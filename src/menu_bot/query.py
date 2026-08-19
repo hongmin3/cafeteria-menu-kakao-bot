@@ -10,7 +10,50 @@ from .db import MenuDB
 
 WEEKDAYS = {"월": 0, "화": 1, "수": 2, "목": 3, "금": 4, "토": 5, "일": 6}
 MEALS = {"아침": "조식", "조식": "조식", "점심": "중식", "중식": "중식", "저녁": "석식", "석식": "석식"}
-LOCATIONS = ("평촌", "안양", "화성", "뷰웍스")
+
+HELP_TEXT = """🍚 뷰밥 메뉴 알리미 사용법
+원하는 날짜와 끼니를 편하게 말해 주세요.
+
+• 아침 → 오늘 조식
+• 금요일 점심 → 이번 주 금요일 중식
+• 월 → 월요일의 모든 식단
+• 내일 저녁 → 내일 석식
+
+토·일요일에는 월~금 요일을 다음 주로 해석해요.
+주말 식사는 운영하지 않아요.
+언제든 ‘사용방법’ 또는 ‘도움말’을 입력해 다시 볼 수 있어요."""
+
+CASUAL_REPLACEMENTS = {
+    "월욜": "월요일",
+    "화욜": "화요일",
+    "수욜": "수요일",
+    "목욜": "목요일",
+    "금욜": "금요일",
+    "토욜": "토요일",
+    "일욜": "일요일",
+    "낼모레": "모레",
+    "낼": "내일",
+    "담주": "다음주",
+}
+
+
+def normalize_query(text: str) -> str:
+    normalized = text.strip()
+    for casual, standard in CASUAL_REPLACEMENTS.items():
+        normalized = normalized.replace(casual, standard)
+    normalized = re.sub(r"(다음주|이번주)([월화수목금토일])(?=\s|$)", r"\1 \2요일", normalized)
+    normalized = re.sub(r"[?!,.]+", " ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def looks_like_menu_query(text: str) -> bool:
+    normalized = normalize_query(text).replace(" ", "")
+    hints = (
+        *MEALS.keys(), "오늘", "내일", "모레", "어제", "이번주", "다음주",
+        "월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일",
+        "식단", "메뉴", "밥", "뭐먹", "뭐나와", "주말",
+    )
+    return any(hint in normalized for hint in hints)
 
 
 @dataclass(frozen=True)
@@ -22,9 +65,8 @@ class ParsedQuery:
 
 
 def parse_query(text: str, now: datetime) -> ParsedQuery:
-    normalized = re.sub(r"\s+", " ", text.strip())
+    normalized = normalize_query(text)
     meal = next((value for key, value in MEALS.items() if key in normalized), None)
-    location = next((name for name in LOCATIONS if name in normalized), None)
     today = now.date()
     scope = "today"
     if "모레" in normalized:
@@ -63,51 +105,48 @@ def parse_query(text: str, now: datetime) -> ParsedQuery:
                 target = monday + timedelta(days=target_weekday)
             else:
                 target = today
-    return ParsedQuery(target, meal, location, scope)
+    return ParsedQuery(target, meal, None, scope)
 
 
-def _choose_location(rows: list, requested: str | None, default_location: str) -> tuple[list, str | None]:
+def _choose_common_menu(rows: list) -> list:
     locations = sorted({row["location"] for row in rows})
-    wanted = requested or default_location or None
-    if wanted:
-        exact = [row for row in rows if row["location"] == wanted]
-        if exact:
-            return exact, wanted
-        common = [row for row in rows if row["location"] == "뷰웍스"]
-        if common:
-            return common, "뷰웍스(공통)"
-        return [], wanted
-    non_common = [name for name in locations if name != "뷰웍스"]
-    if len(non_common) > 1:
-        return [], None
-    if "뷰웍스" in locations:
-        return [row for row in rows if row["location"] == "뷰웍스"], "뷰웍스(공통)"
+    common = [row for row in rows if row["location"] == "뷰웍스"]
+    if common:
+        return common
     if len(locations) == 1:
-        return rows, locations[0]
-    return [], None
+        return rows
+    return []
+
+
+def _menu_items(menu_text: str) -> list[str]:
+    """Split OCR-normalized menu cells without breaking meaningful slash pairs."""
+    return [item.strip() for item in menu_text.split(" · ") if item.strip()]
 
 
 def answer(db: MenuDB, text: str, timezone: str, default_location: str = "", now: datetime | None = None) -> str:
     current = now or datetime.now(ZoneInfo(timezone))
+    if "주말" in normalize_query(text):
+        return "주말에는 식당을 운영하지 않습니다."
     parsed = parse_query(text, current)
     this_monday = current.date() - timedelta(days=current.date().weekday())
     allowed_mondays = {this_monday, this_monday + timedelta(days=7)}
     target_monday = parsed.day - timedelta(days=parsed.day.weekday())
     if parsed.scope == "explicit" and target_monday not in allowed_mondays:
         return "과거 식단 조회는 지원하지 않아요. 이번 주 또는 다음 주 요일로 물어봐 주세요."
+    if parsed.day.weekday() >= 5:
+        weekday = "토" if parsed.day.weekday() == 5 else "일"
+        return f"{parsed.day:%m월 %d일}({weekday}) 주말에는 식당을 운영하지 않습니다."
     rows = db.query(parsed.day, parsed.meal_type)
     if not rows:
         weekday = "월화수목금토일"[parsed.day.weekday()]
         return f"{parsed.day:%m월 %d일}({weekday}) 식단표가 아직 업로드되지 않았습니다."
-    selected, location_label = _choose_location(rows, parsed.location, default_location)
+    selected = _choose_common_menu(rows)
     if not selected:
-        choices = ", ".join(sorted({row["location"] for row in rows}))
-        if parsed.location:
-            return f"{parsed.day:%m월 %d일} {parsed.location} 식단은 없어요. 확인 가능한 지점: {choices}"
-        return f"지점을 함께 말해 주세요. 예: ‘평촌 금요일 점심’\n확인 가능한 지점: {choices}"
+        weekday = "월화수목금토일"[parsed.day.weekday()]
+        return f"{parsed.day:%m월 %d일}({weekday}) 공통 식단표를 확인할 수 없습니다."
 
     weekday = "월화수목금토일"[parsed.day.weekday()]
-    title = f"🍽 {parsed.day:%m월 %d일}({weekday}) {location_label}"
+    title = f"🍽 {parsed.day:%m월 %d일}({weekday})"
     parts = [title]
     grouped: dict[str, list] = {}
     for row in selected:
@@ -116,21 +155,28 @@ def answer(db: MenuDB, text: str, timezone: str, default_location: str = "", now
         meal_rows = grouped.get(meal)
         if not meal_rows:
             continue
-        parts.append(f"\n[{meal}]")
+        meal_parts = [f"[{meal}]"]
         notices = [row for row in meal_rows if row["status"] == "no_service" and row["category"] == "안내"]
         if notices:
             notices = list(dict.fromkeys(row["menu_text"] for row in notices))
-            parts.append("운영 없음 — " + " / ".join(notices))
+            meal_parts.append("<운영 안내>")
+            meal_parts.extend(f"- {notice}" for notice in notices)
+            parts.append("\n".join(meal_parts))
             continue
         plus_rows = [row for row in meal_rows if row["category"] == "PLUS 코너"]
         main_rows = [row for row in meal_rows if row["category"] != "PLUS 코너"]
         for row in main_rows:
-            if row["status"] == "no_service":
-                parts.append(f"{row['category']}: 미제공 ({row['menu_text']})")
-                continue
             marker = "✨ " if row["status"] == "special" else ""
-            parts.append(f"{marker}{row['category']}: {row['menu_text']}")
+            meal_parts.append(f"{marker}<{row['category']}>")
+            if row["status"] == "no_service":
+                meal_parts.append(f"- 미제공 ({row['menu_text']})")
+                continue
+            meal_parts.extend(f"- {item}" for item in _menu_items(row["menu_text"]))
         if plus_rows:
-            plus_text = " / ".join(dict.fromkeys(row["menu_text"] for row in plus_rows))
-            parts.append(f"공통 PLUS: {plus_text}")
-    return "\n".join(parts)
+            plus_items = []
+            for row in plus_rows:
+                plus_items.extend(_menu_items(row["menu_text"]))
+            meal_parts.append("<공통 PLUS>")
+            meal_parts.extend(f"- {item}" for item in dict.fromkeys(plus_items))
+        parts.append("\n".join(meal_parts))
+    return "\n\n".join(parts)
