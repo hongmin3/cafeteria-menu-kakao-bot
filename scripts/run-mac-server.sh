@@ -3,6 +3,7 @@ set -euo pipefail
 
 project_dir="${0:A:h:h}"
 cd "$project_dir"
+export PYTHONPATH="$project_dir/src${PYTHONPATH:+:$PYTHONPATH}"
 
 if [[ ! -x ".venv/bin/uvicorn" ]]; then
   print -u2 "먼저 README의 설치 단계를 실행해 주세요."
