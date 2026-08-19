@@ -5,7 +5,7 @@ import pytest
 
 from menu_bot.db import MenuDB
 from menu_bot.models import MenuEntry
-from menu_bot.query import answer, looks_like_menu_query, parse_query
+from menu_bot.query import answer, looks_like_menu_query, parse_query, query_issue
 from menu_bot.web import HELP_TEXT, kakao_response
 
 
@@ -141,3 +141,67 @@ def test_weekend_shorthand_reports_closed(tmp_path: Path, utterance: str, expect
 @pytest.mark.parametrize("utterance", ["asdf", "배고프다아아", "ㅎㅇ", "아무말"])
 def test_unrecognized_inputs_get_help(utterance: str):
     assert not looks_like_menu_query(utterance)
+
+
+@pytest.mark.parametrize(
+    ("utterance", "message_part"),
+    [
+        ("다음주", "요일을 함께"),
+        ("다음 주 점심", "요일을 함께"),
+        ("담주 메뉴", "요일을 함께"),
+        ("차주 저녁", "요일을 함께"),
+        ("이번주", "요일을 함께"),
+        ("이번 주 아침", "요일을 함께"),
+        ("금주 메뉴", "요일을 함께"),
+        ("오늘 내일 점심", "날짜를 하나만"),
+        ("이번주 다음주 월요일", "날짜를 하나만"),
+        ("다음주 오늘 점심", "주차와 날짜 표현"),
+        ("오늘 수요일 점심", "날짜와 요일을 하나만"),
+        ("월요일 화요일", "요일을 하나만"),
+        ("월 화 점심", "요일을 하나만"),
+        ("화요일 아침 점심", "끼니를 하나만"),
+        ("지난주 월요일", "지난 주 식단은 지원하지"),
+        ("저번주 금요일", "지난 주 식단은 지원하지"),
+        ("다다음주 월요일", "다다음 주 식단은 지원하지"),
+        ("2월 30일 점심", "날짜를 확인"),
+        ("13/40 저녁", "날짜를 확인"),
+    ],
+)
+def test_ambiguous_or_unsupported_queries_get_clarification(utterance: str, message_part: str):
+    issue = query_issue(utterance, NOW.date())
+    assert issue is not None
+    assert message_part in issue
+
+
+@pytest.mark.parametrize(
+    "utterance",
+    [
+        "다음주 월요일",
+        "다음 주 화요일 점심",
+        "담주월 아침",
+        "차주 금요일 저녁",
+        "이번주 목요일",
+        "오늘",
+        "내일 점심",
+        "8월 20일 점심",
+        "8/20 저녁",
+        "화요일",
+        "아침",
+    ],
+)
+def test_unambiguous_queries_do_not_get_clarification(utterance: str):
+    assert query_issue(utterance, NOW.date()) is None
+
+
+def test_next_week_without_weekday_never_falls_back_to_today(tmp_path: Path):
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "post-today",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "오늘메뉴", source_post_id="post-today")],
+        )
+        result = answer(db, "다음주", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "요일을 함께" in result
+    assert "오늘메뉴" not in result
