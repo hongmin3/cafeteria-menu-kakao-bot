@@ -110,9 +110,30 @@ def test_common_casual_inputs(utterance: str, expected_day: str, expected_meal: 
     assert parsed.meal_type == expected_meal
 
 
-@pytest.mark.parametrize("utterance", ["오늘 뭐먹어", "밥 뭐야", "이번주 메뉴", "평촌점심", "주말"])
+@pytest.mark.parametrize(
+    "utterance",
+    ["오늘 뭐먹어", "밥 뭐야", "이번주 메뉴", "평촌점심", "주말", "월", "화", "수", "목", "금", "토", "일"],
+)
 def test_menu_intent_variations(utterance: str):
     assert looks_like_menu_query(utterance)
+
+
+@pytest.mark.parametrize(
+    ("utterance", "expected"),
+    [
+        ("토", "08월 22일(토) 주말에는 식당을 운영하지 않습니다."),
+        ("토요일", "08월 22일(토) 주말에는 식당을 운영하지 않습니다."),
+        ("일", "08월 23일(일) 주말에는 식당을 운영하지 않습니다."),
+        ("일요일", "08월 23일(일) 주말에는 식당을 운영하지 않습니다."),
+    ],
+)
+def test_weekend_shorthand_reports_closed(tmp_path: Path, utterance: str, expected: str):
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        result = answer(db, utterance, "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert result == expected
 
 
 @pytest.mark.parametrize("utterance", ["asdf", "배고프다아아", "ㅎㅇ", "아무말"])
