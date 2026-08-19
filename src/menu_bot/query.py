@@ -48,6 +48,10 @@ def normalize_query(text: str) -> str:
 
 def looks_like_menu_query(text: str) -> bool:
     normalized = normalize_query(text).replace(" ", "")
+    # A single weekday character is a supported shorthand (for example,
+    # "월" for all Monday meals and "토" for the weekend closure notice).
+    if normalized in WEEKDAYS:
+        return True
     hints = (
         *MEALS.keys(), "오늘", "내일", "모레", "어제", "이번주", "다음주",
         "월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일",
