@@ -34,11 +34,14 @@ CASUAL_REPLACEMENTS = {
     "낼모레": "모레",
     "낼": "내일",
     "담주": "다음주",
+    "차주": "다음주",
+    "금주": "이번주",
 }
 
 
 def normalize_query(text: str) -> str:
     normalized = text.strip()
+    normalized = re.sub(r"(다음|이번|담|차|금)\s+주", r"\1주", normalized)
     for casual, standard in CASUAL_REPLACEMENTS.items():
         normalized = normalized.replace(casual, standard)
     normalized = re.sub(r"(다음주|이번주)([월화수목금토일])(?=\s|$)", r"\1 \2요일", normalized)
@@ -52,12 +55,57 @@ def looks_like_menu_query(text: str) -> bool:
     # "월" for all Monday meals and "토" for the weekend closure notice).
     if normalized in WEEKDAYS:
         return True
+    if re.search(r"(?:(?:20\d{2})년)?\d{1,2}월\d{1,2}일|(?<!\d)\d{1,2}/\d{1,2}(?!\d)", normalized):
+        return True
     hints = (
         *MEALS.keys(), "오늘", "내일", "모레", "어제", "이번주", "다음주",
+        "지난주", "저번주", "다다음주",
         "월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일",
         "식단", "메뉴", "밥", "뭐먹", "뭐나와", "주말",
     )
     return any(hint in normalized for hint in hints)
+
+
+def query_issue(text: str, today: date | None = None) -> str | None:
+    """Return a clarification for ambiguous or unsupported date/meal input."""
+    normalized = normalize_query(text)
+    compact = normalized.replace(" ", "")
+    if any(token in compact for token in ("지난주", "저번주")):
+        return "지난 주 식단은 지원하지 않아요. 이번 주 또는 다음 주 요일로 물어봐 주세요."
+    if "다다음주" in compact:
+        return "다다음 주 식단은 지원하지 않아요. 이번 주 또는 다음 주 요일로 물어봐 주세요."
+
+    week_scopes = {token for token in ("이번주", "다음주") if token in compact}
+    relative_days = {token for token in ("어제", "오늘", "내일", "모레") if token in compact}
+    weekdays = set(re.findall(r"([월화수목금토일])요일", normalized))
+    weekdays.update(re.findall(r"(?<!\S)([월화수목금토일])(?!\S)", normalized))
+    meal_types = {value for key, value in MEALS.items() if key in compact}
+    explicit = list(re.finditer(r"(?:(20\d{2})년\s*)?(\d{1,2})월\s*(\d{1,2})일", normalized))
+    slashes = list(re.finditer(r"(?<!\d)(\d{1,2})/(\d{1,2})(?!\d)", normalized))
+
+    if len(week_scopes) > 1 or len(relative_days) > 1 or len(explicit) + len(slashes) > 1:
+        return "날짜를 하나만 말해 주세요. 예: ‘내일 점심’ 또는 ‘다음주 월요일’."
+    if week_scopes and (relative_days or explicit or slashes):
+        return "주차와 날짜 표현을 함께 쓰면 헷갈릴 수 있어요. 하나만 말해 주세요. 예: ‘다음주 월요일’."
+    if (relative_days or explicit or slashes) and weekdays:
+        return "날짜와 요일을 하나만 말해 주세요. 예: ‘내일 점심’ 또는 ‘목요일 점심’."
+    if len(weekdays) > 1:
+        return "요일을 하나만 말해 주세요. 예: ‘월요일’ 또는 ‘화요일 점심’."
+    if len(meal_types) > 1:
+        return "끼니를 하나만 말해 주세요. 하루 전체 식단은 ‘화요일’처럼 요일만 입력해 주세요."
+    if week_scopes and not weekdays:
+        label = "다음 주" if "다음주" in week_scopes else "이번 주"
+        return f"{label} 식단을 보려면 요일을 함께 말해 주세요.\n예: ‘{label.replace(' ', '')} 월요일’ 또는 ‘{label.replace(' ', '')} 화요일 점심’"
+
+    reference_year = (today or date.today()).year
+    try:
+        for match in explicit:
+            date(int(match.group(1) or reference_year), int(match.group(2)), int(match.group(3)))
+        for match in slashes:
+            date(reference_year, int(match.group(1)), int(match.group(2)))
+    except ValueError:
+        return "날짜를 확인해 주세요. 예: ‘8월 20일 점심’ 또는 ‘8/20 점심’."
+    return None
 
 
 @dataclass(frozen=True)
@@ -131,6 +179,9 @@ def answer(db: MenuDB, text: str, timezone: str, default_location: str = "", now
     current = now or datetime.now(ZoneInfo(timezone))
     if "주말" in normalize_query(text):
         return "주말에는 식당을 운영하지 않습니다."
+    issue = query_issue(text, current.date())
+    if issue:
+        return issue
     parsed = parse_query(text, current)
     this_monday = current.date() - timedelta(days=current.date().weekday())
     allowed_mondays = {this_monday, this_monday + timedelta(days=7)}
