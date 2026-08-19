@@ -4,16 +4,29 @@ import argparse
 from datetime import datetime, timedelta
 import json
 from pathlib import Path
+import sys
 from zoneinfo import ZoneInfo
 
 from .config import get_settings
 from .db import MenuDB
+from .next_week_watch import check_next_week_posted
 from .pipeline import process_manifest
 from .query import answer
 from .scraper import GroupwareScraper
 
 
+def _use_utf8_console() -> None:
+    # Windows 콘솔 기본 코드페이지(cp949 등)는 🍽 같은 이모지를 인코딩하지
+    # 못해 print()가 UnicodeEncodeError로 죽는다. reconfigure()가 없는
+    # 구버전 Python이나 콘솔이 아닌 스트림에서는 조용히 건너뛴다.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure:
+            reconfigure(encoding="utf-8")
+
+
 def main() -> None:
+    _use_utf8_console()
     parser = argparse.ArgumentParser(description="뷰웍스 식단 챗봇 관리 도구")
     sub = parser.add_subparsers(dest="command", required=True)
     ingest = sub.add_parser("ingest", help="JSON 목록의 식단 이미지를 OCR하여 저장")
@@ -28,6 +41,10 @@ def main() -> None:
     scrape.add_argument("--show-browser", action="store_true")
     ask = sub.add_parser("ask", help="로컬 DB에 식단 질문")
     ask.add_argument("text")
+    sub.add_parser(
+        "check-next-week",
+        help="다음 주 식단표 게시글이 올라왔는지 확인(주말 폴링용, 확인되면 상태 저장 후 종료)",
+    )
     args = parser.parse_args()
     settings = get_settings()
 
@@ -52,6 +69,9 @@ def main() -> None:
             print(answer(db, args.text, settings.timezone, settings.default_location))
         finally:
             db.close()
+    elif args.command == "check-next-week":
+        result = check_next_week_posted(settings)
+        print(result.message)
 
 
 if __name__ == "__main__":

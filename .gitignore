@@ -9,3 +9,6 @@ assets/*.png
 *.log
 work/
 .DS_Store
+windows-transfer-secrets/
+WINDOWS_CODEX_MIGRATION_REQUEST.md
+logs/

@@ -17,6 +17,8 @@ class Settings:
     database_path: Path
     timezone: str
     webhook_token: str
+    ocr_provider: str
+    next_week_state_path: Path
 
 
 def get_settings() -> Settings:
@@ -33,4 +35,7 @@ def get_settings() -> Settings:
         database_path=Path(os.getenv("DATABASE_PATH", "data/menus.db")),
         timezone=os.getenv("TIMEZONE", "Asia/Seoul"),
         webhook_token=os.getenv("KAKAO_WEBHOOK_TOKEN", "").strip(),
+        # "auto"(플랫폼 자동 감지) | "apple_vision" | "paddleocr"
+        ocr_provider=os.getenv("OCR_PROVIDER", "auto").strip().lower(),
+        next_week_state_path=Path(os.getenv("NEXT_WEEK_STATE_PATH", "data/next_week_watch_state.json")),
     )
