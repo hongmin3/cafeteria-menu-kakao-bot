@@ -5,6 +5,7 @@ import pytest
 
 from menu_bot.db import MenuDB
 from menu_bot.models import MenuEntry
+from menu_bot.pipeline import filter_entries_to_week
 from menu_bot.query import answer, looks_like_menu_query, parse_query, query_issue
 from menu_bot.web import HELP_TEXT, kakao_response
 
@@ -30,18 +31,18 @@ def test_plain_breakfast_means_today():
     assert parsed.meal_type == "조식"
 
 
-def test_location_and_next_week():
+def test_next_week_can_be_parsed_but_is_rejected_by_answer_validation():
     parsed = parse_query("평촌 다음주 화요일 저녁", NOW)
     assert parsed.day.isoformat() == "2026-08-25"
     assert parsed.location is None
     assert parsed.meal_type == "석식"
 
 
-def test_weekend_weekday_means_next_week():
+def test_weekend_weekday_still_means_current_week():
     weekend = datetime(2026, 8, 22, 9, 0, tzinfo=ZoneInfo("Asia/Seoul"))
     parsed = parse_query("월요일 아침", weekend)
-    assert parsed.day.isoformat() == "2026-08-24"
-    assert parsed.scope == "next_week"
+    assert parsed.day.isoformat() == "2026-08-17"
+    assert parsed.scope == "current_week"
 
 
 def test_single_weekday_character_returns_all_meals():
@@ -146,23 +147,24 @@ def test_unrecognized_inputs_get_help(utterance: str):
 @pytest.mark.parametrize(
     ("utterance", "message_part"),
     [
-        ("다음주", "요일을 함께"),
-        ("다음 주 점심", "요일을 함께"),
-        ("담주 메뉴", "요일을 함께"),
-        ("차주 저녁", "요일을 함께"),
+        ("다음주", "이번 주 식단만"),
+        ("다음 주 점심", "이번 주 식단만"),
+        ("담주 메뉴", "이번 주 식단만"),
+        ("차주 저녁", "이번 주 식단만"),
         ("이번주", "요일을 함께"),
         ("이번 주 아침", "요일을 함께"),
         ("금주 메뉴", "요일을 함께"),
         ("오늘 내일 점심", "날짜를 하나만"),
-        ("이번주 다음주 월요일", "날짜를 하나만"),
-        ("다음주 오늘 점심", "주차와 날짜 표현"),
+        ("이번주 다음주 월요일", "이번 주 식단만"),
+        ("다음주 오늘 점심", "이번 주 식단만"),
+        ("이번주 오늘 점심", "주차와 날짜 표현"),
         ("오늘 수요일 점심", "날짜와 요일을 하나만"),
         ("월요일 화요일", "요일을 하나만"),
         ("월 화 점심", "요일을 하나만"),
         ("화요일 아침 점심", "끼니를 하나만"),
-        ("지난주 월요일", "지난 주 식단은 지원하지"),
-        ("저번주 금요일", "지난 주 식단은 지원하지"),
-        ("다다음주 월요일", "다다음 주 식단은 지원하지"),
+        ("지난주 월요일", "이번 주 식단만"),
+        ("저번주 금요일", "이번 주 식단만"),
+        ("다다음주 월요일", "이번 주 식단만"),
         ("2월 30일 점심", "날짜를 확인"),
         ("13/40 저녁", "날짜를 확인"),
     ],
@@ -176,10 +178,6 @@ def test_ambiguous_or_unsupported_queries_get_clarification(utterance: str, mess
 @pytest.mark.parametrize(
     "utterance",
     [
-        "다음주 월요일",
-        "다음 주 화요일 점심",
-        "담주월 아침",
-        "차주 금요일 저녁",
         "이번주 목요일",
         "오늘",
         "내일 점심",
@@ -193,7 +191,7 @@ def test_unambiguous_queries_do_not_get_clarification(utterance: str):
     assert query_issue(utterance, NOW.date()) is None
 
 
-def test_next_week_without_weekday_never_falls_back_to_today(tmp_path: Path):
+def test_next_week_is_never_served_or_falls_back_to_today(tmp_path: Path):
     db = MenuDB(tmp_path / "menus.db")
     try:
         db.replace_entries(
@@ -203,5 +201,32 @@ def test_next_week_without_weekday_never_falls_back_to_today(tmp_path: Path):
         result = answer(db, "다음주", "Asia/Seoul", now=NOW)
     finally:
         db.close()
-    assert "요일을 함께" in result
+    assert "이번 주 식단만" in result
     assert "오늘메뉴" not in result
+
+
+def test_explicit_next_week_date_is_rejected(tmp_path: Path):
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "post-next",
+            [MenuEntry(date(2026, 8, 24), "뷰웍스", "중식", "일반식", "차주메뉴", source_post_id="post-next")],
+        )
+        result = answer(db, "8월 24일 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "이번 주 식단만" in result
+    assert "차주메뉴" not in result
+
+
+def test_operational_ingest_keeps_only_current_week_entries():
+    entries = [
+        MenuEntry(date(2026, 8, 16), "뷰웍스", "중식", "일반식", "지난주", source_post_id="p"),
+        MenuEntry(date(2026, 8, 17), "뷰웍스", "중식", "일반식", "이번주월", source_post_id="p"),
+        MenuEntry(date(2026, 8, 21), "뷰웍스", "중식", "일반식", "이번주금", source_post_id="p"),
+        MenuEntry(date(2026, 8, 23), "뷰웍스", "중식", "일반식", "이번주일", source_post_id="p"),
+        MenuEntry(date(2026, 8, 24), "뷰웍스", "중식", "일반식", "다음주", source_post_id="p"),
+    ]
+    selected, filtered = filter_entries_to_week(entries, date(2026, 8, 17))
+    assert [entry.menu_text for entry in selected] == ["이번주월", "이번주금", "이번주일"]
+    assert filtered == 2

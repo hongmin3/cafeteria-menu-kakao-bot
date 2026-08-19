@@ -19,7 +19,7 @@ HELP_TEXT = """🍚 뷰밥 메뉴 알리미 사용법
 • 월 → 월요일의 모든 식단
 • 내일 저녁 → 내일 석식
 
-토·일요일에는 월~금 요일을 다음 주로 해석해요.
+요일은 항상 이번 주 날짜로 해석해요.
 주말 식사는 운영하지 않아요.
 언제든 ‘사용방법’ 또는 ‘도움말’을 입력해 다시 볼 수 있어요."""
 
@@ -71,9 +71,9 @@ def query_issue(text: str, today: date | None = None) -> str | None:
     normalized = normalize_query(text)
     compact = normalized.replace(" ", "")
     if any(token in compact for token in ("지난주", "저번주")):
-        return "지난 주 식단은 지원하지 않아요. 이번 주 또는 다음 주 요일로 물어봐 주세요."
+        return "지난 주 식단은 제공하지 않아요. 이번 주 식단만 조회할 수 있어요."
     if "다다음주" in compact:
-        return "다다음 주 식단은 지원하지 않아요. 이번 주 또는 다음 주 요일로 물어봐 주세요."
+        return "다다음 주 식단은 제공하지 않아요. 이번 주 식단만 조회할 수 있어요."
 
     week_scopes = {token for token in ("이번주", "다음주") if token in compact}
     relative_days = {token for token in ("어제", "오늘", "내일", "모레") if token in compact}
@@ -83,10 +83,12 @@ def query_issue(text: str, today: date | None = None) -> str | None:
     explicit = list(re.finditer(r"(?:(20\d{2})년\s*)?(\d{1,2})월\s*(\d{1,2})일", normalized))
     slashes = list(re.finditer(r"(?<!\d)(\d{1,2})/(\d{1,2})(?!\d)", normalized))
 
+    if "다음주" in week_scopes:
+        return "다음 주 식단은 제공하지 않아요. 이번 주 식단만 조회할 수 있어요."
     if len(week_scopes) > 1 or len(relative_days) > 1 or len(explicit) + len(slashes) > 1:
-        return "날짜를 하나만 말해 주세요. 예: ‘내일 점심’ 또는 ‘다음주 월요일’."
+        return "날짜를 하나만 말해 주세요. 예: ‘내일 점심’ 또는 ‘이번주 월요일’."
     if week_scopes and (relative_days or explicit or slashes):
-        return "주차와 날짜 표현을 함께 쓰면 헷갈릴 수 있어요. 하나만 말해 주세요. 예: ‘다음주 월요일’."
+        return "주차와 날짜 표현을 함께 쓰면 헷갈릴 수 있어요. 하나만 말해 주세요. 예: ‘오늘 점심’ 또는 ‘이번주 월요일’."
     if (relative_days or explicit or slashes) and weekdays:
         return "날짜와 요일을 하나만 말해 주세요. 예: ‘내일 점심’ 또는 ‘목요일 점심’."
     if len(weekdays) > 1:
@@ -94,8 +96,7 @@ def query_issue(text: str, today: date | None = None) -> str | None:
     if len(meal_types) > 1:
         return "끼니를 하나만 말해 주세요. 하루 전체 식단은 ‘화요일’처럼 요일만 입력해 주세요."
     if week_scopes and not weekdays:
-        label = "다음 주" if "다음주" in week_scopes else "이번 주"
-        return f"{label} 식단을 보려면 요일을 함께 말해 주세요.\n예: ‘{label.replace(' ', '')} 월요일’ 또는 ‘{label.replace(' ', '')} 화요일 점심’"
+        return "이번 주 식단을 보려면 요일을 함께 말해 주세요.\n예: ‘이번주 월요일’ 또는 ‘이번주 화요일 점심’"
 
     reference_year = (today or date.today()).year
     try:
@@ -150,9 +151,7 @@ def parse_query(text: str, now: datetime) -> ParsedQuery:
                 elif "이번주" in normalized or "이번 주" in normalized:
                     week_shift, scope = 0, "current_week"
                 else:
-                    # 주말에는 새로 게시된 다음 주 식단을 묻는 것이 기본 동작이다.
-                    week_shift = 7 if today.weekday() >= 5 else 0
-                    scope = "next_week" if week_shift else "current_week"
+                    week_shift, scope = 0, "current_week"
                 monday = today - timedelta(days=today.weekday()) + timedelta(days=week_shift)
                 target = monday + timedelta(days=target_weekday)
             else:
@@ -184,10 +183,9 @@ def answer(db: MenuDB, text: str, timezone: str, default_location: str = "", now
         return issue
     parsed = parse_query(text, current)
     this_monday = current.date() - timedelta(days=current.date().weekday())
-    allowed_mondays = {this_monday, this_monday + timedelta(days=7)}
     target_monday = parsed.day - timedelta(days=parsed.day.weekday())
-    if parsed.scope == "explicit" and target_monday not in allowed_mondays:
-        return "과거 식단 조회는 지원하지 않아요. 이번 주 또는 다음 주 요일로 물어봐 주세요."
+    if target_monday != this_monday:
+        return "이번 주 식단만 조회할 수 있어요. 이번 주 요일로 물어봐 주세요."
     if parsed.day.weekday() >= 5:
         weekday = "토" if parsed.day.weekday() == 5 else "일"
         return f"{parsed.day:%m월 %d일}({weekday}) 주말에는 식당을 운영하지 않습니다."
