@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timedelta
 import json
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from .config import get_settings
 from .db import MenuDB
@@ -16,6 +18,10 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     ingest = sub.add_parser("ingest", help="JSON 목록의 식단 이미지를 OCR하여 저장")
     ingest.add_argument("manifest", type=Path)
+    ingest.add_argument(
+        "--learning", action="store_true",
+        help="1년치 OCR/파서 검증용으로 모든 날짜를 저장(운영 DB에서는 사용하지 않음)",
+    )
     scrape = sub.add_parser("scrape", help="그룹웨어에서 최근 식단 게시물을 수집")
     scrape.add_argument("--pages", type=int, default=2)
     scrape.add_argument("--output", type=Path, default=Path("data/latest_manifest.json"))
@@ -34,7 +40,9 @@ def main() -> None:
         rows = json.loads(args.manifest.read_text(encoding="utf-8"))
         db = MenuDB(settings.database_path)
         try:
-            stats = process_manifest(rows, db, Path("data/images"))
+            today = datetime.now(ZoneInfo(settings.timezone)).date()
+            week_start = None if args.learning else today - timedelta(days=today.weekday())
+            stats = process_manifest(rows, db, Path("data/images"), week_start=week_start)
             print(json.dumps(stats, ensure_ascii=False, indent=2))
         finally:
             db.close()
@@ -48,5 +56,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import date, timedelta
 from pathlib import Path
 import requests
 
@@ -21,8 +22,19 @@ def _download(url: str, image_dir: Path) -> Path:
     return path
 
 
-def process_manifest(rows: list[dict], db: MenuDB, image_dir: Path, progress=print) -> dict:
-    stats = {"posts": 0, "images": 0, "entries": 0, "skipped_images": 0, "errors": []}
+def filter_entries_to_week(entries: list[MenuEntry], week_start: date) -> tuple[list[MenuEntry], int]:
+    week_end = week_start + timedelta(days=6)
+    selected = [entry for entry in entries if week_start <= entry.service_date <= week_end]
+    return selected, len(entries) - len(selected)
+
+
+def process_manifest(
+    rows: list[dict], db: MenuDB, image_dir: Path, progress=print, week_start: date | None = None
+) -> dict:
+    stats = {
+        "posts": 0, "images": 0, "entries": 0, "filtered_entries": 0,
+        "skipped_images": 0, "errors": [],
+    }
     for index, row in enumerate(rows, 1):
         try:
             urls = [image["src"] if isinstance(image, dict) else image for image in row.get("images", [])]
@@ -42,14 +54,17 @@ def process_manifest(rows: list[dict], db: MenuDB, image_dir: Path, progress=pri
                 key = (entry.service_date, entry.location, entry.meal_type, entry.category)
                 if key not in best or len(entry.menu_text) > len(best[key].menu_text):
                     best[key] = entry
+            selected_entries = list(best.values())
+            if week_start is not None:
+                selected_entries, filtered = filter_entries_to_week(selected_entries, week_start)
+                stats["filtered_entries"] += filtered
             db.save_post(post)
-            db.replace_entries(post.post_id, list(best.values()))
+            db.replace_entries(post.post_id, selected_entries)
             stats["posts"] += 1
-            stats["entries"] += len(best)
-            progress(f"[{index}/{len(rows)}] {post.title}: {len(best)}개 메뉴")
+            stats["entries"] += len(selected_entries)
+            progress(f"[{index}/{len(rows)}] {post.title}: {len(selected_entries)}개 메뉴")
         except Exception as exc:
             stats["errors"].append({"title": row.get("title"), "error": str(exc)})
             progress(f"[{index}/{len(rows)}] 오류: {row.get('title')} — {exc}")
     return stats
-
 
