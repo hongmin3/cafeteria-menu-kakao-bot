@@ -170,6 +170,8 @@ def answer(db: MenuDB, text: str, timezone: str, default_location: str = "", now
         plus_rows = [row for row in meal_rows if row["category"] == "PLUS 코너"]
         main_rows = [row for row in meal_rows if row["category"] != "PLUS 코너"]
         for row in main_rows:
+            if len(meal_parts) > 1 and meal_parts[-1] != "":
+                meal_parts.append("")
             marker = "✨ " if row["status"] == "special" else ""
             meal_parts.append(f"{marker}<{row['category']}>")
             if row["status"] == "no_service":
@@ -180,6 +182,8 @@ def answer(db: MenuDB, text: str, timezone: str, default_location: str = "", now
             plus_items = []
             for row in plus_rows:
                 plus_items.extend(_menu_items(row["menu_text"]))
+            if len(meal_parts) > 1 and meal_parts[-1] != "":
+                meal_parts.append("")
             meal_parts.append("<공통 PLUS>")
             meal_parts.extend(f"- {item}" for item in dict.fromkeys(plus_items))
         parts.append("\n".join(meal_parts))

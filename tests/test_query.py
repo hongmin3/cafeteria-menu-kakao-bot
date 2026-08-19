@@ -67,6 +67,8 @@ def test_vertical_menu_format(tmp_path: Path):
     assert "<일반식>\n- 라면\n- 연근" in result
     assert "<간편식>\n- 샌드위치" in result
     assert "<공통 PLUS>\n- 수정과\n- 현미밥" in result
+    assert "- 연근\n\n<간편식>" in result
+    assert "- 샌드위치\n\n<공통 PLUS>" in result
 
 
 def test_full_day_response_splits_into_meal_bubbles():
