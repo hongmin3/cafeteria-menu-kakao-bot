@@ -1,0 +1,28 @@
+# 뷰밥 메뉴 알리미 — 카카오 스킬 FastAPI 서버
+# 이 서버에는 다른 팀 서비스가 이미 여러 개 돌고 있다. 그쪽이 쓰는 포트와
+# 겹치지 않는 값을 .env의 MENUBOT_PORT로 지정하고, 127.0.0.1만 바인딩한다.
+[Unit]
+Description=Vieworks cafeteria menu Kakao skill server (뷰밥 메뉴 알리미)
+Documentation=file://__APP_DIR__/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=__APP_DIR__
+# 서버 자체는 America/New_York이지만 이 프로세스의 로그·naive datetime은
+# 식단 기준 시간대로 보이는 편이 낫다(질의 로직은 코드에서 항상 명시적으로
+# Asia/Seoul을 쓰므로 이 설정과 무관하게 동작한다).
+Environment=TZ=Asia/Seoul
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__APP_DIR__/scripts/run-linux-server.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

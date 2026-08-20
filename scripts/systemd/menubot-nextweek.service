@@ -1,0 +1,22 @@
+# 뷰밥 메뉴 알리미 — 다음 주 식단표 게시 확인(주말 폴링)
+[Unit]
+Description=Vieworks menu bot next-week post watch (뷰밥 다음 주 게시 확인)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=__APP_DIR__
+Environment=TZ=Asia/Seoul
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__APP_DIR__/scripts/run-linux-next-week-watch.sh
+# 평소에는 제목만 읽어 가볍지만, 다음 주 게시글을 찾으면 그 자리에서 이미지
+# 다운로드와 PaddleOCR까지 수행하므로 수집 작업과 같은 상한을 쓴다
+# (menubot-collect.service 주석 참고). MemoryHigh는 회수 압박만 주고,
+# 하드 상한 4G를 넘으면 이 작업만 실패하고 다른 서비스는 보호된다.
+MemoryHigh=3G
+MemoryMax=4G
+TimeoutStartSec=1800

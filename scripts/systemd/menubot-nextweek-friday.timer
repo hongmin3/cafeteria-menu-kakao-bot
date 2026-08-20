@@ -1,0 +1,11 @@
+# 금요일 22:00 (한국시간) 1회
+[Unit]
+Description=Vieworks menu bot next-week watch timer (금 22:00 KST)
+
+[Timer]
+OnCalendar=Fri 22:00 Asia/Seoul
+Persistent=true
+Unit=menubot-nextweek.service
+
+[Install]
+WantedBy=timers.target
