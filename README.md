@@ -199,7 +199,7 @@ NGROK_DOMAIN=계정에-할당된-도메인.ngrok-free.dev
 ```bash
 menu-bot scrape --pages 2 --output data/latest_manifest.json
 menu-bot ingest data/latest_manifest.json
-# 1년치 OCR·파서 검증 전용(운영 DB와 분리해서 사용)
+# 1년치 OCR·파서 검증 전용. --learning은 항상 `menus.learning.db`(운영 DB와 다른 파일)에 저장된다.
 menu-bot ingest data/history_manifest.json --learning
 menu-bot ask "금요일 아침"
 

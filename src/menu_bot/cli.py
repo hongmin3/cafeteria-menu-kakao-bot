@@ -15,6 +15,11 @@ from .query import answer
 from .scraper import GroupwareScraper
 
 
+def _learning_db_path(database_path: Path) -> Path:
+    """--learning 전용 DB 경로. 운영 DB와 절대 같은 파일을 쓰지 않는다."""
+    return database_path.with_name(f"{database_path.stem}.learning{database_path.suffix}")
+
+
 def _use_utf8_console() -> None:
     # Windows 콘솔 기본 코드페이지(cp949 등)는 🍽 같은 이모지를 인코딩하지
     # 못해 print()가 UnicodeEncodeError로 죽는다. reconfigure()가 없는
@@ -55,7 +60,12 @@ def main() -> None:
         print(f"{len(rows)}개 게시물을 {args.output}에 저장했습니다.")
     elif args.command == "ingest":
         rows = json.loads(args.manifest.read_text(encoding="utf-8"))
-        db = MenuDB(settings.database_path)
+        # --learning은 운영 DB(현재 주만 보관)와 절대 섞이면 안 되므로 항상
+        # 별도 파일에 쓴다. 과거 이 구분이 없어 1년치 학습용 데이터가
+        # 그대로 운영 DB에 쌓인 적이 있었다(2026-08-20 정리, 백업:
+        # data/menus.db.backup-2026-08-20).
+        db_path = _learning_db_path(settings.database_path) if args.learning else settings.database_path
+        db = MenuDB(db_path)
         try:
             today = datetime.now(ZoneInfo(settings.timezone)).date()
             week_start = None if args.learning else today - timedelta(days=today.weekday())

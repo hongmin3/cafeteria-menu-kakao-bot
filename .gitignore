@@ -11,4 +11,5 @@ work/
 .DS_Store
 windows-transfer-secrets/
 WINDOWS_CODEX_MIGRATION_REQUEST.md
+WINDOWS_HANDOFF_STATUS.md
 logs/
