@@ -1,0 +1,26 @@
+# 뷰밥 메뉴 알리미 — 주간 운영 수집(scrape + OCR + ingest)
+[Unit]
+Description=Vieworks menu bot weekly collect (뷰밥 메뉴 알리미 주간 수집)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=__APP_DIR__
+Environment=TZ=Asia/Seoul
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__APP_DIR__/scripts/run-linux-collect.sh
+# PaddleOCR + Chromium을 함께 쓰므로 이 장비(RAM 8GB, 다른 서비스와 공유)에서
+# 폭주하지 않도록 상한을 둔다. 2페이지(14개 게시물, 28장 OCR) 실측
+# 피크가 2.7~2.9G였으므로 3G 하드 상한은 여유가 거의 없었다. MemoryHigh로 3G
+# 부터 회수 압박만 주고(죽이지 않음), 하드 상한은 4G로 두어 게시물 수가 늘어도
+# 이 작업만 실패하고 다른 서비스는 보호되게 한다.
+MemoryHigh=3G
+MemoryMax=4G
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target

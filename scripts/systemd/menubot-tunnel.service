@@ -1,0 +1,23 @@
+# 뷰밥 메뉴 알리미 — ngrok 터널(카카오 서버가 접근할 고정 공인 주소)
+[Unit]
+Description=Vieworks menu bot ngrok tunnel (뷰밥 메뉴 알리미 터널)
+After=network-online.target menubot-web.service
+Wants=network-online.target
+# BindsTo/PartOf로 묶지 않는다. 웹 서버가 재시작되는 5초 동안 터널까지 내려가면
+# 터널은 스스로 다시 올라올 근거가 없어 영구히 죽는다. 둘 다 Restart=always로
+# 각자 살아나게 두는 편이 안전하다(그 5초간 카카오는 502를 받고 재질문하면 된다).
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=__APP_DIR__
+Environment=TZ=Asia/Seoul
+ExecStart=__APP_DIR__/scripts/run-linux-tunnel.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -19,6 +19,7 @@ class Settings:
     webhook_token: str
     ocr_provider: str
     next_week_state_path: Path
+    browser_channel: str = "auto"
 
 
 def get_settings() -> Settings:
@@ -38,4 +39,9 @@ def get_settings() -> Settings:
         # "auto"(플랫폼 자동 감지) | "apple_vision" | "paddleocr"
         ocr_provider=os.getenv("OCR_PROVIDER", "auto").strip().lower(),
         next_week_state_path=Path(os.getenv("NEXT_WEEK_STATE_PATH", "data/next_week_watch_state.json")),
+        # Playwright가 띄울 브라우저. "auto"는 Google Chrome이 설치된 데스크톱
+        # (macOS/Windows)에서는 chrome 채널을, Chrome이 없는 Linux 서버에서는
+        # Playwright 번들 Chromium("")을 쓴다. 특정 채널을 강제하려면
+        # BROWSER_CHANNEL=chrome|msedge|chromium 처럼 지정한다.
+        browser_channel=(os.getenv("BROWSER_CHANNEL") or "").strip().lower() or "auto",
     )

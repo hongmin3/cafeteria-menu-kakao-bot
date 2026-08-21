@@ -1,0 +1,12 @@
+# 토·일요일 00:05부터 2시간 간격 (한국시간).
+# 이미 확인된 주차면 next_week_watch가 그룹웨어 접속 없이 바로 종료한다.
+[Unit]
+Description=Vieworks menu bot next-week watch timer (토·일 2시간 간격 KST)
+
+[Timer]
+OnCalendar=Sat,Sun 00/2:05 Asia/Seoul
+Persistent=false
+Unit=menubot-nextweek.service
+
+[Install]
+WantedBy=timers.target

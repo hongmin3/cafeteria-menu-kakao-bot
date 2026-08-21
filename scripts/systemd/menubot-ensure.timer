@@ -1,0 +1,21 @@
+# 일요일 23:00부터 금요일 23:00까지 매시 정각 (한국시간).
+#
+# 일요일 22:00 마감 점검(menubot-nextweek-deadline)이 미확보 알림을 보낸
+# 직후인 23:00부터 시작한다. 토·일 낮에는 2시간 간격 주말 폴링
+# (menubot-nextweek-weekend)이 이미 돌고 있어 중복으로 그룹웨어를 두드리지
+# 않도록 이 타이머는 토요일과 일요일 낮을 비워 둔다.
+#
+# 식단이 확보되면 이 작업은 DB만 확인하고 즉시 끝난다(그룹웨어 접속 없음).
+# systemd 타이머는 스스로를 끌 수 없으므로, "루프를 멈춘다"는 것은 이렇게
+# 아무 일도 하지 않는 것으로 구현했다.
+[Unit]
+Description=Vieworks menu bot hourly retry timer (일 23:00~금 23:00, 매시 KST)
+
+[Timer]
+OnCalendar=Sun 23:00 Asia/Seoul
+OnCalendar=Mon,Tue,Wed,Thu,Fri *:00 Asia/Seoul
+Persistent=false
+Unit=menubot-ensure.service
+
+[Install]
+WantedBy=timers.target

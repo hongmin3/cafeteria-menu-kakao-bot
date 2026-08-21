@@ -1,0 +1,12 @@
+# 일요일 22:00 (한국시간). 주말 2시간 간격 폴링(00:05~22:05)이 사실상 끝나는
+# 시점으로, 이때까지 다음 주 식단을 확보하지 못했으면 사람이 알아야 한다.
+[Unit]
+Description=Vieworks menu bot next-week deadline timer (일 22:00 KST)
+
+[Timer]
+OnCalendar=Sun 22:00 Asia/Seoul
+Persistent=true
+Unit=menubot-nextweek-deadline.service
+
+[Install]
+WantedBy=timers.target

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import platform
 import re
 from urllib.parse import urlsplit
 
@@ -30,6 +31,33 @@ class GroupwareScraper:
         self.settings = settings
         self.headless = headless
 
+    def _launch(self, pw):
+        """플랫폼에 맞는 Chromium을 띄운다.
+
+        macOS/Windows 데스크톱에는 Google Chrome이 설치돼 있어 그대로 chrome
+        채널을 쓰지만, 사내 Linux 서버에는 Chrome이 없어 Playwright가
+        내려받은 번들 Chromium을 써야 한다. Ubuntu 24.04는 AppArmor가 비특권
+        user namespace를 막아 번들 Chromium의 샌드박스가 뜨지 않으므로,
+        Linux에서는 --no-sandbox를 붙인다(그룹웨어 페이지만 여는 headless
+        전용 프로세스이고, 서버에서 일반 웹서핑을 하지 않는다).
+        """
+        channel = self.settings.browser_channel
+        args: list[str] = []
+        if channel == "auto":
+            if platform.system() == "Linux":
+                channel = ""
+                args = ["--no-sandbox", "--disable-dev-shm-usage"]
+            else:
+                channel = "chrome"
+        elif platform.system() == "Linux":
+            args = ["--no-sandbox", "--disable-dev-shm-usage"]
+        kwargs: dict = {"headless": self.headless}
+        if channel:
+            kwargs["channel"] = channel
+        if args:
+            kwargs["args"] = args
+        return pw.chromium.launch(**kwargs)
+
     def _login_and_open_board(self, page) -> None:
         _goto_settling(page, self.settings.groupware_url)
         if page.locator("#auth_id").count() and page.locator("#auth_pw").count():
@@ -50,7 +78,7 @@ class GroupwareScraper:
         if not self.settings.groupware_user or not self.settings.groupware_password:
             raise RuntimeError("GROUPWARE_USER와 GROUPWARE_PASSWORD가 필요합니다.")
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(channel="chrome", headless=self.headless)
+            browser = self._launch(pw)
             page = browser.new_page(viewport={"width": 1600, "height": 1000})
             self._login_and_open_board(page)
 
@@ -92,7 +120,7 @@ class GroupwareScraper:
         if not self.settings.groupware_user or not self.settings.groupware_password:
             raise RuntimeError("GROUPWARE_USER와 GROUPWARE_PASSWORD가 필요합니다.")
         with sync_playwright() as pw:
-            browser = pw.chromium.launch(channel="chrome", headless=self.headless)
+            browser = self._launch(pw)
             page = browser.new_page(viewport={"width": 1600, "height": 1000})
             self._login_and_open_board(page)
 

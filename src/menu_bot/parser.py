@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import date
 import re
 
+from .corrections import active_vocabulary, clean_items
 from .models import MenuEntry, SourcePost
 
 
@@ -167,12 +168,13 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
         cells[(service_day, meal, category)].append((-y, text, confidence))
 
     entries: list[MenuEntry] = []
+    vocabulary = active_vocabulary()
     for (service_day, meal, category), values in cells.items():
         values.sort()
-        texts = []
-        for _, text, _ in values:
-            if text not in texts:
-                texts.append(text)
+        # OCR 글자 오인식과 장식 서체에서 끼어든 조각을 여기서 걸러낸다
+        # (corrections 참고). 원본 OCR 결과는 <이미지>.ocr.json 캐시에 남아
+        # 있으므로 교정 규칙을 고친 뒤 다시 만들 수 있다.
+        texts = clean_items([text for _, text, _ in values], vocabulary)
         menu_text = " · ".join(texts)
         if len(menu_text) < 2:
             continue

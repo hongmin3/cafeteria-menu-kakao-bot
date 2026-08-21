@@ -2,8 +2,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
+import os
 import platform
 import subprocess
+
+
+def _env(name: str, default: str) -> str:
+    """빈 문자열로 남겨둔 .env 항목은 "미지정"으로 보고 기본값을 쓴다.
+
+    os.getenv는 `PADDLE_DET_MODEL=`처럼 값만 비운 경우에도 ""를 돌려주므로,
+    그대로 넘기면 모델명이 빈 문자열이 되어 PaddleOCR 생성이 깨진다.
+    """
+    value = (os.getenv(name) or "").strip()
+    return value or default
 
 
 class OCRProvider(ABC):
@@ -52,7 +63,7 @@ class AppleVisionOCRProvider(OCRProvider):
 
 
 class PaddleOCRProvider(OCRProvider):
-    """Windows 전용: 로컬 CPU에서 실행되는 PaddleOCR 한국어 모델로 OCR.
+    """Windows·Linux 공용: 로컬 CPU에서 실행되는 PaddleOCR 한국어 모델로 OCR.
 
     PaddleOCR은 이미지 좌측 상단을 원점으로 픽셀 좌표를 반환하므로, Apple
     Vision과 동일한 좌측 하단 원점 정규화 좌표로 변환한다.
@@ -67,17 +78,21 @@ class PaddleOCRProvider(OCRProvider):
 
             # 감지/인식 모델명을 둘 다 명시해야 한다. 하나만 지정하면 lang=
             # 파라미터가 무시되어 한글을 지원하지 않는 기본 인식 모델로
-            # 조용히 전환된다(한글이 전부 빈 문자열로 인식됨). PP-OCRv5
-            # server 감지 모델은 이 CPU의 oneDNN 실행 경로에서
-            # `ConvertPirAttribute2RuntimeAttribute` 오류로 죽어 mobile
-            # 감지 모델과 enable_mkldnn=False로 우회한다.
+            # 조용히 전환된다(한글이 전부 빈 문자열로 인식됨).
+            #
+            # 기본값은 사내 Windows PC에서 검증된 조합이다. 그 PC에서는
+            # PP-OCRv5 server 감지 모델이 oneDNN 실행 경로에서
+            # `ConvertPirAttribute2RuntimeAttribute` 오류로 죽어 mobile 감지
+            # 모델 + enable_mkldnn=False로 우회했다. 장비마다 되는 조합이
+            # 다르므로 코드를 고치지 않고 .env로 바꿀 수 있게 열어 둔다.
             self._engine = PaddleOCR(
-                text_detection_model_name="PP-OCRv5_mobile_det",
-                text_recognition_model_name="korean_PP-OCRv5_mobile_rec",
+                text_detection_model_name=_env("PADDLE_DET_MODEL", "PP-OCRv5_mobile_det"),
+                text_recognition_model_name=_env("PADDLE_REC_MODEL", "korean_PP-OCRv5_mobile_rec"),
                 use_doc_orientation_classify=False,
                 use_doc_unwarping=False,
                 use_textline_orientation=False,
-                enable_mkldnn=False,
+                enable_mkldnn=_env("PADDLE_ENABLE_MKLDNN", "0").lower()
+                in {"1", "true", "yes", "on"},
             )
         return self._engine
 
