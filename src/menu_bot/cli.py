@@ -3,15 +3,19 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timedelta
 import json
+import os
 from pathlib import Path
 import sys
 from zoneinfo import ZoneInfo
 
 from .config import get_settings
+from .corrections import MIN_VOCAB_COUNT, build_vocabulary
 from .db import MenuDB
 from .next_week_watch import check_next_week_deadline, check_next_week_posted
 from .notify import get_mail_settings, send_mail
-from .pipeline import process_manifest
+from .ocr import recognize
+from .parser import parse_ocr_lines, post_from_title
+from .pipeline import image_path, process_manifest
 from .query import answer
 from .scraper import GroupwareScraper
 
@@ -83,6 +87,13 @@ def main() -> None:
         "notify-test",
         help="알림 메일 설정이 실제로 동작하는지 시험 메일 1통으로 확인(비밀번호는 출력하지 않음)",
     )
+    vocab = sub.add_parser(
+        "build-vocab",
+        help="OCR 오인식 교정에 쓸 메뉴 이름 어휘집을 만든다(실제 메뉴 데이터이므로 저장소에 넣지 않음)",
+    )
+    vocab.add_argument("manifest", type=Path, help="어휘를 모을 게시물 목록 JSON")
+    vocab.add_argument("--image-dir", type=Path, default=Path("data/images"))
+    vocab.add_argument("--output", type=Path, default=Path("data/menu_vocab.json"))
     args = parser.parse_args()
     settings = get_settings()
 
@@ -145,6 +156,34 @@ def main() -> None:
             mail=mail,
         )
         sys.exit(0 if ok else 1)
+    elif args.command == "build-vocab":
+        # 어휘집을 만드는 동안에는 어휘집 교정 자체를 끈다. 안 그러면 직전
+        # 어휘집을 근거로 값을 고친 뒤 그 결과로 새 어휘집을 만드는 꼴이 된다.
+        os.environ["MENU_VOCAB_PATH"] = str(args.output.with_name("__no_vocab__.json"))
+        rows = json.loads(args.manifest.read_text(encoding="utf-8"))
+        items: list[str] = []
+        images = 0
+        for row in rows:
+            urls = [im["src"] if isinstance(im, dict) else im for im in row.get("images", [])]
+            try:
+                post = post_from_title(row["id"], row["title"], urls)
+            except ValueError:
+                continue
+            for url in urls:
+                path = image_path(url, args.image_dir)
+                if not path.exists() or not path.with_suffix(path.suffix + ".ocr.json").exists():
+                    continue
+                images += 1
+                for entry in parse_ocr_lines(post, url, recognize(path)):
+                    items.extend(part.strip() for part in entry.menu_text.split(" · ") if part.strip())
+        vocabulary = build_vocabulary(items)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(vocabulary, ensure_ascii=False, indent=0), encoding="utf-8")
+        frequent = sum(1 for count in vocabulary.values() if count >= MIN_VOCAB_COUNT)
+        print(
+            f"이미지 {images}장에서 메뉴 이름 {len(vocabulary)}종(총 {sum(vocabulary.values())}회)을 모아 "
+            f"{args.output}에 저장했습니다. 교정 후보로 쓰이는 {MIN_VOCAB_COUNT}회 이상 항목은 {frequent}종입니다."
+        )
 
 
 if __name__ == "__main__":

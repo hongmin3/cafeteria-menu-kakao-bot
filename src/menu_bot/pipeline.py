@@ -11,9 +11,14 @@ from .ocr import recognize
 from .parser import parse_ocr_lines, post_from_title
 
 
-def _download(url: str, image_dir: Path) -> Path:
+def image_path(url: str, image_dir: Path) -> Path:
+    """이미지 URL이 저장되는 경로. 다운로드와 어휘집 생성이 같은 규칙을 써야 한다."""
     suffix = Path(url.split("fileName=")[-1]).suffix or ".img"
-    path = image_dir / (hashlib.sha256(url.encode()).hexdigest()[:24] + suffix)
+    return image_dir / (hashlib.sha256(url.encode()).hexdigest()[:24] + suffix)
+
+
+def _download(url: str, image_dir: Path) -> Path:
+    path = image_path(url, image_dir)
     if not path.exists():
         response = requests.get(url, timeout=30)
         response.raise_for_status()

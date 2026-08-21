@@ -57,9 +57,14 @@ async def kakao_skill(request: Request, token: str = "") -> dict:
     if not utterance or normalized in {"도움", "도움말", "사용법", "사용방법", "안녕", "안녕하세요"}:
         return kakao_response(HELP_TEXT)
     if not looks_like_menu_query(utterance):
-        return kakao_response("질문을 이해하지 못했어요.\n\n" + HELP_TEXT)
+        return kakao_response("무슨 말씀인지 잘 못 알아들었어요. 😅\n\n" + HELP_TEXT)
     db = MenuDB(settings.database_path)
     try:
-        return kakao_response(answer(db, utterance, settings.timezone, settings.default_location))
+        return kakao_response(
+            answer(
+                db, utterance, settings.timezone, settings.default_location,
+                locations=settings.post_prefixes,
+            )
+        )
     finally:
         db.close()
