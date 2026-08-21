@@ -55,7 +55,7 @@ if ss -tlnp 2>/dev/null | grep -qE "[:.]$PORT[[:space:]]"; then
 else ok "$PORT 사용 가능"; fi
 
 echo "6) systemd 유닛"
-for u in menubot-web.service menubot-tunnel.service menubot-collect.timer menubot-nextweek-friday.timer menubot-nextweek-weekend.timer; do
+for u in menubot-web.service menubot-tunnel.service menubot-collect.timer menubot-nextweek-friday.timer menubot-nextweek-weekend.timer menubot-nextweek-deadline.timer; do
   # is-enabled는 미등록 유닛에 "not-found"를 찍고 종료코드도 0이 아니라,
   # 첫 줄만 취해 두 줄로 깨지지 않게 한다.
   state="$(systemctl is-enabled "$u" 2>/dev/null | head -1)"; state="${state:-미등록}"
@@ -72,6 +72,29 @@ s=get_settings(); db=MenuDB(s.database_path)
 print('  [OK]   메뉴 항목', db.count_entries(), '개')
 db.close()" 2>/dev/null || bad "DB 조회 실패"
 else warn "DB 아직 없음 (첫 수집 전)"; fi
+
+echo "8) 알림 메일 (값은 출력하지 않음)"
+MAIL_OUT="$(./.venv/bin/python -c "
+from menu_bot.notify import get_mail_settings
+m = get_mail_settings()
+if m.configured:
+    print('OK|%s:%s %s -> %s' % (m.host, m.port, m.security, ', '.join(m.recipients)))
+else:
+    print('MISSING|' + ', '.join(m.missing))
+" 2>/dev/null)"
+case "$MAIL_OUT" in
+  OK\|*) ok "발송 설정 완료 (${MAIL_OUT#OK|})" ;;
+  MISSING\|*) bad "알림 메일 미설정 — .env의 ${MAIL_OUT#MISSING|} 를 채워야 성공/미확보 알림이 나갑니다" ;;
+  *) bad "알림 메일 설정을 읽을 수 없습니다" ;;
+esac
+if [ "${MAIL_OUT%%|*}" = "OK" ]; then
+  SMTP_HOST_V="$(env_value SMTP_HOST)"; SMTP_PORT_V="$(env_value SMTP_PORT)"
+  if timeout 10 bash -c "</dev/tcp/${SMTP_HOST_V}/${SMTP_PORT_V:-587}" 2>/dev/null; then
+    ok "SMTP ${SMTP_HOST_V}:${SMTP_PORT_V:-587} 연결 가능"
+  else
+    bad "SMTP ${SMTP_HOST_V}:${SMTP_PORT_V:-587} 연결 불가(아웃바운드 차단 여부 확인)"
+  fi
+fi
 
 echo
 [ "$FAIL" = "0" ] && echo "점검 결과: 문제 없음" || { echo "점검 결과: 위 [!!] 항목을 해결하세요"; exit 1; }

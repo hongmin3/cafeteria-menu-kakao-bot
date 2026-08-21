@@ -27,6 +27,8 @@ UNITS=(
   menubot-nextweek.service
   menubot-nextweek-friday.timer
   menubot-nextweek-weekend.timer
+  menubot-nextweek-deadline.service
+  menubot-nextweek-deadline.timer
 )
 
 for u in "${UNITS[@]}"; do
@@ -45,6 +47,7 @@ systemctl enable --now menubot-tunnel.service
 systemctl enable --now menubot-collect.timer
 systemctl enable --now menubot-nextweek-friday.timer
 systemctl enable --now menubot-nextweek-weekend.timer
+systemctl enable --now menubot-nextweek-deadline.timer
 
 echo
 echo "== 상태 =="

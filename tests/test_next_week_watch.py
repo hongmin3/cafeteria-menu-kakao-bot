@@ -1,12 +1,17 @@
-from datetime import datetime
+from datetime import date, datetime
+import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from menu_bot.config import Settings
-from menu_bot.next_week_watch import check_next_week_posted
+from menu_bot.db import MenuDB
+from menu_bot.models import MenuEntry
+from menu_bot.next_week_watch import check_next_week_deadline, check_next_week_posted
 
 
 NOW = datetime(2026, 8, 21, 22, 0, tzinfo=ZoneInfo("Asia/Seoul"))  # 금요일 22시
+SUNDAY_NIGHT = datetime(2026, 8, 23, 22, 0, tzinfo=ZoneInfo("Asia/Seoul"))  # 일요일 22시(마감)
+TARGET = "2026-08-24"
 
 
 def _settings(tmp_path: Path) -> Settings:
@@ -36,7 +41,10 @@ class FakeScraper:
 
     def collect(self, max_pages: int = 1) -> list[dict]:
         self.collect_calls += 1
-        return [{"id": f"post-{i}", "title": title, "images": []} for i, title in enumerate(self.titles)]
+        return [
+            {"id": f"post-{i}", "title": title, "images": []}
+            for i, title in enumerate(self.titles)
+        ]
 
 
 class ExplodingScraper:
@@ -47,39 +55,291 @@ class ExplodingScraper:
         raise AssertionError("이미 확인된 주차는 그룹웨어에 접속하면 안 된다")
 
 
-def test_next_week_post_found_and_state_saved(tmp_path: Path):
+class FailingScraper:
+    """그룹웨어 접속 자체가 실패하는 상황(사내망 장애, 로그인 화면 변경 등)."""
+
+    def __init__(self, message: str = "net::ERR_CONNECTION_TIMED_OUT"):
+        self.message = message
+
+    def list_recent_titles(self, max_pages: int = 1):
+        raise RuntimeError(self.message)
+
+    def collect(self, max_pages: int = 1):
+        raise RuntimeError(self.message)
+
+
+class MailSpy:
+    def __init__(self, ok: bool = True):
+        self.ok = ok
+        self.sent: list[tuple[str, str]] = []
+
+    def __call__(self, subject: str, body: str, mail=None, progress=print) -> bool:
+        self.sent.append((subject, body))
+        return self.ok
+
+
+def _ingesting_process(entries: int = 2):
+    """게시글을 실제로 저장하는 process_manifest 대역.
+
+    OCR·네트워크 없이 저장 경로만 재현해, 알림 본문에 들어가는 식단 구조가
+    실제 DB에서 만들어지는지까지 검증한다.
+    """
+
+    def process(rows, db, image_dir, progress=print, week_start=None):
+        from menu_bot.models import SourcePost
+
+        for row in rows:
+            post = SourcePost(
+                post_id=row["id"], title=row["title"], location="뷰웍스",
+                start_date=week_start or date(2026, 8, 24), image_urls=[],
+            )
+            db.save_post(post)
+            db.replace_entries(post.post_id, [
+                MenuEntry(
+                    service_date=week_start, location="뷰웍스", meal_type="중식",
+                    category="일반식", menu_text="제육볶음 · 콩나물국", status="normal",
+                    source_post_id=post.post_id,
+                ),
+                MenuEntry(
+                    service_date=week_start, location="뷰웍스", meal_type="중식",
+                    category="PLUS 코너", menu_text="현미밥", status="normal",
+                    source_post_id=post.post_id,
+                ),
+            ][:entries])
+        return {"posts": len(rows), "images": 1, "entries": entries * len(rows),
+                "filtered_entries": 0, "skipped_images": 0, "errors": []}
+
+    return process
+
+
+def _state(settings: Settings) -> dict:
+    return json.loads(settings.next_week_state_path.read_text(encoding="utf-8"))
+
+
+def _results(state: dict) -> list[str]:
+    return [attempt["result"] for attempt in state.get("attempts", [])]
+
+
+def test_next_week_post_found_and_confirmed_sends_success_mail(tmp_path: Path):
     settings = _settings(tmp_path)
-    scraper = FakeScraper(["[뷰웍스] 2026-08-24 ~ 08-28 식단표"])
-    result = check_next_week_posted(settings, now=NOW, scraper=scraper)
+    scraper = FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"])
+    mail = MailSpy()
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=scraper, process=_ingesting_process(), send=mail
+    )
     assert result.found is True
+    assert result.confirmed is True
     assert result.already_confirmed is False
-    assert result.target_week_start.isoformat() == "2026-08-24"
-    assert settings.next_week_state_path.exists()
+    assert result.notified is True
+    assert result.target_week_start.isoformat() == TARGET
+
+    state = _state(settings)
+    assert state["confirmed_week_start"] == TARGET
+    assert state["success_notified_week"] == TARGET
+    assert _results(state) == ["confirmed"]
+
+    subject, body = mail.sent[0]
+    assert "수집 완료" in subject
+    # 알림에 실제 식단 구조가 들어가야 한다.
+    assert "08월 24일(월)" in body
+    assert "제육볶음" in body
+    assert "공통 PLUS" in body
 
 
-def test_next_week_post_not_found_yet(tmp_path: Path):
+def test_success_mail_not_resent_for_same_week(tmp_path: Path):
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    for _ in range(2):
+        check_next_week_posted(
+            settings, now=NOW, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+            process=_ingesting_process(), send=mail,
+        )
+    assert len(mail.sent) == 1
+
+
+def test_post_found_but_zero_entries_is_not_confirmed(tmp_path: Path):
+    """제목만 올라오고 이미지가 없거나 OCR이 아무것도 못 읽은 경우.
+
+    이걸 성공으로 처리하면 폴링이 멈춰 그 주 식단을 통째로 놓친다.
+    """
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]), send=mail
+    )
+    assert result.found is True
+    assert result.confirmed is False
+    assert result.error is not None
+    assert mail.sent == []
+    state = _state(settings)
+    assert "confirmed_week_start" not in state
+    assert _results(state) == ["ingest_failed"]
+
+
+def test_next_week_post_not_found_records_attempt(tmp_path: Path):
     settings = _settings(tmp_path)
     scraper = FakeScraper(["[뷰웍스] 2026-08-17 ~ 08-21 식단표"])  # 이번 주 게시글만 있음
-    result = check_next_week_posted(settings, now=NOW, scraper=scraper)
+    mail = MailSpy()
+    result = check_next_week_posted(settings, now=NOW, scraper=scraper, send=mail)
     assert result.found is False
-    assert not settings.next_week_state_path.exists()
+    assert result.confirmed is False
+    assert mail.sent == []
+    state = _state(settings)
+    assert "confirmed_week_start" not in state
+    assert _results(state) == ["not_posted"]
+
+
+def test_scraper_failure_is_recorded_with_reason(tmp_path: Path):
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=FailingScraper(), send=mail, progress=lambda *_: None
+    )
+    assert result.found is False
+    assert result.confirmed is False
+    assert "ERR_CONNECTION_TIMED_OUT" in (result.error or "")
+    assert mail.sent == []
+    state = _state(settings)
+    assert _results(state) == ["error"]
+    assert "ERR_CONNECTION_TIMED_OUT" in state["attempts"][0]["error"]
 
 
 def test_already_confirmed_week_skips_groupware_access(tmp_path: Path):
     settings = _settings(tmp_path)
-    settings.next_week_state_path.write_text('{"confirmed_week_start": "2026-08-24"}', encoding="utf-8")
+    settings.next_week_state_path.write_text(
+        json.dumps({"target_week_start": TARGET, "confirmed_week_start": TARGET}), encoding="utf-8"
+    )
     result = check_next_week_posted(settings, now=NOW, scraper=ExplodingScraper())
     assert result.already_confirmed is True
     assert result.found is True
+    assert result.confirmed is True
 
 
 def test_different_weekend_recheck_after_previous_confirmation(tmp_path: Path):
     settings = _settings(tmp_path)
-    # 지난주에 확인된 상태가 남아있어도 이번 주 대상(다음주 월요일)이 다르면 다시 확인한다.
-    settings.next_week_state_path.write_text('{"confirmed_week_start": "2026-08-17"}', encoding="utf-8")
-    scraper = FakeScraper(["[뷰웍스] 2026-08-24 ~ 08-28 식단표"])
-    result = check_next_week_posted(settings, now=NOW, scraper=scraper)
+    # 지난주에 확인된 상태가 남아 있어도 이번 대상 주차가 다르면 다시 확인한다.
+    settings.next_week_state_path.write_text(
+        json.dumps({"target_week_start": "2026-08-17", "confirmed_week_start": "2026-08-17"}),
+        encoding="utf-8",
+    )
+    scraper = FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"])
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=scraper, process=_ingesting_process(), send=MailSpy()
+    )
     assert result.already_confirmed is False
-    assert result.found is True
+    assert result.confirmed is True
     assert scraper.list_calls == 1
     assert scraper.collect_calls == 1
+    # 주차가 바뀌면 지난 주 시도 기록은 버리고 새로 센다.
+    assert _results(_state(settings)) == ["confirmed"]
+
+
+def test_corrupt_state_file_does_not_block_collection(tmp_path: Path):
+    settings = _settings(tmp_path)
+    settings.next_week_state_path.write_text("{ 깨진 json", encoding="utf-8")
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+        process=_ingesting_process(), send=MailSpy(),
+    )
+    assert result.confirmed is True
+
+
+def test_deadline_alerts_when_next_week_still_missing(tmp_path: Path):
+    settings = _settings(tmp_path)
+    # 주말 내내 게시글이 없었던 상황을 만든다.
+    for _ in range(3):
+        check_next_week_posted(
+            settings, now=NOW, scraper=FakeScraper(["[뷰웍스] 2026-08-17 ~ 08-21 식단표"]),
+            send=MailSpy(),
+        )
+    mail = MailSpy()
+    result = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    assert result.confirmed is False
+    assert result.alerted is True
+    subject, body = mail.sent[0]
+    assert "아직 못 받았습니다" in subject
+    assert "게시글이 아직 없음: 3회" in body
+    assert _state(settings)["deadline_alert_sent_week"] == TARGET
+
+
+def test_deadline_reports_crawl_failures(tmp_path: Path):
+    settings = _settings(tmp_path)
+    check_next_week_posted(
+        settings, now=NOW, scraper=FailingScraper("로그인 화면을 찾지 못했습니다"),
+        send=MailSpy(), progress=lambda *_: None,
+    )
+    mail = MailSpy()
+    check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    _, body = mail.sent[0]
+    assert "그룹웨어 접속/스크래핑 실패: 1회" in body
+    assert "로그인 화면을 찾지 못했습니다" in body
+
+
+def test_deadline_is_quiet_when_week_already_confirmed(tmp_path: Path):
+    settings = _settings(tmp_path)
+    check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+        process=_ingesting_process(), send=MailSpy(),
+    )
+    mail = MailSpy()
+    result = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    assert result.confirmed is True
+    assert result.alerted is False
+    assert mail.sent == []
+
+
+def test_deadline_alert_sent_only_once(tmp_path: Path):
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    first = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    second = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    assert first.alerted is True
+    assert second.alerted is False
+    assert second.already_alerted is True
+    assert len(mail.sent) == 1
+
+
+def test_deadline_retries_when_mail_send_failed(tmp_path: Path):
+    settings = _settings(tmp_path)
+    failing = MailSpy(ok=False)
+    result = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=failing)
+    assert result.alerted is False
+    assert result.already_alerted is False
+    assert "deadline_alert_sent_week" not in _state(settings)
+    # 발송이 실패했으니 다음 실행에서 다시 시도해야 한다.
+    working = MailSpy()
+    assert check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=working).alerted is True
+
+
+def test_week_structure_marks_special_and_no_service(tmp_path: Path):
+    from menu_bot.notify import format_week_structure
+
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries("p1", [
+            MenuEntry(service_date=date(2026, 8, 24), location="뷰웍스", meal_type="중식",
+                      category="일반식", menu_text="말복 특식 · 갈비낙지탕", status="special",
+                      source_post_id="p1"),
+            MenuEntry(service_date=date(2026, 8, 25), location="뷰웍스", meal_type="조식",
+                      category="안내", menu_text="전사 휴무", status="no_service",
+                      source_post_id="p1"),
+        ])
+        text = format_week_structure(db, date(2026, 8, 24))
+    finally:
+        db.close()
+    assert "저장된 항목 2개" in text
+    assert "✨특식" in text
+    assert "⛔미운영" in text
+    assert "08월 26일(수)" in text and "(저장된 항목 없음)" in text
+
+
+def test_send_mail_without_config_returns_false(tmp_path: Path, monkeypatch):
+    from menu_bot.notify import MailSettings, send_mail
+
+    unconfigured = MailSettings(
+        host="", port=587, user="", password="", security="starttls",
+        sender="", recipients=(), timeout=5,
+    )
+    logs: list[str] = []
+    assert send_mail("제목", "본문", mail=unconfigured, progress=logs.append) is False
+    assert any("설정" in line for line in logs)

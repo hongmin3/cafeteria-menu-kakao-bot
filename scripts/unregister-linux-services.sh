@@ -8,12 +8,14 @@ if [ "$(id -u)" != "0" ]; then
   exit 1
 fi
 UNITS=(
+  menubot-nextweek-deadline.timer
   menubot-nextweek-weekend.timer
   menubot-nextweek-friday.timer
   menubot-collect.timer
   menubot-tunnel.service
   menubot-web.service
   menubot-nextweek.service
+  menubot-nextweek-deadline.service
   menubot-collect.service
 )
 for u in "${UNITS[@]}"; do

@@ -155,6 +155,38 @@ powershell -ExecutionPolicy Bypass -File scripts\run-windows-tunnel.ps1
 - 다음 주 게시글을 찾으면 **그 자리에서** 이미지 다운로드·OCR·파싱까지 끝내고 `week_start`를 다음 주 월요일로 저장합니다. 카카오 응답은 실제 달력 날짜로 필터링되므로, 데이터가 주말에 미리 들어가 있어도 월요일 0시 전에는 노출되지 않다가 자정이 지나는 순간 자동으로 조회됩니다.
 - 한 번 확인되면 상태 파일(`data/next_week_watch_state.json`)에 대상 주차가 기록되어, 같은 주말 안의 나머지 2시간 간격 실행은 그룹웨어에 다시 접속하지 않고 즉시 종료합니다(주차가 바뀌면 다음 주에 자동으로 다시 확인).
 - 월요일 08:00 운영 수집은 안전망으로 그대로 유지합니다. 주말에 이미 확인·저장됐다면 같은 게시물을 다시 처리해도 동일한 `source_post_id`로 안전하게 덮어씁니다.
+- **저장된 메뉴 항목이 1건 이상일 때만 "확보"로 봅니다.** 게시글 제목만 먼저 올라오고 이미지가 아직 없거나 OCR이 아무것도 읽지 못한 경우를 성공으로 처리하면 폴링이 멈춰 그 주 식단을 통째로 놓칩니다.
+- 시도마다 결과(`not_posted` / `error` / `ingest_failed` / `confirmed`)와 사유를 상태 파일에 남깁니다. 일요일 22시 마감 점검이 "무엇이 몇 번 실패했는지"를 그대로 알릴 수 있게 하기 위함입니다.
+
+### 알림 메일
+
+| 시점 | 조건 | 내용 |
+|---|---|---|
+| 주말 폴링 중 아무 때나 | 다음 주 식단 확보 성공 | 대상 주차, 수집 통계, **저장된 식단 구조 전체**(날짜 → 끼니 → 코너 → 항목) |
+| 일요일 22:00 | **마지막 시도까지 해 본 뒤** 여전히 미확보 | 시도 요약(사유별 횟수), 최근 8회 시도와 오류 메시지, 다음 조치 안내 |
+
+마감 점검은 상태 파일만 보고 판정하지 않고, 그 자리에서 수집을 한 번 더 시도한 다음 판정합니다. 2시간 간격 폴링의 마지막 회차(일 22:05)가 5분 뒤에 성공하는 경우 헛경보를 먼저 보내게 되기 때문입니다.
+
+둘 다 같은 주차에 한 번만 보냅니다(상태 파일의 `success_notified_week`, `deadline_alert_sent_week`). 마감 알림은 **발송이 실패하면 기록하지 않으므로** 다음 실행에서 다시 시도합니다. 반대로 성공 알림 발송이 실패해도 수집 자체는 성공으로 처리합니다 — 알림이 안 됐다고 식단 데이터를 버릴 이유는 없기 때문입니다.
+
+SMTP 설정(`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USER`, `SMTP_PASSWORD`, `NOTIFY_EMAIL_FROM`, `NOTIFY_EMAIL_TO`)이 비어 있으면 발송을 건너뛰고 로그만 남깁니다. `check-linux-env.sh`가 미설정 항목과 SMTP 연결 가능 여부를 점검합니다. Gmail은 2단계 인증 계정의 **앱 비밀번호**가 필요합니다.
+
+### 주말 시나리오 검증
+
+기준 시각을 옮겨야 하는 검증은 `--now`로 합니다. 서버 시스템 시계를 바꾸면 같은 장비의 다른 서비스 로그와 DB 타임스탬프가 전부 어긋나므로 시계는 건드리지 않습니다.
+
+```bash
+# 다음 주 게시글이 아직 없는 상황
+menu-bot check-next-week --now 2026-08-22T02:05
+# 게시글이 이미 있는 주차를 대상으로 삼아 성공 경로 확인
+menu-bot check-next-week --now 2026-08-14T22:00
+# 그룹웨어 접속 실패 상황
+GROUPWARE_URL=https://unreachable.invalid/x menu-bot check-next-week --now 2026-08-22T06:05
+# 일요일 22시 마감 점검(미확보면 알림 메일)
+menu-bot next-week-deadline --now 2026-08-23T22:00
+```
+
+`DATABASE_PATH`와 `NEXT_WEEK_STATE_PATH`를 임시 경로로 덮어쓰면 운영 DB·상태 파일을 건드리지 않고 검증할 수 있습니다.
 
 ## Windows 자동 시작(작업 스케줄러)
 
@@ -221,10 +253,11 @@ sudo ./scripts/register-linux-services.sh
 | `menubot-collect.timer` | 매주 월요일 08:00 KST | 운영 수집(scrape+ingest), 안전망 |
 | `menubot-nextweek-friday.timer` | 매주 금요일 22:00 KST | 다음 주 게시글 1회 확인 |
 | `menubot-nextweek-weekend.timer` | 토·일 00:05부터 2시간 간격 KST | 다음 주 게시글 반복 확인(확인되면 즉시 종료) |
+| `menubot-nextweek-deadline.timer` | 매주 일요일 22:00 KST | 미확보면 알림 메일 발송 |
 
 `menubot-web`과 `menubot-tunnel`은 서로 `BindsTo`로 묶지 않았습니다. 웹 서버가 재시작되는 몇 초 동안 터널까지 내려가면 터널은 스스로 다시 올라올 근거가 없어 영구히 죽기 때문입니다. 둘 다 각자 `Restart=always`로 살아나게 두고, 그 몇 초 동안 카카오가 받는 502는 재질문으로 해소됩니다.
 
-`menubot-collect.service`와 `menubot-nextweek.service`는 타이머가 부르는 `oneshot`이라 `enable`하지 않습니다. 둘 다 `MemoryMax=3G`를 걸어 PaddleOCR과 Chromium이 같은 장비의 다른 서비스를 밀어내지 못하게 했습니다.
+`menubot-collect.service`, `menubot-nextweek.service`, `menubot-nextweek-deadline.service`는 타이머가 부르는 `oneshot`이라 `enable`하지 않습니다. 수집과 주말 폴링에는 `MemoryHigh=3G` + `MemoryMax=4G`를 걸어 PaddleOCR과 Chromium이 같은 장비의 다른 서비스를 밀어내지 못하게 했습니다(마감 점검도 마지막 수집 시도를 하므로 같은 상한).
 
 **시간대 주의**: 이 서버의 시스템 시간대는 `America/New_York`입니다. 다른 서비스의 로그 시각을 흔들 수 없어 시스템 시간대는 바꾸지 않고, 대신 각 타이머의 `OnCalendar`에 `Asia/Seoul`을 명시했습니다(systemd 252+ 지원). 조회 로직은 코드에서 항상 명시적으로 `Asia/Seoul`을 쓰므로 시스템 시간대와 무관하게 동작합니다.
 
