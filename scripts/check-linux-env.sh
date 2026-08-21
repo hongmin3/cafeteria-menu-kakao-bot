@@ -55,7 +55,7 @@ if ss -tlnp 2>/dev/null | grep -qE "[:.]$PORT[[:space:]]"; then
 else ok "$PORT 사용 가능"; fi
 
 echo "6) systemd 유닛"
-for u in menubot-web.service menubot-tunnel.service menubot-collect.timer menubot-nextweek-friday.timer menubot-nextweek-weekend.timer menubot-nextweek-deadline.timer; do
+for u in menubot-web.service menubot-tunnel.service menubot-collect.timer menubot-nextweek-friday.timer menubot-nextweek-weekend.timer menubot-nextweek-deadline.timer menubot-ensure.timer; do
   # is-enabled는 미등록 유닛에 "not-found"를 찍고 종료코드도 0이 아니라,
   # 첫 줄만 취해 두 줄로 깨지지 않게 한다.
   state="$(systemctl is-enabled "$u" 2>/dev/null | head -1)"; state="${state:-미등록}"

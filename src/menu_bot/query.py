@@ -353,12 +353,21 @@ def answer(
         return f"{parsed.day:%m월 %d일}({weekday}) 주말에는 식당을 운영하지 않습니다."
     rows = db.query(parsed.day, parsed.meal_type)
     if not rows:
+        # 주말 폴링이나 월요일 수집이 아직 식단표를 못 받은 상태. 없는 식단을
+        # 지어내지 않고 사정을 그대로 알린다. 서버는 확보될 때까지 1시간 간격
+        # 으로 계속 다시 확인한다(menubot-ensure.timer).
         weekday = "월화수목금토일"[parsed.day.weekday()]
-        return f"{parsed.day:%m월 %d일}({weekday}) 식단표가 아직 업로드되지 않았습니다."
+        return (
+            f"{parsed.day:%m월 %d일}({weekday}) 식단표가 아직 그룹웨어에 올라오지 않았어요.\n"
+            "올라오면 자동으로 반영되니 조금 뒤에 다시 물어봐 주세요. 🙏"
+        )
     selected = _choose_common_menu(rows)
     if not selected:
         weekday = "월화수목금토일"[parsed.day.weekday()]
-        return f"{parsed.day:%m월 %d일}({weekday}) 공통 식단표를 확인할 수 없습니다."
+        return (
+            f"{parsed.day:%m월 %d일}({weekday}) 공통 식단표를 확인할 수 없어요.\n"
+            "사업장별 식단만 올라온 것 같아요. 담당자에게 확인이 필요합니다."
+        )
 
     weekday = "월화수목금토일"[parsed.day.weekday()]
     title = f"🍽 {parsed.day:%m월 %d일}({weekday})"

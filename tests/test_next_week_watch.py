@@ -3,10 +3,16 @@ import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from menu_bot.config import Settings
 from menu_bot.db import MenuDB
 from menu_bot.models import MenuEntry
-from menu_bot.next_week_watch import check_next_week_deadline, check_next_week_posted
+from menu_bot.next_week_watch import (
+    check_next_week_deadline,
+    check_next_week_posted,
+    ensure_week_menu,
+)
 
 
 NOW = datetime(2026, 8, 21, 22, 0, tzinfo=ZoneInfo("Asia/Seoul"))  # 금요일 22시
@@ -309,6 +315,126 @@ def test_deadline_retries_when_mail_send_failed(tmp_path: Path):
     # 발송이 실패했으니 다음 실행에서 다시 시도해야 한다.
     working = MailSpy()
     assert check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=working).alerted is True
+
+
+# ── 1시간 간격 재시도 (일요일 22시 마감 이후) ──────────────
+SUNDAY_LATE = datetime(2026, 8, 23, 23, 0, tzinfo=ZoneInfo("Asia/Seoul"))
+MONDAY_EARLY = datetime(2026, 8, 24, 1, 0, tzinfo=ZoneInfo("Asia/Seoul"))
+TUESDAY = datetime(2026, 8, 25, 10, 0, tzinfo=ZoneInfo("Asia/Seoul"))
+
+
+@pytest.mark.parametrize(
+    ("today", "expected"),
+    [
+        (date(2026, 8, 21), "2026-08-17"),  # 금 → 이번 주
+        (date(2026, 8, 22), "2026-08-24"),  # 토 → 다가오는 주
+        (date(2026, 8, 23), "2026-08-24"),  # 일 → 다가오는 주
+        (date(2026, 8, 24), "2026-08-24"),  # 월 → 이번 주
+        (date(2026, 8, 28), "2026-08-24"),  # 금 → 이번 주
+    ],
+)
+def test_week_for_does_not_shift_across_midnight(today: date, expected: str):
+    """일요일 밤과 월요일 새벽이 같은 주차를 가리켜야 재시도가 엉뚱한 주로 넘어가지 않는다."""
+    from menu_bot.next_week_watch import _week_for
+
+    assert _week_for(today).isoformat() == expected
+
+
+def test_ensure_menu_collects_when_week_is_missing(tmp_path: Path):
+    settings = _settings(tmp_path)
+    scraper = FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"])
+    mail = MailSpy()
+    result = ensure_week_menu(
+        settings, now=SUNDAY_LATE, scraper=scraper, process=_ingesting_process(), send=mail
+    )
+    assert result.confirmed is True
+    assert result.target_week_start.isoformat() == TARGET
+    assert scraper.collect_calls == 1
+    assert len(mail.sent) == 1
+
+
+def test_ensure_menu_stops_once_the_menu_is_in(tmp_path: Path):
+    """확보되면 그룹웨어에 접속하지 않고 즉시 끝난다 — 이게 '루프가 멈춘다'의 실제 동작."""
+    settings = _settings(tmp_path)
+    ensure_week_menu(
+        settings, now=SUNDAY_LATE, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+        process=_ingesting_process(), send=MailSpy(),
+    )
+    mail = MailSpy()
+    for moment in (MONDAY_EARLY, TUESDAY):
+        result = ensure_week_menu(settings, now=moment, scraper=ExplodingScraper(), send=mail)
+        assert result.already_confirmed is True
+        assert result.confirmed is True
+    assert mail.sent == []
+
+
+def test_ensure_menu_uses_the_db_not_just_the_state_file(tmp_path: Path):
+    """월요일 정기 수집이 상태 파일을 건드리지 않고 DB만 채운 경우.
+
+    상태 파일만 보면 이미 들어온 주차를 계속 다시 긁는다.
+    """
+    settings = _settings(tmp_path)
+    db = MenuDB(settings.database_path)
+    try:
+        db.replace_entries("p", [
+            MenuEntry(service_date=date(2026, 8, 24), location="뷰웍스", meal_type="중식",
+                      category="일반식", menu_text="제육볶음", source_post_id="p"),
+        ])
+    finally:
+        db.close()
+    result = ensure_week_menu(settings, now=MONDAY_EARLY, scraper=ExplodingScraper())
+    assert result.already_confirmed is True
+    # 주말 폴링·마감 점검이 헛돌지 않도록 상태 파일에도 확보 사실을 남긴다.
+    assert _state(settings)["confirmed_week_start"] == TARGET
+
+
+def test_ensure_menu_keeps_retrying_while_post_is_absent(tmp_path: Path):
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    for moment in (SUNDAY_LATE, MONDAY_EARLY, TUESDAY):
+        result = ensure_week_menu(
+            settings, now=moment, scraper=FakeScraper(["[뷰웍스] 2026-08-17 ~ 08-21 식단표"]),
+            send=mail,
+        )
+        assert result.confirmed is False
+        # 게시글이 없는 것은 이상 상황이 아니므로 오류로 표시하지 않는다(종료 코드 0).
+        assert result.error is None
+    assert _results(_state(settings)) == ["not_posted"] * 3
+    assert mail.sent == []
+
+
+def test_ensure_menu_records_connection_failures(tmp_path: Path):
+    settings = _settings(tmp_path)
+    result = ensure_week_menu(
+        settings, now=MONDAY_EARLY, scraper=FailingScraper(), progress=lambda *_: None
+    )
+    assert result.error is not None
+    assert _results(_state(settings)) == ["error"]
+
+
+def test_ensure_menu_does_not_confirm_on_zero_entries(tmp_path: Path):
+    settings = _settings(tmp_path)
+    result = ensure_week_menu(
+        settings, now=MONDAY_EARLY, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+        send=MailSpy(), progress=lambda *_: None,
+    )
+    assert result.found is True
+    assert result.confirmed is False
+    assert _results(_state(settings)) == ["ingest_failed"]
+
+
+def test_ensure_menu_success_mail_is_sent_once(tmp_path: Path):
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    ensure_week_menu(
+        settings, now=SUNDAY_LATE, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+        process=_ingesting_process(), send=mail,
+    )
+    ensure_week_menu(
+        settings, now=MONDAY_EARLY, scraper=FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"]),
+        process=_ingesting_process(), send=mail,
+    )
+    assert len(mail.sent) == 1
 
 
 def test_week_structure_marks_special_and_no_service(tmp_path: Path):

@@ -11,7 +11,11 @@ from zoneinfo import ZoneInfo
 from .config import get_settings
 from .corrections import MIN_VOCAB_COUNT, build_vocabulary
 from .db import MenuDB
-from .next_week_watch import check_next_week_deadline, check_next_week_posted
+from .next_week_watch import (
+    check_next_week_deadline,
+    check_next_week_posted,
+    ensure_week_menu,
+)
 from .notify import get_mail_settings, send_mail
 from .ocr import recognize
 from .parser import parse_ocr_lines, post_from_title
@@ -83,6 +87,14 @@ def main() -> None:
         "--now", metavar="ISO8601",
         help="기준 시각을 지정해 마감 시나리오를 검증. 시스템 시계는 건드리지 않는다.",
     )
+    ensure = sub.add_parser(
+        "ensure-menu",
+        help="지금 필요한 주차 식단이 DB에 없으면 다시 수집(1시간 간격 재시도용, 있으면 즉시 종료)",
+    )
+    ensure.add_argument(
+        "--now", metavar="ISO8601",
+        help="기준 시각을 지정해 재시도 시나리오를 검증. 시스템 시계는 건드리지 않는다.",
+    )
     sub.add_parser(
         "notify-test",
         help="알림 메일 설정이 실제로 동작하는지 시험 메일 1통으로 확인(비밀번호는 출력하지 않음)",
@@ -136,6 +148,13 @@ def main() -> None:
         # 미확보 상태로 마감된 것은 사람이 봐야 하는 사건이므로 실패로 표시한다.
         # 이미 알림을 보낸 주차는 조용히 0으로 끝낸다.
         if not result.confirmed and not result.already_alerted:
+            sys.exit(1)
+    elif args.command == "ensure-menu":
+        result = ensure_week_menu(settings, now=_parse_now(args.now, settings.timezone))
+        print(result.message)
+        # 아직 게시글이 없는 것은 이상 상황이 아니므로 0으로 끝낸다(한 시간 뒤 다시
+        # 시도한다). 접속 실패나 OCR 0건만 systemd가 실패로 잡도록 1로 끝낸다.
+        if result.error:
             sys.exit(1)
     elif args.command == "notify-test":
         mail = get_mail_settings()

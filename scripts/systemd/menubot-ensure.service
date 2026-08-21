@@ -1,0 +1,20 @@
+# 뷰밥 메뉴 알리미 — 식단 확보 재시도(1시간 간격)
+[Unit]
+Description=Vieworks menu bot hourly retry until the week's menu is in (뷰밥 식단 확보 재시도)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=__APP_DIR__
+Environment=TZ=Asia/Seoul
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONUNBUFFERED=1
+ExecStart=__APP_DIR__/scripts/run-linux-ensure-menu.sh
+# DB에 이미 있으면 즉시 끝나지만, 없을 때는 수집·OCR을 하므로 수집 유닛과
+# 같은 상한이 필요하다.
+MemoryHigh=3G
+MemoryMax=4G
+TimeoutStartSec=1800

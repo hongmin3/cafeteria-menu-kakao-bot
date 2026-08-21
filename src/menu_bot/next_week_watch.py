@@ -130,6 +130,30 @@ def check_next_week_posted(
             message=f"{target.isoformat()} 주차 게시글은 이미 확인·저장되어 이번 주말 폴링을 건너뜁니다.",
         )
 
+    return _collect_week(
+        settings, target, current, state, checked_at,
+        scraper=scraper, image_dir=image_dir, progress=progress, process=process, send=send,
+    )
+
+
+def _collect_week(
+    settings: Settings,
+    target: date,
+    current: datetime,
+    state: dict,
+    checked_at: str,
+    scraper=None,
+    image_dir: Path = Path("data/images"),
+    progress=print,
+    process=process_manifest,
+    send=send_mail,
+) -> NextWeekWatchResult:
+    """대상 주차 게시글을 찾아 수집·OCR·저장하고, 확보되면 알림을 보낸다.
+
+    주말 폴링(check_next_week_posted)과 시간별 재시도(ensure_week_menu)가
+    같은 본문을 쓴다. 둘의 차이는 "어느 주차를 노리는가"와 "이미 확보됐는지
+    어떻게 판단하는가"뿐이다.
+    """
     scraper = scraper or GroupwareScraper(settings, headless=True)
     try:
         # 제목만 가볍게 먼저 확인한다. collect()는 본문 이미지를 실제로 렌더링해
@@ -210,6 +234,71 @@ def check_next_week_posted(
         ),
         stats=stats,
         notified=notified,
+    )
+
+
+def _week_for(today: date) -> date:
+    """지금 채워져 있어야 하는 주차의 월요일.
+
+    토·일에는 다가오는 월요일(=다음 주), 월~금에는 그 주 월요일이다. 덕분에
+    일요일 밤 23시와 월요일 새벽 1시가 **같은 주차**를 가리켜, 자정을 넘겨도
+    재시도가 엉뚱한 주차로 넘어가지 않는다.
+    """
+    if today.weekday() >= 5:
+        return next_monday(today)
+    return today - timedelta(days=today.weekday())
+
+
+def _db_has_week(settings: Settings, week_start: date) -> bool:
+    db = MenuDB(settings.database_path)
+    try:
+        return any(db.query(week_start + timedelta(days=offset)) for offset in range(5))
+    finally:
+        db.close()
+
+
+def ensure_week_menu(
+    settings: Settings,
+    now: datetime | None = None,
+    scraper: GroupwareScraper | None = None,
+    image_dir: Path = Path("data/images"),
+    progress=print,
+    process=process_manifest,
+    send=send_mail,
+) -> NextWeekWatchResult:
+    """지금 필요한 주차의 식단이 DB에 없으면 다시 수집한다(1시간 간격 재시도용).
+
+    일요일 22시 마감까지 식단표를 못 받았을 때 손을 놓지 않기 위한 장치다.
+    확보 여부는 상태 파일이 아니라 **DB에 그 주차 메뉴가 있는지**로 판단한다.
+    월요일 아침 정기 수집이 상태 파일을 건드리지 않고 DB를 채우는 경우가
+    있어서, 상태 파일만 보면 이미 들어온 주차를 계속 다시 긁게 된다.
+
+    DB에 이미 있으면 그룹웨어에 접속하지 않고 즉시 끝난다. 그래서 이 작업을
+    한 시간마다 걸어 둬도 평소에는 사실상 아무 일도 하지 않는다.
+    """
+    current = now or datetime.now(ZoneInfo(settings.timezone))
+    target = _week_for(current.date())
+    state = _state_for_target(settings.next_week_state_path, target)
+    checked_at = f"{current:%Y-%m-%d %H:%M} ({settings.timezone})"
+
+    if _db_has_week(settings, target):
+        # 확보 사실을 상태 파일에도 남겨, 주말 폴링과 마감 점검이 헛돌지 않게 한다.
+        if state.get("confirmed_week_start") != target.isoformat():
+            state["confirmed_week_start"] = target.isoformat()
+            state["confirmed_at"] = current.isoformat(timespec="seconds")
+            _save_state(settings.next_week_state_path, state)
+        return NextWeekWatchResult(
+            target_week_start=target,
+            already_confirmed=True,
+            found=True,
+            confirmed=True,
+            message=f"{target.isoformat()} 주차 식단이 이미 저장돼 있어 재시도를 건너뜁니다.",
+        )
+
+    progress(f"{target.isoformat()} 주차 식단이 아직 없어 다시 수집을 시도합니다.")
+    return _collect_week(
+        settings, target, current, state, checked_at,
+        scraper=scraper, image_dir=image_dir, progress=progress, process=process, send=send,
     )
 
 
