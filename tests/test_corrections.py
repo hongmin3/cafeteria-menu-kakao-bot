@@ -153,6 +153,31 @@ def test_real_items_are_not_broken_by_the_rules(item: str):
     assert correct_item(item) == item
 
 
+@pytest.mark.parametrize("item", ["행", "주", "하", "남", "돼", "지", "집", "매", " 매 "])
+def test_single_character_fragments_are_dropped(item: str):
+    """1년치에서 한 글자 항목 7개는 전부 조각이었다. 두 글자부터는 멀쩡한 메뉴가 많다."""
+    assert correct_item(item) is None
+
+
+@pytest.mark.parametrize("item", ["숭늉", "쌀밥", "잡채", "식혜", "닭죽", "팝콘", "수박", "떡국", "쫄면"])
+def test_two_character_menus_survive(item: str):
+    assert correct_item(item) == item
+
+
+@pytest.mark.parametrize(
+    ("wrong", "right"),
+    [
+        ("고줏잎무침", "고춧잎무침"),
+        ("홍합탕 · 고줏잎무침", "홍합탕 · 고춧잎무침"),
+        ("열무비빔밥*양넘고추장", "열무비빔밥*양념고추장"),
+        ("승늄", "숭늉"),
+    ],
+)
+def test_this_week_misreadings_are_fixed(wrong: str, right: str):
+    """2026-08-24 주차 실제 수집분에서 사용자가 잡아 준 오인식."""
+    assert correct_item(wrong) == right
+
+
 @pytest.mark.parametrize("item", ["마늘쫑지무침", "마늘쫑볶음", "햄마늘쫑볶음"])
 def test_balanced_spelling_variants_are_left_to_the_source(item: str):
     """`마늘쫑`(16회) 대 `마늘종`(9회)처럼 빈도가 비슷하면 원문 표기일 수 있어 손대지 않는다."""

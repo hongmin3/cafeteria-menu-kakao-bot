@@ -41,16 +41,18 @@ class FakeScraper:
         self.list_calls = 0
         self.collect_calls = 0
 
+    @staticmethod
+    def _id(title: str) -> str:
+        # 게시글마다 다른 id여야 한다. 같은 id면 "이미 처리한 게시글"로 걸러진다.
+        return "post-" + str(abs(hash(title)) % 10**8)
+
     def list_recent_titles(self, max_pages: int = 1) -> list[dict]:
         self.list_calls += 1
-        return [{"id": f"post-{i}", "title": title} for i, title in enumerate(self.titles)]
+        return [{"id": self._id(t), "title": t} for t in self.titles]
 
     def collect(self, max_pages: int = 1) -> list[dict]:
         self.collect_calls += 1
-        return [
-            {"id": f"post-{i}", "title": title, "images": []}
-            for i, title in enumerate(self.titles)
-        ]
+        return [{"id": self._id(t), "title": t, "images": []} for t in self.titles]
 
 
 class ExplodingScraper:
@@ -141,7 +143,7 @@ def test_next_week_post_found_and_confirmed_sends_success_mail(tmp_path: Path):
 
     state = _state(settings)
     assert state["confirmed_week_start"] == TARGET
-    assert state["success_notified_week"] == TARGET
+    assert state["success_notified_week"] == f"{TARGET}:primary"
     assert _results(state) == ["confirmed"]
 
     subject, body = mail.sent[0]
@@ -400,7 +402,83 @@ def test_ensure_menu_keeps_retrying_while_post_is_absent(tmp_path: Path):
         # 게시글이 없는 것은 이상 상황이 아니므로 오류로 표시하지 않는다(종료 코드 0).
         assert result.error is None
     assert _results(_state(settings)) == ["not_posted"] * 3
-    assert mail.sent == []
+    # 일요일 밤에는 조용하지만, 그 주가 시작된 뒤(월요일)에도 답할 수 없으면
+    # 한 번은 알려야 한다. 화요일에 또 보내지는 않는다.
+    assert len(mail.sent) == 1
+    assert "아직 못 받았습니다" in mail.sent[0][0]
+
+
+def _other_sites_process(week_start_default=date(2026, 8, 24)):
+    """뷰웍스 게시글 없이 다른 사업장 게시글만 올라온 상황을 재현한다."""
+
+    def process(rows, db, image_dir, progress=print, week_start=None):
+        from menu_bot.models import SourcePost
+
+        week = week_start or week_start_default
+        for index, location in enumerate(("화성", "안양")):
+            post = SourcePost(post_id=f"other-{index}", title=f"[{location}] {week}",
+                              location=location, start_date=week, image_urls=[])
+            db.save_post(post)
+            db.replace_entries(post.post_id, [
+                MenuEntry(service_date=week, location=location, meal_type="중식",
+                          category="일반식", menu_text="지점메뉴", source_post_id=post.post_id),
+            ])
+        return {"posts": 2, "images": 2, "entries": 2,
+                "filtered_entries": 0, "skipped_images": 0, "errors": []}
+
+    return process
+
+
+def test_other_sites_only_answers_but_keeps_waiting_for_primary(tmp_path: Path):
+    """2026-08-24 주차에 실제로 났던 사고.
+
+    [화성]·[안양] 게시글만 올라와 113건이 저장됐는데 "수집 완료" 메일이 나갔고,
+    챗봇은 공통 식단을 고르지 못해 "확인할 수 없어요"로 답했다. 지금은 두
+    사업장 식단을 합쳐 답하되, 뷰웍스 게시글은 계속 기다린다.
+    """
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
+        process=_other_sites_process(), send=mail, progress=lambda *_: None,
+    )
+    assert result.found is True
+    assert result.servable is True, "다른 사업장 식단으로라도 답할 수 있어야 한다"
+    assert result.confirmed is False, "뷰웍스 게시글을 받을 때까지 확보가 아니다"
+    state = _state(settings)
+    assert "confirmed_week_start" not in state, "폴링이 멈추면 안 된다"
+    assert _results(state) == ["fallback_only"]
+    subject, body = mail.sent[0]
+    assert "다른 사업장 기준" in subject
+    assert "뷰웍스 게시글이 아직 없어" in body
+
+
+def test_other_sites_only_keeps_hourly_retry_alive(tmp_path: Path):
+    settings = _settings(tmp_path)
+    ensure_week_menu(
+        settings, now=SUNDAY_LATE, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
+        process=_other_sites_process(), send=MailSpy(), progress=lambda *_: None,
+    )
+    # 다음 시각에도 그룹웨어를 다시 확인해야 한다(즉시 종료하면 안 된다).
+    scraper = FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"])
+    result = ensure_week_menu(
+        settings, now=MONDAY_EARLY, scraper=scraper, process=_ingesting_process(),
+        send=MailSpy(), progress=lambda *_: None,
+    )
+    assert scraper.collect_calls == 1
+    assert result.confirmed is True
+
+
+def test_deadline_reports_the_other_sites_reason(tmp_path: Path):
+    settings = _settings(tmp_path)
+    check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
+        process=_other_sites_process(), send=MailSpy(), progress=lambda *_: None,
+    )
+    mail = MailSpy()
+    check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    _, body = mail.sent[0]
+    assert "다른 사업장 식단만 확보" in body
 
 
 def test_ensure_menu_records_connection_failures(tmp_path: Path):

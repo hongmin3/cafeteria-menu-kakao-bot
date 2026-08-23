@@ -314,13 +314,77 @@ def parse_query(text: str, now: datetime) -> ParsedQuery:
     return ParsedQuery(target, meal, None, scope)
 
 
+# 챗봇이 답하는 기준 사업장. 다른 사업장 게시글만 올라온 주차에는
+# 그것으로 대신 답하되(_merge_sites), 이 게시글을 계속 기다린다.
+PRIMARY_LOCATION = "뷰웍스"
+MERGED_LOCATION = "공통"
+
+
+def _meal_is_closed(meal_rows: list) -> bool:
+    return any(row["status"] == "no_service" and row["category"] == "안내" for row in meal_rows)
+
+
+def _row_dict(row, location: str) -> dict:
+    return {
+        "service_date": row["service_date"], "location": location,
+        "meal_type": row["meal_type"], "category": row["category"],
+        "menu_text": row["menu_text"], "status": row["status"],
+    }
+
+
+def _merge_sites(rows: list) -> list:
+    """여러 사업장 게시글만 올라온 주차를 끼니 단위로 합친다.
+
+    2026-08-24 주차에 [화성]·[안양] 게시글만 올라온 적이 있는데, 두 식단을
+    셀 단위로 대조해 보니 42칸 중 31칸이 완전히 같고 실제 차이는 "어느 요일
+    조식을 쉬는가"뿐이었다(안양은 화요일, 화성은 목요일 조식 미운영).
+    나머지 차이는 전부 OCR 오인식이었다.
+
+    그래서 끼니별로 운영/미운영이 같으면 같은 식단으로 보고 하나로 합치고,
+    운영 여부가 갈리는 끼니만 사업장을 나란히 보여준다. 합칠 때는 코너별로
+    더 풍부하게 읽힌 쪽을 채택한다(pipeline의 중복 처리와 같은 원칙).
+    """
+    by_meal: dict[str, dict[str, list]] = {}
+    for row in rows:
+        by_meal.setdefault(row["meal_type"], {}).setdefault(row["location"], []).append(row)
+
+    merged: list = []
+    for per_site in by_meal.values():
+        closed = {site: _meal_is_closed(site_rows) for site, site_rows in per_site.items()}
+        if len(set(closed.values())) > 1:
+            # 운영 여부가 사업장마다 다르다 — 진짜 차이이므로 그대로 남긴다.
+            for site in sorted(per_site):
+                merged.extend(_row_dict(row, site) for row in per_site[site])
+            continue
+        best: dict[str, dict] = {}
+        for site_rows in per_site.values():
+            for row in site_rows:
+                candidate = _row_dict(row, MERGED_LOCATION)
+                previous = best.get(row["category"])
+                if previous is None or _richer(candidate, previous):
+                    best[row["category"]] = candidate
+        merged.extend(best.values())
+    return merged
+
+
+def _richer(candidate: dict, previous: dict) -> bool:
+    """항목 수가 많은 쪽, 같으면 글자가 긴 쪽을 고른다."""
+    return (
+        len(_menu_items(candidate["menu_text"])), len(candidate["menu_text"])
+    ) > (
+        len(_menu_items(previous["menu_text"])), len(previous["menu_text"])
+    )
+
+
 def _choose_common_menu(rows: list) -> list:
     locations = sorted({row["location"] for row in rows})
-    common = [row for row in rows if row["location"] == "뷰웍스"]
+    common = [row for row in rows if row["location"] == PRIMARY_LOCATION]
     if common:
         return common
     if len(locations) == 1:
         return rows
+    if locations:
+        return _merge_sites(rows)
     return []
 
 
@@ -371,6 +435,10 @@ def answer(
 
     weekday = "월화수목금토일"[parsed.day.weekday()]
     title = f"🍽 {parsed.day:%m월 %d일}({weekday})"
+    sources = sorted({row["location"] for row in rows})
+    if PRIMARY_LOCATION not in sources and sources:
+        # 뷰웍스 게시글 없이 다른 사업장 것만 올라온 주차. 어디 기준인지 밝힌다.
+        title += f"\n※ 뷰웍스 식단표가 아직 없어 {'·'.join(sources)} 식단으로 안내해요."
     parts = [title]
     grouped: dict[str, list] = {}
     for row in selected:
@@ -379,32 +447,44 @@ def answer(
         meal_rows = grouped.get(meal)
         if not meal_rows:
             continue
-        meal_parts = [f"[{meal}]"]
-        notices = [row for row in meal_rows if row["status"] == "no_service" and row["category"] == "안내"]
-        if notices:
-            notices = list(dict.fromkeys(row["menu_text"] for row in notices))
-            meal_parts.append("<운영 안내>")
-            meal_parts.extend(f"- {notice}" for notice in notices)
-            parts.append("\n".join(meal_parts))
-            continue
-        plus_rows = [row for row in meal_rows if row["category"] == "PLUS 코너"]
-        main_rows = [row for row in meal_rows if row["category"] != "PLUS 코너"]
-        for row in main_rows:
-            if len(meal_parts) > 1 and meal_parts[-1] != "":
+        sites = sorted({row["location"] for row in meal_rows})
+        if len(sites) > 1:
+            # 운영 여부가 사업장마다 갈리는 끼니만 나란히 보여준다(_merge_sites 참고).
+            meal_parts = [f"[{meal}]", "※ 이 끼니는 사업장마다 달라요"]
+            for site in sites:
                 meal_parts.append("")
-            marker = "✨ " if row["status"] == "special" else ""
-            meal_parts.append(f"{marker}<{row['category']}>")
-            if row["status"] == "no_service":
-                meal_parts.append(f"- 미제공 ({row['menu_text']})")
-                continue
-            meal_parts.extend(f"- {item}" for item in _menu_items(row["menu_text"]))
-        if plus_rows:
-            plus_items = []
-            for row in plus_rows:
-                plus_items.extend(_menu_items(row["menu_text"]))
-            if len(meal_parts) > 1 and meal_parts[-1] != "":
-                meal_parts.append("")
-            meal_parts.append("<공통 PLUS>")
-            meal_parts.extend(f"- {item}" for item in dict.fromkeys(plus_items))
+                meal_parts.append(f"〔{site}〕")
+                meal_parts.extend(_render_meal_body([r for r in meal_rows if r["location"] == site]))
+        else:
+            meal_parts = [f"[{meal}]", *_render_meal_body(meal_rows)]
         parts.append("\n".join(meal_parts))
     return "\n\n".join(parts)
+
+
+def _render_meal_body(meal_rows: list) -> list[str]:
+    notices = [row for row in meal_rows if row["status"] == "no_service" and row["category"] == "안내"]
+    if notices:
+        unique = list(dict.fromkeys(row["menu_text"] for row in notices))
+        return ["<운영 안내>", *(f"- {notice}" for notice in unique)]
+
+    lines: list[str] = []
+    plus_rows = [row for row in meal_rows if row["category"] == "PLUS 코너"]
+    main_rows = [row for row in meal_rows if row["category"] != "PLUS 코너"]
+    for row in main_rows:
+        if lines and lines[-1] != "":
+            lines.append("")
+        marker = "✨ " if row["status"] == "special" else ""
+        lines.append(f"{marker}<{row['category']}>")
+        if row["status"] == "no_service":
+            lines.append(f"- 미제공 ({row['menu_text']})")
+            continue
+        lines.extend(f"- {item}" for item in _menu_items(row["menu_text"]))
+    if plus_rows:
+        plus_items: list[str] = []
+        for row in plus_rows:
+            plus_items.extend(_menu_items(row["menu_text"]))
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.append("<공통 PLUS>")
+        lines.extend(f"- {item}" for item in dict.fromkeys(plus_items))
+    return lines
