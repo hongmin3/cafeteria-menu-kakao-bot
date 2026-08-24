@@ -236,6 +236,55 @@ def test_help_text_stays_one_bubble_when_prefixed():
     assert "…메뉴가 길어" not in response["template"]["outputs"][0]["simpleText"]["text"]
 
 
+# ── 지점 게시글만 올라온 주차 ────────────────────────────────
+@pytest.fixture
+def sites_db(tmp_path: Path):
+    """뷰웍스 게시글 없이 [안양]·[화성] 게시글만 올라온 주차(2026-08-24 실제 상황).
+
+    두 지점 식단은 42칸 중 31칸이 같고, 진짜 차이는 조식 미운영 요일뿐이다.
+    """
+    database = MenuDB(tmp_path / "menus.db")
+    monday, tuesday = date(2026, 8, 17), date(2026, 8, 18)
+    rows = []
+    for site in ("안양", "화성"):
+        # 월요일 중식은 두 지점이 같다.
+        rows.append(MenuEntry(monday, site, "중식", "일반식", "제육볶음 · 콩나물국",
+                              source_post_id=site))
+        rows.append(MenuEntry(monday, site, "중식", "PLUS 코너", "숭늉", source_post_id=site))
+    # 화요일 조식만 갈린다: 안양 미운영, 화성 운영.
+    rows.append(MenuEntry(tuesday, "안양", "조식", "안내", "조식 미운영",
+                          status="no_service", source_post_id="안양"))
+    rows.append(MenuEntry(tuesday, "화성", "조식", "일반식", "*볶음밥DAY* · 참치김치볶음밥",
+                          status="special", source_post_id="화성"))
+    rows.append(MenuEntry(tuesday, "화성", "조식", "PLUS 코너", "숭늉", source_post_id="화성"))
+    database.replace_entries("sites", rows)
+    yield database
+    database.close()
+
+
+def test_identical_site_menus_are_merged_without_labels(sites_db):
+    result = answer(sites_db, "월요일 점심", "Asia/Seoul", now=NOW)
+    assert "제육볶음" in result
+    # 사업장은 사용자에게 노출하지 않는다. 서버가 알아서 판단한다.
+    for site in ("안양", "화성", "뷰웍스", "사업장"):
+        assert site not in result, result
+    # 같은 메뉴가 두 번 나오면 안 된다.
+    assert result.count("제육볶음") == 1
+
+
+def test_differing_meal_shows_the_operating_site_menu(sites_db):
+    """한쪽만 쉬는 끼니는 운영하는 쪽 메뉴를 보여준다.
+
+    다른 지점이 쉰다는 사실은 뷰웍스 사람에게 아무 정보가 아니고, 메뉴 자체는
+    거의 같기 때문이다.
+    """
+    result = answer(sites_db, "화요일 아침", "Asia/Seoul", now=NOW)
+    assert "볶음밥DAY" in result
+    assert "미운영" not in result
+    for site in ("안양", "화성", "사업장"):
+        assert site not in result, result
+
+
 def test_query_issue_uses_configured_locations():
     """사업장 이름은 설정값(POST_PREFIXES)에서 온다."""
     assert query_issue("안양점심", NOW.date(), ("안양",)) is None

@@ -352,10 +352,12 @@ def _merge_sites(rows: list) -> list:
     for per_site in by_meal.values():
         closed = {site: _meal_is_closed(site_rows) for site, site_rows in per_site.items()}
         if len(set(closed.values())) > 1:
-            # 운영 여부가 사업장마다 다르다 — 진짜 차이이므로 그대로 남긴다.
-            for site in sorted(per_site):
-                merged.extend(_row_dict(row, site) for row in per_site[site])
-            continue
+            # 운영 여부가 사업장마다 다르다(안양은 화요일, 화성은 목요일 조식
+            # 미운영). 어느 쪽도 뷰웍스 기준이 아니므로 사용자에게 사업장을
+            # 늘어놓아 봐야 판단할 근거가 없다. 다른 사업장이 쉰다는 사실은
+            # 뷰웍스 사람에게 아무 정보가 아니지만 메뉴 자체는 거의 같으므로
+            # (42칸 중 31칸 동일), 운영하는 쪽 메뉴를 보여준다.
+            per_site = {site: rows for site, rows in per_site.items() if not closed[site]}
         best: dict[str, dict] = {}
         for site_rows in per_site.values():
             for row in site_rows:
@@ -434,12 +436,9 @@ def answer(
         )
 
     weekday = "월화수목금토일"[parsed.day.weekday()]
-    title = f"🍽 {parsed.day:%m월 %d일}({weekday})"
-    sources = sorted({row["location"] for row in rows})
-    if PRIMARY_LOCATION not in sources and sources:
-        # 뷰웍스 게시글 없이 다른 사업장 것만 올라온 주차. 어디 기준인지 밝힌다.
-        title += f"\n※ 뷰웍스 식단표가 아직 없어 {'·'.join(sources)} 식단으로 안내해요."
-    parts = [title]
+    # 어느 사업장 게시글에서 왔는지는 사용자에게 노출하지 않는다. 어떤 식단을
+    # 보여줄지는 _choose_common_menu/_merge_sites가 서버에서 판단을 끝낸다.
+    parts = [f"🍽 {parsed.day:%m월 %d일}({weekday})"]
     grouped: dict[str, list] = {}
     for row in selected:
         grouped.setdefault(row["meal_type"], []).append(row)
@@ -447,17 +446,7 @@ def answer(
         meal_rows = grouped.get(meal)
         if not meal_rows:
             continue
-        sites = sorted({row["location"] for row in meal_rows})
-        if len(sites) > 1:
-            # 운영 여부가 사업장마다 갈리는 끼니만 나란히 보여준다(_merge_sites 참고).
-            meal_parts = [f"[{meal}]", "※ 이 끼니는 사업장마다 달라요"]
-            for site in sites:
-                meal_parts.append("")
-                meal_parts.append(f"〔{site}〕")
-                meal_parts.extend(_render_meal_body([r for r in meal_rows if r["location"] == site]))
-        else:
-            meal_parts = [f"[{meal}]", *_render_meal_body(meal_rows)]
-        parts.append("\n".join(meal_parts))
+        parts.append("\n".join([f"[{meal}]", *_render_meal_body(meal_rows)]))
     return "\n\n".join(parts)
 
 
