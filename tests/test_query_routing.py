@@ -263,26 +263,26 @@ def sites_db(tmp_path: Path):
 
 
 def test_identical_site_menus_are_merged_without_labels(sites_db):
+    """두 사업장이 같은 끼니는 사업장을 밝히지 않고 한 번만 보여준다."""
     result = answer(sites_db, "월요일 점심", "Asia/Seoul", now=NOW)
     assert "제육볶음" in result
-    # 사업장은 사용자에게 노출하지 않는다. 서버가 알아서 판단한다.
     for site in ("안양", "화성", "뷰웍스", "사업장"):
         assert site not in result, result
-    # 같은 메뉴가 두 번 나오면 안 된다.
     assert result.count("제육볶음") == 1
 
 
-def test_differing_meal_shows_the_operating_site_menu(sites_db):
-    """한쪽만 쉬는 끼니는 운영하는 쪽 메뉴를 보여준다.
+def test_differing_meal_shows_both_sites(sites_db):
+    """한쪽만 쉬는 끼니는 두 사업장을 나란히 보여준다.
 
-    다른 지점이 쉰다는 사실은 뷰웍스 사람에게 아무 정보가 아니고, 메뉴 자체는
-    거의 같기 때문이다.
+    사업장을 나눠 올렸다는 것 자체가 그 주에 운영 예외가 있다는 뜻이고,
+    사용자는 둘 중 한 곳에 있다. 한쪽만 골라 보여주면 나머지 절반이 닫힌
+    식당으로 가게 된다.
     """
     result = answer(sites_db, "화요일 아침", "Asia/Seoul", now=NOW)
-    assert "볶음밥DAY" in result
-    assert "미운영" not in result
-    for site in ("안양", "화성", "사업장"):
-        assert site not in result, result
+    assert "〔안양〕" in result and "조식 미운영" in result
+    assert "〔화성〕" in result and "볶음밥DAY" in result
+    # 다만 "뷰웍스 식단표가 없어서…" 같은 사정 설명은 넣지 않는다.
+    assert "뷰웍스" not in result
 
 
 def test_query_issue_uses_configured_locations():

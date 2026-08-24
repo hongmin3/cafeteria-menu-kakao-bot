@@ -143,7 +143,7 @@ def test_next_week_post_found_and_confirmed_sends_success_mail(tmp_path: Path):
 
     state = _state(settings)
     assert state["confirmed_week_start"] == TARGET
-    assert state["success_notified_week"] == f"{TARGET}:primary"
+    assert state["success_notified_week"] == TARGET
     assert _results(state) == ["confirmed"]
 
     subject, body = mail.sent[0]
@@ -429,12 +429,10 @@ def _other_sites_process(week_start_default=date(2026, 8, 24)):
     return process
 
 
-def test_other_sites_only_answers_but_keeps_waiting_for_primary(tmp_path: Path):
-    """2026-08-24 주차에 실제로 났던 사고.
-
-    [화성]·[안양] 게시글만 올라와 113건이 저장됐는데 "수집 완료" 메일이 나갔고,
-    챗봇은 공통 식단을 고르지 못해 "확인할 수 없어요"로 답했다. 지금은 두
-    사업장 식단을 합쳐 답하되, 뷰웍스 게시글은 계속 기다린다.
+def test_site_split_posts_count_as_the_week_being_posted(tmp_path: Path):
+    """식당은 두 사업장 메뉴가 같을 때 [뷰웍스] 하나로 올리고, 운영 예외가 있는
+    주에만 [안양]·[화성]으로 나눠 올린다. 그러므로 사업장 게시글이 올라왔으면
+    그것이 그 주 식단표다 — 기다릴 [뷰웍스] 게시글은 없다.
     """
     settings = _settings(tmp_path)
     mail = MailSpy()
@@ -443,42 +441,39 @@ def test_other_sites_only_answers_but_keeps_waiting_for_primary(tmp_path: Path):
         process=_other_sites_process(), send=mail, progress=lambda *_: None,
     )
     assert result.found is True
-    assert result.servable is True, "다른 사업장 식단으로라도 답할 수 있어야 한다"
-    assert result.confirmed is False, "뷰웍스 게시글을 받을 때까지 확보가 아니다"
+    assert result.servable is True
+    assert result.confirmed is True
     state = _state(settings)
-    assert "confirmed_week_start" not in state, "폴링이 멈추면 안 된다"
-    assert _results(state) == ["fallback_only"]
+    assert state["confirmed_week_start"] == TARGET
+    assert _results(state) == ["confirmed"]
     subject, body = mail.sent[0]
-    assert "다른 사업장 기준" in subject
-    assert "뷰웍스 게시글이 아직 없어" in body
+    assert "식단 수집 완료" in subject
+    assert "사업장별로 나뉘어 올라왔습니다" in body
 
 
-def test_other_sites_only_keeps_hourly_retry_alive(tmp_path: Path):
+def test_site_split_posts_stop_the_hourly_retry(tmp_path: Path):
     settings = _settings(tmp_path)
     ensure_week_menu(
         settings, now=SUNDAY_LATE, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
         process=_other_sites_process(), send=MailSpy(), progress=lambda *_: None,
     )
-    # 다음 시각에도 그룹웨어를 다시 확인해야 한다(즉시 종료하면 안 된다).
-    scraper = FakeScraper([f"[뷰웍스] {TARGET} ~ 08-28 식단표"])
-    result = ensure_week_menu(
-        settings, now=MONDAY_EARLY, scraper=scraper, process=_ingesting_process(),
-        send=MailSpy(), progress=lambda *_: None,
-    )
-    assert scraper.collect_calls == 1
-    assert result.confirmed is True
+    # 확보됐으니 이후 시각에는 그룹웨어에 접속하지 않아야 한다.
+    for moment in (MONDAY_EARLY, TUESDAY):
+        result = ensure_week_menu(settings, now=moment, scraper=ExplodingScraper())
+        assert result.already_confirmed is True
+        assert result.confirmed is True
 
 
-def test_deadline_reports_the_other_sites_reason(tmp_path: Path):
+def test_deadline_is_quiet_after_site_split_posts(tmp_path: Path):
     settings = _settings(tmp_path)
     check_next_week_posted(
         settings, now=NOW, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
         process=_other_sites_process(), send=MailSpy(), progress=lambda *_: None,
     )
     mail = MailSpy()
-    check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
-    _, body = mail.sent[0]
-    assert "다른 사업장 식단만 확보" in body
+    result = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    assert result.confirmed is True
+    assert mail.sent == []
 
 
 def test_ensure_menu_records_connection_failures(tmp_path: Path):

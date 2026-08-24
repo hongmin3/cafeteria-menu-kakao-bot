@@ -21,7 +21,6 @@ ATTEMPT_LABELS = {
     "error": "그룹웨어 접속/스크래핑 실패",
     "ingest_failed": "게시글은 있는데 OCR·파싱 결과가 0건",
     "not_servable": "저장은 됐지만 공통 식단을 고를 수 없음",
-    "fallback_only": "뷰웍스 게시글 없이 다른 사업장 식단만 확보(답변은 가능)",
     "confirmed": "수집 성공",
 }
 
@@ -176,11 +175,10 @@ def success_mail(
     stats: dict | None,
     structure: str,
     locations: list[str] | None = None,
-    has_primary: bool = True,
+    split_by_site: bool = False,
 ) -> tuple[str, str]:
     week_end = week_start + timedelta(days=4)
-    label = "식단 수집 완료" if has_primary else "식단 수집(다른 사업장 기준)"
-    subject = f"[뷰밥 메뉴 알리미] {week_start:%m/%d}~{week_end:%m/%d} {label}"
+    subject = f"[뷰밥 메뉴 알리미] {week_start:%m/%d}~{week_end:%m/%d} 식단 수집 완료"
     if stats:
         counts = (
             f"게시물 {stats.get('posts', 0)}건 / 이미지 {stats.get('images', 0)}장 / "
@@ -198,7 +196,7 @@ def success_mail(
 대상 주차 : {_label(week_start)} ~ {_label(week_end)}
 수집 결과 : {counts}
 출처 사업장 : {", ".join(locations or []) or "확인 불가"}
-{"" if has_primary else chr(10) + "⚠ 뷰웍스 게시글이 아직 없어 다른 사업장 식단으로 답하고 있습니다." + chr(10) + "  뷰웍스 게시글이 올라오면 자동으로 그것으로 바뀌고 다시 알려드립니다." + chr(10)}
+{"" if not split_by_site else chr(10) + "이번 주는 사업장별로 나뉘어 올라왔습니다. 식당은 두 사업장 메뉴가 같을 때" + chr(10) + "통합으로 올리므로, 나뉘어 올라온 주는 운영 예외(끼니 미운영 등)가 있다는" + chr(10) + "뜻입니다. 챗봇은 같은 끼니는 하나로 합쳐 보여주고, 사업장마다 다른 끼니만" + chr(10) + "사업장을 밝혀 나란히 보여줍니다." + chr(10)}
 
 {week_start:%m월 %d일}(월) 00시가 지나면 카카오 챗봇에서 바로 조회됩니다.
 운영 DB는 항상 '이번 주'만 노출하므로, 주말에 미리 저장돼 있어도 월요일
