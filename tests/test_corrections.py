@@ -10,6 +10,7 @@ from menu_bot.corrections import (
     clean_items,
     correct_item,
     is_noise,
+    is_promotional_noise,
     load_vocabulary,
 )
 
@@ -25,6 +26,37 @@ from menu_bot.corrections import (
 def test_noise_is_dropped(item: str):
     assert is_noise(item) or not item.strip()
     assert correct_item(item) is None
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        "천상현 셰프", "천상현 세프", "천상현세프", "이연복 쉐프", "백종원 CHEF",
+        "오늘의 셰프 천상현", "현대그콘푸드", "HYUNDAI GREEN FOOD",
+        "브랜드콜라보DAY", "BRAND COLLABORATION", "콜라보 DAY_호우섬",
+        "여름휴가 맛집_전주편", "2호선맛집탐방! '신림", "다함께차차차 이벤트",
+        "후식이벤트DAY", "**말복 특식 DAY**", "VIEWORKS 12월 특식",
+    ],
+)
+def test_promotion_graphics_are_dropped(item: str):
+    """인물·브랜드·행사가 바뀌어도 홍보 배너를 메뉴로 노출하지 않는다."""
+    assert is_promotional_noise(item)
+    assert is_noise(item)
+    assert correct_item(item) is None
+
+
+def test_person_name_is_not_hardcoded_as_noise():
+    """역할 표기 없는 일반 인명 자체를 임의로 지우지 않는다."""
+    assert not is_promotional_noise("천상현")
+
+
+@pytest.mark.parametrize(
+    "item",
+    ["멕시칸치킨플래터 특식", "말복삼계탕", "전주식콩나물국밥", "호우섬우육탕면"],
+)
+def test_real_special_food_names_are_kept(item: str):
+    assert not is_promotional_noise(item)
+    assert correct_item(item) == item
 
 
 @pytest.mark.parametrize(
@@ -178,6 +210,17 @@ def test_this_week_misreadings_are_fixed(wrong: str, right: str):
     assert correct_item(wrong) == right
 
 
+def test_current_thursday_special_is_cleaned_from_real_server_values():
+    items = [
+        "현대그콘푸드", "천상현 세프", "해물백쌈뽕", "유린기", "유부겨자냉채",
+        "짜사이", "천상현세프", "쌀밥/짝두)", "그린샐러드*드레싱",
+    ]
+    assert clean_items(items) == [
+        "해물백짬뽕", "유린기", "유부겨자냉채", "짜사이", "쌀밥/깍두기",
+        "그린샐러드*드레싱",
+    ]
+
+
 @pytest.mark.parametrize("item", ["마늘쫑지무침", "마늘쫑볶음", "햄마늘쫑볶음"])
 def test_balanced_spelling_variants_are_left_to_the_source(item: str):
     """`마늘쫑`(16회) 대 `마늘종`(9회)처럼 빈도가 비슷하면 원문 표기일 수 있어 손대지 않는다."""
@@ -292,6 +335,9 @@ def test_parser_applies_corrections(monkeypatch):
         line("일반식", 0.05, 0.62),                 # 코너
         line("PLUS", 0.05, 0.40),
         line("쌀밥/짝두기", 0.30, 0.58),             # 오인식
+        line("천상현 셰프", 0.30, 0.59),             # 위쪽 가로 특식 홍보 배너
+        line("천상현 셰프", 0.33, 0.53),             # 오른쪽 아래 명패
+        line("브랜드콜라보DAY", 0.30, 0.57),         # 1년치에 반복된 행사 제목
         line("004", 0.30, 0.55),                  # 노이즈
         line("숭능", 0.30, 0.38),                  # 오인식
     ]
@@ -303,3 +349,7 @@ def test_parser_applies_corrections(monkeypatch):
     assert "깍두기" in joined and "짝두기" not in joined
     assert "숭늉" in joined and "숭능" not in joined
     assert "004" not in joined
+    assert "천상현" not in joined and "셰프" not in joined
+    assert "브랜드콜라보" not in joined
+    general = next(entry for entry in entries if entry.category == "일반식")
+    assert general.status == "special"

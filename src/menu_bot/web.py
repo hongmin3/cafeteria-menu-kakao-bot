@@ -10,6 +10,14 @@ from .query import HELP_TEXT, answer, looks_like_menu_query
 app = FastAPI(title="Vieworks Menu Kakao Skill")
 
 
+QUICK_REPLIES = [
+    {"action": "message", "label": "오늘의 아침", "messageText": "오늘 아침"},
+    {"action": "message", "label": "오늘의 점심", "messageText": "오늘 점심"},
+    {"action": "message", "label": "오늘의 저녁", "messageText": "오늘 저녁"},
+    {"action": "message", "label": "사용방법", "messageText": "사용방법"},
+]
+
+
 def kakao_response(text: str) -> dict:
     # A full-day query becomes one bubble per meal. This keeps vertical menus
     # readable and stays within Kakao's three-output response limit.
@@ -24,13 +32,9 @@ def kakao_response(text: str) -> dict:
         "version": "2.0",
         "template": {
             "outputs": outputs,
-            "quickReplies": [
-                {
-                    "action": "message",
-                    "label": "사용방법",
-                    "messageText": "사용방법",
-                }
-            ],
+            # Users can open today's meal without typing. Keep help available
+            # alongside the three most common actions on every response.
+            "quickReplies": QUICK_REPLIES,
         },
     }
 

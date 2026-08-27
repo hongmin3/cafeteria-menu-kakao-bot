@@ -118,9 +118,14 @@ def unknown_terms(text: str, locations: tuple[str, ...] = DEFAULT_LOCATIONS) -> 
 HELP_TEXT = """🍚 뷰밥 메뉴 알리미
 
 안녕하세요! 사내 식당 식단을 알려드려요.
-아래처럼 편하게 물어보시면 됩니다 😊
+아래 버튼만 누르면 입력하지 않아도 오늘 식단을 바로 볼 수 있어요 😊
 
-🍳 끼니만 말하기
+👇 오늘의 식단 바로 보기
+ · ‘오늘의 아침’ → 오늘 조식
+ · ‘오늘의 점심’ → 오늘 중식
+ · ‘오늘의 저녁’ → 오늘 석식
+
+🍳 직접 물어보기
  ‘아침’ ‘점심’ ‘저녁’ → 오늘 그 끼니
 
 📅 날짜와 함께
@@ -138,7 +143,8 @@ HELP_TEXT = """🍚 뷰밥 메뉴 알리미
  · ‘금욜’ ‘낼점심’처럼 줄여 말해도 알아들어요.
  · 특식은 ✨, 미운영은 안내 문구로 표시해요.
 
-이 안내가 다시 필요하면 아래 ‘사용방법’ 버튼을 눌러 주세요!"""
+매 답변 아래에 오늘의 아침·점심·저녁 버튼이 있어요.
+이 안내가 다시 필요하면 ‘사용방법’ 버튼을 눌러 주세요!"""
 
 CASUAL_REPLACEMENTS = {
     "월욜": "월요일",
@@ -477,7 +483,7 @@ def _render_meal_body(meal_rows: list) -> list[str]:
     for row in main_rows:
         if lines and lines[-1] != "":
             lines.append("")
-        marker = "✨ " if row["status"] == "special" else ""
+        marker = "✨ 특식 " if row["status"] == "special" else ""
         lines.append(f"{marker}<{row['category']}>")
         if row["status"] == "no_service":
             lines.append(f"- 미제공 ({row['menu_text']})")

@@ -227,6 +227,13 @@ def test_help_text_explains_each_supported_form(fragment: str):
     assert fragment in HELP_TEXT
 
 
+def test_help_text_promotes_today_meal_buttons():
+    assert "입력하지 않아도 오늘 식단" in HELP_TEXT
+    assert "오늘의 아침" in HELP_TEXT
+    assert "오늘의 점심" in HELP_TEXT
+    assert "오늘의 저녁" in HELP_TEXT
+
+
 def test_help_text_stays_one_bubble_when_prefixed():
     """카카오 응답은 '\\n\\n[' 를 기준으로 말풍선을 나눈다. 안내문이 쪼개지면 안 된다."""
     from menu_bot.web import kakao_response

@@ -26,6 +26,29 @@ import re
 
 HANGUL = re.compile(r"[가-힣]")
 
+# 1년치 원본 OCR 167장 전수 조사에서 실제 메뉴에 섞인 홍보 제목의 공통 형태.
+# 특정 셰프·브랜드 이름을 열거하지 않아 다음 행사에서도 같은 방식으로 처리한다.
+PROMOTIONAL_NOISE = re.compile(
+    r"(?:"
+    r"셰프|쉐프|세프|\bCHEF\b|"
+    r"콜라보(?:레이션)?|COLLAB(?:ORATION)?|"
+    r"맛집(?:탐방|특집)?|"
+    r"이벤트(?:\s*DAY)?|"
+    # 이번 주 어두운 HYUNDAI GREEN FOOD 로고를 `현대그콘푸드`로 읽은
+    # 실제 서버 OCR 결과까지 포함한다. 음식 메뉴의 일반적인 `푸드`는 건드리지 않는다.
+    r"(?:HYUNDAI|현대)\s*(?:GREEN|그[린콘])\s*(?:FOOD|푸드)"
+    r")",
+    re.I,
+)
+
+# 음식명이 없이 행사명만 적힌 특식 배너. `멕시칸치킨플래터 특식`처럼 음식이
+# 들어간 줄은 보존하고, `말복 특식 DAY` 같은 제목만 제거한다.
+SPECIAL_BANNER_ONLY = re.compile(
+    r"^[*\s]*(?:(?:VIEWORKS|뷰웍스)\s*)?(?:\d{1,2}월\s*)?"
+    r"(?:초복|중복|말복|창립기념일|장김기념일)?\s*특식(?:\s*DAY)?[*\s]*$",
+    re.I,
+)
+
 # 어휘집 항목이 교정 대상이 되기 위한 최소 등장 횟수. 어휘집은 Apple Vision
 # OCR 결과에서 모은 것이라 그 자체에도 오인식이 섞여 있는데, 오인식은 보통
 # 한두 번 나오고 실제 메뉴 이름은 여러 번 반복된다. 하한을 두지 않으면
@@ -104,6 +127,9 @@ SUBSTITUTIONS = {
     "출기볶음": "줄기볶음",
     "떠국": "떡국",
     "베이그에그": "베이컨에그",
+    # 2026-08-24 주차 목요일 중식 실제 서버 OCR 결과.
+    "백쌈뽕": "백짬뽕",
+    "짝두)": "깍두기",
     # ── 표준 표기로 통일 ──
     # OCR 오인식인지 인쇄 표기인지 가릴 수 없지만 한쪽이 표준 표기이고 빈도도
     # 훨씬 높은 것들. `마늘쫑`(16회) 대 `마늘종`(9회)처럼 빈도가 비슷한 표기는
@@ -127,7 +153,13 @@ def is_noise(item: str) -> bool:
        `식혜`, `닭죽`처럼 멀쩡한 메뉴가 많으므로 딱 한 글자만 버린다.
     """
     text = item.strip()
-    return len(text) <= 1 or not HANGUL.search(text)
+    return len(text) <= 1 or not HANGUL.search(text) or is_promotional_noise(text)
+
+
+def is_promotional_noise(item: str) -> bool:
+    """셰프·콜라보·행사 제목처럼 메뉴가 아닌 홍보 문구인지."""
+    text = item.strip()
+    return bool(PROMOTIONAL_NOISE.search(text) or SPECIAL_BANNER_ONLY.fullmatch(text))
 
 
 def load_vocabulary(path: str | Path | None = None) -> dict[str, int]:
