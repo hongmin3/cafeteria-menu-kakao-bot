@@ -1,4 +1,5 @@
 # 질의 해석 규칙
+<!-- akela: scope=query-debug tier=should -->
 
 챗봇(`src/menu_bot/query.py`)이 카카오톡 발화를 어떻게 해석하는지 정리한 규칙. 새 발화 패턴을 추가하거나 회귀를 디버깅할 때 참고한다.
 
