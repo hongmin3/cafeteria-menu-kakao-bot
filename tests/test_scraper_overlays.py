@@ -159,3 +159,66 @@ def test_diagnostics_never_mask_the_original_failure():
     """진단이 실패해도 예외를 내지 않는다 — 본 오류를 가리면 안 된다."""
     assert _describe_blockers(BrokenPage()) == ""
     assert _save_failure_snapshot(BrokenPage(), "titles") is None
+
+
+class LateRenderingHome:
+    """메뉴가 곧바로 보이지 않고 스크립트로 잠시 뒤 그려지는 홈 화면."""
+
+    def __init__(self):
+        self.waited_for = []
+        self.counted = 0
+
+    def get_by_text(self, label, exact=False):
+        return _MenuChain(self, label)
+
+    def locator(self, selector):
+        return _MenuChain(self, selector)
+
+
+class _MenuChain:
+    def __init__(self, page, label):
+        self.page = page
+        self.label = label
+
+    def or_(self, other):
+        return self
+
+    @property
+    def first(self):
+        return self
+
+    def count(self):
+        # 렌더링 전이라 아직 0이다. 이 값을 보고 판단하면 회귀가 난다.
+        self.page.counted += 1
+        return 0
+
+    def wait_for(self, timeout=None):
+        self.page.waited_for.append(self.label)
+
+
+def test_menu_lookup_waits_instead_of_counting():
+    """메뉴가 아직 그려지지 않았어도 기다렸다가 잡는다.
+
+    2026-08-31 회귀: count()로 즉시 세는 바람에 메뉴가 멀쩡히 있는데도
+    "이름이 바뀌었을 수 있습니다"로 실패했다. 실서버에서 게시판 진입이
+    다시 막혔다.
+    """
+    from menu_bot.config import Settings
+    from menu_bot.scraper import GroupwareScraper
+
+    page = LateRenderingHome()
+    scraper = GroupwareScraper(
+        Settings(
+            groupware_user="u", groupware_password="p",
+            groupware_url="https://groupware.example.com/",
+            post_prefixes=("뷰웍스",), default_location="",
+            database_path="x.db", timezone="Asia/Seoul", webhook_token="",
+            ocr_provider="auto", next_week_state_path="s.json",
+        )
+    )
+
+    target = scraper._menu_link(page, "게시판")
+
+    assert target is not None
+    assert page.waited_for == ["게시판"]  # 기다렸다
+    assert page.counted == 0  # 즉시 세지 않았다

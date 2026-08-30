@@ -207,23 +207,30 @@ class GroupwareScraper:
                 "`playwright install chromium`이 필요하거나 서버 메모리가 부족할 수 있습니다.",
             ) from exc
 
-    def _menu_link(self, page, label: str):
+    def _menu_link(self, page, label: str, timeout_ms: int = 30_000):
         """상단 메뉴 항목을 찾는다. 표시 문구가 바뀌면 title 속성으로 되짚는다.
 
         메뉴 이름은 그룹웨어 개편 때 바뀔 수 있는 값이라 텍스트 하나에만
         기대지 않는다. 둘 다 없으면 무엇을 못 찾았는지 분명히 말해 준다.
+
+        **요소가 나타날 때까지 기다려야 한다.** 홈 화면 메뉴는 스크립트로
+        그려지므로 `count()`로 즉시 세면 렌더링 전에 "없다"고 단정해 버린다
+        — 2026-08-31에 실제로 그 회귀를 내서, 메뉴가 멀쩡히 있는데도 "메뉴
+        이름이 바뀌었을 수 있습니다"로 실패했다. 두 셀렉터를 or로 묶어 한
+        번의 대기로 먼저 나타나는 쪽을 잡는다.
         """
-        by_text = page.get_by_text(label, exact=True)
-        if by_text.count():
-            return by_text.first
-        by_title = page.locator(f'[title="{label}"]')
-        if by_title.count():
-            return by_title.first
-        raise ScrapeError(
-            f"{label} 메뉴 찾기",
-            f'상단 메뉴에서 "{label}"을 찾지 못했습니다.',
-            f"메뉴 이름이 바뀌었을 수 있습니다. {_describe_blockers(page)}",
-        )
+        target = page.get_by_text(label, exact=True).or_(
+            page.locator(f'[title="{label}"]')
+        ).first
+        try:
+            target.wait_for(timeout=timeout_ms)
+        except PlaywrightError as exc:
+            raise ScrapeError(
+                f"{label} 메뉴 찾기",
+                f'상단 메뉴에서 "{label}"을 찾지 못했습니다.',
+                f"메뉴 이름이 바뀌었을 수 있습니다. {_describe_blockers(page)}",
+            ) from exc
+        return target
 
     def _sign_in(self, page) -> None:
         """로그인 폼이 보이면 채워 넣고, 홈으로 넘어갔는지 확인한다.
