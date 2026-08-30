@@ -479,7 +479,8 @@ def test_deadline_is_quiet_after_site_split_posts(tmp_path: Path):
 def test_ensure_menu_records_connection_failures(tmp_path: Path):
     settings = _settings(tmp_path)
     result = ensure_week_menu(
-        settings, now=MONDAY_EARLY, scraper=FailingScraper(), progress=lambda *_: None
+        settings, now=MONDAY_EARLY, scraper=FailingScraper(),
+        send=MailSpy(), progress=lambda *_: None,
     )
     assert result.error is not None
     assert _results(_state(settings)) == ["error"]

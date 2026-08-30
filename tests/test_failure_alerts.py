@@ -182,3 +182,28 @@ def test_streak_resets_once_the_menu_arrives(tmp_path: Path):
     _run(settings, BlockedScraper(), mail, times=STUCK_ALERT_AFTER - 1)
 
     assert mail.stuck_alerts == []
+
+
+# ── 테스트가 진짜 메일을 보내지 않는다는 보장 ────────────────────────────
+
+
+def test_real_mail_sending_is_blocked_during_tests():
+    """`send=` 주입을 빠뜨려도 실제 메일은 나가지 않는다.
+
+    2026-08-31에 주입을 빠뜨린 테스트 하나가 서버에서 pytest를 돌릴 때마다
+    운영 담당자에게 미확보 알림을 보냈다. conftest의 두 겹(설정 비우기 +
+    SMTP 차단)이 살아 있는지 여기서 확인한다.
+    """
+    from menu_bot.notify import MailSettings, send_mail
+
+    # 1겹: 설정이 비어 있어 발송 전에 물러난다.
+    assert send_mail("제목", "본문", progress=lambda *_: None) is False
+
+    # 2겹: 설정이 채워져 있어도 소켓을 열지 못한다.
+    configured = MailSettings(
+        host="smtp.example.com", port=587, user="u", password="p",
+        security="starttls", sender="u@example.com",
+        recipients=("someone@example.com",), timeout=5,
+    )
+    assert configured.configured is True
+    assert send_mail("제목", "본문", mail=configured, progress=lambda *_: None) is False
