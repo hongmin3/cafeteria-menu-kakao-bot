@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from email.utils import formatdate
 import os
 import smtplib
+import socket
 import ssl
 
 from dotenv import load_dotenv
@@ -16,11 +17,15 @@ from .db import MenuDB
 WEEKDAY_KO = "월화수목금토일"
 MEAL_ORDER = ("조식", "중식", "석식")
 
+# 그룹웨어에서 식단을 못 가져온 결과들. 연속 실패를 셀 때 같은 것으로 본다.
+FAILURE_RESULTS = frozenset({"error", "ingest_failed", "not_servable", "title_unreadable"})
+
 ATTEMPT_LABELS = {
     "not_posted": "게시글이 아직 없음",
     "error": "그룹웨어 접속/스크래핑 실패",
     "ingest_failed": "게시글은 있는데 OCR·파싱 결과가 0건",
     "not_servable": "저장은 됐지만 공통 식단을 고를 수 없음",
+    "title_unreadable": "식단표 게시글은 있는데 제목에서 주차를 못 읽음",
     "confirmed": "수집 성공",
 }
 
@@ -125,6 +130,19 @@ def send_mail(subject: str, body: str, mail: MailSettings | None = None, progres
     return True
 
 
+def sender_host() -> str:
+    """이 알림을 보낸 기계 이름.
+
+    같은 Gmail 계정으로 여러 대(서버·데스크톱)가 알림을 보낼 수 있어, 메일만
+    보고는 어디서 나온 것인지 가릴 수 없었다. 2026-08-31에 실제로 출처를 알 수
+    없는 알림이 도착해 로그를 뒤져야 했다. 모든 메일에 호스트를 적어 둔다.
+    """
+    try:
+        return socket.gethostname() or "unknown-host"
+    except OSError:
+        return "unknown-host"
+
+
 def _label(day: date) -> str:
     return f"{day:%m월 %d일}({WEEKDAY_KO[day.weekday()]})"
 
@@ -193,6 +211,7 @@ def success_mail(
     body = f"""다음 주 식단표 게시글을 찾아 수집·OCR·저장까지 끝냈습니다.
 
 확인 시각 : {checked_at}
+발신 호스트 : {sender_host()}
 대상 주차 : {_label(week_start)} ~ {_label(week_end)}
 수집 결과 : {counts}
 출처 사업장 : {", ".join(locations or []) or "확인 불가"}
@@ -206,6 +225,56 @@ def success_mail(
 `sudo systemctl start menubot-collect.service`로 다시 수집할 수 있습니다.
 
 {structure}
+"""
+    return subject, body
+
+
+def stuck_alert_mail(
+    week_start: date, checked_at: str, state: dict, streak: int
+) -> tuple[str, str]:
+    """수집이 연속으로 막혔을 때 곧바로 보내는 경보.
+
+    마감(일요일 22시) 알림만 있으면 사정을 너무 늦게 안다. 2026-08-29에 사내
+    공지 팝업이 게시판 진입을 막기 시작했을 때, 첫 실패부터 마감 알림까지
+    44시간 동안 34번을 헛돌면서도 아무도 몰랐다. 그 사이 금요일 정기 수집도
+    같은 이유로 죽어 있었다. 연속 실패가 쌓이면 그 자리에서 알린다.
+    """
+    week_end = week_start + timedelta(days=4)
+    subject = (
+        f"[뷰밥 메뉴 알리미] 🚨 수집이 {streak}회 연속 실패했습니다"
+        f"({week_start:%m/%d}~{week_end:%m/%d})"
+    )
+    attempts = [
+        attempt for attempt in (state.get("attempts") or [])
+        if attempt.get("result") in FAILURE_RESULTS
+    ][-5:]
+    recent_lines = []
+    for attempt in attempts:
+        recent_lines.append(
+            f"  {attempt.get('at', '?')}  "
+            f"{ATTEMPT_LABELS.get(attempt.get('result'), attempt.get('result'))}"
+        )
+        if attempt.get("error"):
+            recent_lines.append(f"      → {attempt['error']}")
+    recent = "\n".join(recent_lines) or "  (없음)"
+    body = f"""식단 수집이 연속 {streak}회 실패했습니다. 마감(일요일 22시)을 기다리지 않고
+바로 알립니다 — 대개는 그룹웨어 화면이 바뀌었거나 접속이 막힌 것입니다.
+
+확인 시각 : {checked_at}
+발신 호스트 : {sender_host()}
+대상 주차 : {_label(week_start)} ~ {_label(week_end)}
+연속 실패 : {streak}회
+
+최근 실패 :
+{recent}
+
+재시도는 계속됩니다(매시 정각). 식단을 읽어 내면 수집 완료 메일이 갑니다.
+이 경보는 주차당 한 번만 보냅니다.
+
+직접 확인하려면:
+  journalctl -u menubot-ensure -n 80        # 최근 실패 사유
+  ls -t data/diagnostics | head             # 실패 시점 화면 스냅샷
+  ./scripts/check-linux-env.sh              # 그룹웨어 접속·환경 점검
 """
     return subject, body
 
@@ -233,6 +302,7 @@ def deadline_alert_mail(week_start: date, checked_at: str, state: dict) -> tuple
     body = f"""주말 폴링이 끝나는 시점(일요일 22시)까지 다음 주 식단을 확보하지 못했습니다.
 
 확인 시각 : {checked_at}
+발신 호스트 : {sender_host()}
 대상 주차 : {_label(week_start)} ~ {_label(week_end)}
 상태      : 미확보
 
@@ -242,9 +312,10 @@ def deadline_alert_mail(week_start: date, checked_at: str, state: dict) -> tuple
 최근 시도 :
 {recent}
 
-이대로 두면 월요일 아침 08시 정기 수집(menubot-collect.timer)이 다시 시도합니다.
-그때까지 게시글이 올라오지 않으면 챗봇은 "식단표가 아직 업로드되지 않았습니다"로
-답합니다(사용자에게 틀린 식단을 보여주지는 않습니다).
+수집은 여기서 멈추지 않습니다. 일요일 23시부터 **매시 정각**에 다시 시도하고,
+식단을 읽어 내는 순간 수집 완료 메일을 보냅니다. 그때까지 챗봇은 "식단표가 아직
+업로드되지 않았습니다"로 답합니다(사용자에게 틀린 식단을 보여주지는 않습니다).
+이 미확보 메일은 주차당 한 번만 갑니다.
 
 지금 직접 확인하려면:
   sudo systemctl start menubot-nextweek.service   # 다음 주 게시글 재확인

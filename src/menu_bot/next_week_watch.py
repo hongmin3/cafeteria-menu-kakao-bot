@@ -9,9 +9,11 @@ from zoneinfo import ZoneInfo
 from .config import Settings
 from .db import MenuDB
 from .notify import (
+    FAILURE_RESULTS,
     deadline_alert_mail,
     format_week_structure,
     send_mail,
+    stuck_alert_mail,
     success_mail,
 )
 from .parser import post_from_title
@@ -23,6 +25,12 @@ from .scraper import GroupwareScraper
 # 상태 파일에 남길 시도 기록 개수 상한. 주말 폴링은 2시간 간격이라 한 주에
 # 20회 남짓이지만, 실패가 이어질 때 파일이 무한히 커지지 않게 잘라 둔다.
 MAX_ATTEMPTS = 40
+
+# 몇 번 연속으로 실패하면 마감(일요일 22시)을 기다리지 않고 알릴지. 폴링이
+# 매시로 바뀌었으니 3회면 세 시간이다 — 일시적인 접속 실패로 사람을 깨우지는
+# 않으면서, 화면 구조가 바뀌어 계속 막히는 상황은 그날 안에 드러난다.
+# 2026-08-29 공지 팝업 건은 첫 실패에서 마감 알림까지 44시간이 걸렸다.
+STUCK_ALERT_AFTER = 3
 
 
 @dataclass(frozen=True)
@@ -82,6 +90,36 @@ def _state_for_target(path: Path, target: date) -> dict:
             state["previous_confirmed_week_start"] = previous
     state.setdefault("attempts", [])
     return state
+
+
+def _failure_streak(state: dict) -> int:
+    """마지막 성공(또는 '아직 게시 안 됨') 이후 연속 실패 횟수."""
+    streak = 0
+    for attempt in reversed(state.get("attempts") or []):
+        if attempt.get("result") in FAILURE_RESULTS:
+            streak += 1
+        else:
+            break
+    return streak
+
+
+def _alert_if_stuck(
+    settings: Settings, target: date, state: dict, checked_at: str, send, progress
+) -> bool:
+    """연속 실패가 임계치에 닿으면 그 자리에서 경보를 보낸다(주차당 한 번).
+
+    게시글이 아직 안 올라온 것(not_posted)은 실패로 세지 않는다. 그건 정상이고,
+    금요일 저녁에 매시 확인하면 대부분 몇 번은 그렇게 나온다.
+    """
+    streak = _failure_streak(state)
+    if streak < STUCK_ALERT_AFTER or state.get("stuck_alert_sent_week") == target.isoformat():
+        return False
+    subject, body = stuck_alert_mail(target, checked_at, state, streak)
+    if not send(subject, body, progress=progress):
+        return False
+    state["stuck_alert_sent_week"] = target.isoformat()
+    _save_state(settings.next_week_state_path, state)
+    return True
 
 
 def _record_attempt(state: dict, when: datetime, result: str, error: str | None = None) -> None:
@@ -168,6 +206,23 @@ def _collect_week(
         target_ids = [post["id"] for post in titles if _matches_target(post, target)]
 
         if not target_ids:
+            unreadable = _unreadable_titles(titles)
+            if unreadable:
+                reason = (
+                    "식단표 게시글로 보이는데 제목에서 주차를 읽지 못했습니다: "
+                    + " | ".join(unreadable[:3])
+                )
+                _record_attempt(state, current, "title_unreadable", reason)
+                _save_state(settings.next_week_state_path, state)
+                _alert_if_stuck(settings, target, state, checked_at, send, progress)
+                progress(reason)
+                return NextWeekWatchResult(
+                    target_week_start=target,
+                    already_confirmed=False,
+                    found=False,
+                    message=f"{target.isoformat()} 주차 — {reason}",
+                    error=reason,
+                )
             _record_attempt(state, current, "not_posted")
             _save_state(settings.next_week_state_path, state)
             return NextWeekWatchResult(
@@ -205,6 +260,7 @@ def _collect_week(
     except Exception as exc:  # noqa: BLE001 - 실패 사유를 남기는 것이 이 함수의 목적 중 하나
         _record_attempt(state, current, "error", f"{type(exc).__name__}: {exc}")
         _save_state(settings.next_week_state_path, state)
+        _alert_if_stuck(settings, target, state, checked_at, send, progress)
         message = f"{target.isoformat()} 주차 확인 중 오류가 났습니다: {type(exc).__name__}: {exc}"
         progress(message)
         return NextWeekWatchResult(
@@ -218,6 +274,7 @@ def _collect_week(
     if not stats.get("entries"):
         _record_attempt(state, current, "ingest_failed", _ingest_error(stats))
         _save_state(settings.next_week_state_path, state)
+        _alert_if_stuck(settings, target, state, checked_at, send, progress)
         message = (
             f"{target.isoformat()} 주차 게시글은 있지만 저장된 메뉴가 0건입니다. "
             "확보로 처리하지 않고 다음 예정 시각에 다시 시도합니다."
@@ -242,6 +299,7 @@ def _collect_week(
         )
         _record_attempt(state, current, "not_servable", reason)
         _save_state(settings.next_week_state_path, state)
+        _alert_if_stuck(settings, target, state, checked_at, send, progress)
         message = f"{target.isoformat()} 주차 — {reason} 확보로 처리하지 않고 다시 시도합니다."
         progress(message)
         return NextWeekWatchResult(
@@ -454,6 +512,24 @@ def check_next_week_deadline(
             else f"{target.isoformat()} 주차 식단 미확보 — 알림 메일 발송에 실패했습니다."
         ),
     )
+
+
+def _unreadable_titles(titles: list[dict]) -> list[str]:
+    """접두어는 맞는데 제목에서 날짜를 읽어 내지 못한 게시글들.
+
+    제목 형식이 바뀌면(예: `[뷰웍스] 8/31 ~ 9/4`처럼 연도가 빠지면)
+    post_from_title이 ValueError를 내고, 그 게시글은 없는 것처럼 취급된다.
+    식단표가 눈앞에 올라와 있는데도 "아직 게시되지 않음"으로 넘어가는 것이
+    가장 나쁜 실패다 — 아무도 이상하다고 느끼지 못한 채 그 주를 놓친다.
+    따로 세어 실패로 기록하고 알림까지 잇는다.
+    """
+    unreadable: list[str] = []
+    for post in titles:
+        try:
+            post_from_title(post["id"], post["title"], [])
+        except ValueError:
+            unreadable.append(post["title"])
+    return unreadable
 
 
 def _matches_target(post: dict, target: date) -> bool:
