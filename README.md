@@ -469,6 +469,18 @@ Windows에서는 `.venv\Scripts\python.exe`로 동일하게 실행하거나 `scr
 - `uvicorn`과 `ngrok`을 각각 `kill -9`로 죽여 자동 복구를 확인했습니다(서버 6초, 터널 12초, 공인 주소 응답 복구까지 15초).
 - **아직 확인하지 못한 것**: 서버 재부팅을 통한 자동 시작. 운영 중인 장비라 재부팅하지 않았습니다. 유닛은 `multi-user.target.wants`에 심볼릭 링크로 `enabled` 상태이므로 부팅 시 올라오는 것이 정상 동작이지만, 실제 재부팅 검증은 남아 있습니다.
 
+## AI 에이전트 Context 관리 (Akela)
+
+이 프로젝트는 [Akela](https://github.com/TimothyHan/akela)를 사용해 Codex/Claude Code 같은 AI 에이전트가 작업할 때 전체 문서를 다 읽는 대신 필요한 지식만 골라 압축된 컨텍스트로 제공받습니다. 런타임 의존성이 아니며 실행/배포 동작에는 전혀 영향을 주지 않습니다.
+
+- Knowledge: `knowledge/`
+- Protocol: `akela/PROTOCOL.md`
+- 설정: `akela.json`
+
+작업 종류(activity)별로 관련 지식만 컴파일해서 사용하므로 매 작업마다 전체 문서를 컨텍스트에 넣을 때보다 토큰 사용량이 크게 줄어듭니다. 기본 흐름:
+
+knowledge/ → `akela compile` → 작업별 slice.md → Codex/Claude 작업 → `akela log`로 Evidence 기록 → `akela stats`/curate로 지식 유지보수
+
 ## License
 
 MIT
