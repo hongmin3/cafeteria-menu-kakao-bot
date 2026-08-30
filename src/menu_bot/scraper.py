@@ -24,6 +24,67 @@ def _goto_settling(page, url: str, settle_ms: int = 1500) -> None:
     page.wait_for_timeout(settle_ms)
 
 
+# 홈 화면을 덮는 레이어. jQuery UI 다이얼로그(공지 팝업), 그 뒤의 반투명
+# 오버레이, 화면 전환 중 잠깐 뜨는 로딩 레이어가 모두 여기에 해당한다.
+OVERLAY_SELECTORS = ".ui-dialog, .ui-widget-overlay, .loading_lyr"
+
+
+def _dismiss_overlays(page) -> int:
+    """홈 화면을 덮는 공지 팝업·로딩 레이어를 치우고 치운 개수를 돌려준다.
+
+    그룹웨어 홈은 게시된 공지가 있으면 jQuery UI 다이얼로그(`.popnoti_lyr`)를
+    띄우는데, 이 레이어가 좌상단 652×977 영역을 덮어 상단 메뉴 "게시판"의
+    클릭 지점(537,55)을 가로챈다. 팝업은 스스로 닫히지 않으므로 Playwright의
+    클릭은 30초를 기다린 끝에 `subtree intercepts pointer events`로 죽는다.
+    2026-08-29 사내 공지가 올라온 뒤 주말 폴링과 시간별 재시도가 전부 이
+    지점에서 실패해 2026-08-31 주차 식단표를 통째로 놓쳤다.
+
+    닫기(X)만 누른다. "오늘 하루 보지 않기"류는 사내 계정 설정을 바꾸므로
+    건드리지 않는다. 닫기 버튼이 없거나 눌러도 남는 레이어는 화면에서만
+    숨긴다 — 서버 요청이 아니라 DOM 조작이라 그룹웨어 상태에 영향이 없다.
+    """
+    return page.evaluate(
+        """(selectors) => {
+          const shown = el => getComputedStyle(el).display !== 'none'
+            && getComputedStyle(el).visibility !== 'hidden'
+            && el.getBoundingClientRect().width > 0;
+          let dismissed = 0;
+          for (const layer of document.querySelectorAll(selectors)) {
+            if (!shown(layer)) continue;
+            const close = layer.querySelector('.ui-dialog-titlebar-close');
+            if (close) close.click();
+            if (shown(layer)) layer.style.display = 'none';
+            dismissed += 1;
+          }
+          return dismissed;
+        }""",
+        OVERLAY_SELECTORS,
+    )
+
+
+def _click_past_overlays(page, target, timeout_ms: int = 15_000, attempts: int = 3) -> None:
+    """덮개를 치우고 클릭한다. 그래도 가로채이면 다시 치우고 재시도한다.
+
+    한 번 치우는 것으로 끝내지 않는 이유는, 화면 전환 중 로딩 레이어가 새로
+    뜨거나 공지 팝업이 여러 개 쌓이는 경우가 있어서다. 마지막 시도까지
+    가로채이면 요소에 click 이벤트를 직접 보낸다(메뉴 앵커의 onclick이 그대로
+    실행된다). 덮개와 무관한 실패는 그대로 올려 보내 사유가 상태 파일과
+    알림 메일에 남게 한다.
+    """
+    target.wait_for(timeout=timeout_ms)
+    for attempt in range(attempts):
+        _dismiss_overlays(page)
+        try:
+            target.click(timeout=timeout_ms)
+            return
+        except PlaywrightError as exc:
+            if "intercepts pointer events" not in str(exc):
+                raise
+            if attempt == attempts - 1:
+                target.dispatch_event("click")
+                return
+
+
 class GroupwareScraper:
     """로그인 후 자유게시판에서 식단 게시물과 본문 이미지 URL을 읽는다."""
 
@@ -67,8 +128,8 @@ class GroupwareScraper:
             host = re.escape(urlsplit(self.settings.groupware_url).netloc)
             page.wait_for_url(re.compile(rf"https?://{host}/"), timeout=30_000)
         _goto_settling(page, self.settings.groupware_url, settle_ms=1000)
-        page.get_by_text("게시판", exact=True).first.click()
-        page.get_by_text("자유", exact=True).first.click()
+        _click_past_overlays(page, page.get_by_text("게시판", exact=True).first)
+        _click_past_overlays(page, page.get_by_text("자유", exact=True).first)
         page.locator("a._atcl").first.wait_for(timeout=30_000)
 
     def _title_pattern(self) -> re.Pattern:
@@ -96,7 +157,9 @@ class GroupwareScraper:
                 )
                 posts = [post for post in posts if title_re.match(post["title"])]
                 for post in posts:
-                    page.locator(f'a._atcl[data-atcl-id="{post["id"]}"]').click()
+                    _click_past_overlays(
+                        page, page.locator(f'a._atcl[data-atcl-id="{post["id"]}"]')
+                    )
                     page.wait_for_timeout(650)
                     # 본문 이미지는 <article> 안이 아니라 <p> 아래에 바로
                     # 들어 있어 태그 위치 대신 첨부파일 URL 패턴으로 찾는다.
