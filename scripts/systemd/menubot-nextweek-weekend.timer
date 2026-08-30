@@ -1,10 +1,18 @@
-# 토·일요일 00:05부터 2시간 간격 (한국시간).
-# 이미 확인된 주차면 next_week_watch가 그룹웨어 접속 없이 바로 종료한다.
+# 토요일 종일, 일요일 22:00까지 매시 정각 (한국시간).
+#
+# 금요일 18시부터 시작된 매시 확인을 끊김 없이 이어받는다. 일요일 22:00에
+# 마감 점검(menubot-nextweek-deadline)이 미확보 알림을 보내고, 23:00부터는
+# menubot-ensure.timer가 같은 일을 매시 이어받으므로 여기서 23시는 비워 둔다.
+# 즉 금 18시부터 다음 금 23시까지 매시 확인이 끊기지 않는다.
+#
+# 확보된 주차면 그룹웨어에 접속하지 않고 즉시 끝난다. 실제 접속은 식단표를
+# 손에 넣기 전까지만 일어난다.
 [Unit]
-Description=Vieworks menu bot next-week watch timer (토·일 2시간 간격 KST)
+Description=Vieworks menu bot next-week watch timer (토 종일·일 22시까지 매시 KST)
 
 [Timer]
-OnCalendar=Sat,Sun 00/2:05 Asia/Seoul
+OnCalendar=Sat *:00 Asia/Seoul
+OnCalendar=Sun 00..22:00 Asia/Seoul
 Persistent=false
 Unit=menubot-nextweek.service
 
