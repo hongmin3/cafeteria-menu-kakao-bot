@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import date
 import re
 
-from .corrections import active_vocabulary, clean_items
+from .corrections import active_vocabulary, clean_items, is_promotional_noise
 from .models import MenuEntry, SourcePost
 
 
@@ -178,8 +178,11 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
         menu_text = " · ".join(texts)
         if len(menu_text) < 2:
             continue
+        # 셰프 협업 배너는 목록에서는 제거하지만 그 배너가 뜻하는 특식 상태는
+        # 보존한다. 따라서 사용자는 셰프 이름 대신 `✨ 특식`과 실제 메뉴만 본다.
+        has_special_promotion = any(is_promotional_noise(text) for _, text, _ in values)
         status = "no_service" if NO_SERVICE_PATTERNS.search(menu_text) else (
-            "special" if SPECIAL_PATTERNS.search(menu_text) else "normal"
+            "special" if has_special_promotion or SPECIAL_PATTERNS.search(menu_text) else "normal"
         )
         entries.append(MenuEntry(
             service_date=service_day,

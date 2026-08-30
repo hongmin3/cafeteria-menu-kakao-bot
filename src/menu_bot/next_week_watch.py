@@ -16,6 +16,7 @@ from .notify import (
 )
 from .parser import post_from_title
 from .pipeline import process_manifest
+from .query import PRIMARY_LOCATION, _choose_common_menu
 from .scraper import GroupwareScraper
 
 
@@ -34,6 +35,10 @@ class NextWeekWatchResult:
     # 게시글 존재(found)와 실제 확보(confirmed)를 분리한다. 게시글만 올라오고
     # 이미지가 없거나 OCR 결과가 0건이면 확보한 것이 아니므로 폴링을 계속해야 한다.
     confirmed: bool = False
+    # 챗봇이 그 주차에 답할 수 있는가. 확보 판정(confirmed)은 이 값과 같은
+    # 기준으로 한다 — 저장된 행이 있는지가 아니라 응답을 만들 수 있는지로
+    # 봐야 알림과 실제 답이 어긋나지 않는다.
+    servable: bool = False
     error: str | None = None
     notified: bool = False
 
@@ -160,9 +165,9 @@ def _collect_week(
         # 다운로드하므로, 아직 게시되지 않았을 때 2시간마다 큰 이미지를 헛되이
         # 내려받지 않기 위함이다.
         titles = scraper.list_recent_titles(max_pages=1)
-        target_exists = any(_matches_target(post, target) for post in titles)
+        target_ids = [post["id"] for post in titles if _matches_target(post, target)]
 
-        if not target_exists:
+        if not target_ids:
             _record_attempt(state, current, "not_posted")
             _save_state(settings.next_week_state_path, state)
             return NextWeekWatchResult(
@@ -172,7 +177,24 @@ def _collect_week(
                 message=f"{target.isoformat()} 주차 게시글이 아직 없습니다. 다음 예정 시각에 다시 확인합니다.",
             )
 
-        # 실제로 존재하므로 이미지 URL까지 수집해 바로 저장한다.
+        # 이미 처리한 게시글뿐이고 답도 나가고 있으면 이미지를 다시 내려받지
+        # 않는다. 상태 파일이 초기화된 뒤 재확인할 때 같은 이미지를 다시
+        # OCR하는 낭비를 막는다.
+        known = set(state.get("ingested_post_ids") or [])
+        if not set(target_ids) - known and _db_can_serve_week(settings, target):
+            sites = _week_locations(settings, target)
+            return NextWeekWatchResult(
+                target_week_start=target,
+                already_confirmed=False,
+                found=True,
+                servable=True,
+                message=(
+                    f"{target.isoformat()} 주차에 새로 올라온 게시글이 없습니다. "
+                    f"현재 {'·'.join(sites)} 식단으로 답하는 중입니다."
+                ),
+            )
+
+        # 새 게시글이 있으므로 이미지 URL까지 수집해 저장한다.
         matched_rows = [post for post in scraper.collect(max_pages=1) if _matches_target(post, target)]
         db = MenuDB(settings.database_path)
         try:
@@ -210,6 +232,32 @@ def _collect_week(
             error=_ingest_error(stats),
         )
 
+    # 저장은 됐지만 챗봇이 답할 수 없는 경우(예: 뷰웍스 게시글 없이 다른
+    # 사업장 것만 올라옴). 확보로 처리하면 폴링이 멈춰 정작 뷰웍스 식단이
+    # 올라와도 아무도 가져오지 않는다.
+    if not _db_can_serve_week(settings, target):
+        locations = _week_locations(settings, target)
+        reason = (
+            f"저장은 됐지만 공통 식단을 고를 수 없습니다(사업장: {', '.join(locations) or '없음'})."
+        )
+        _record_attempt(state, current, "not_servable", reason)
+        _save_state(settings.next_week_state_path, state)
+        message = f"{target.isoformat()} 주차 — {reason} 확보로 처리하지 않고 다시 시도합니다."
+        progress(message)
+        return NextWeekWatchResult(
+            target_week_start=target,
+            already_confirmed=False,
+            found=True,
+            message=message,
+            stats=stats,
+            error=reason,
+        )
+
+    locations = _week_locations(settings, target)
+    # 사업장별로 나뉘어 올라온 주차인가. 그 자체가 "그 주에 운영 예외가 있다"는
+    # 신호라 알림에 적어 준다.
+    split_by_site = PRIMARY_LOCATION not in locations and len(locations) > 1
+    state["ingested_post_ids"] = sorted(set(state.get("ingested_post_ids") or []) | set(target_ids))
     state["confirmed_week_start"] = target.isoformat()
     state["confirmed_at"] = current.isoformat(timespec="seconds")
     _record_attempt(state, current, "confirmed")
@@ -217,21 +265,27 @@ def _collect_week(
 
     notified = False
     if state.get("success_notified_week") != target.isoformat():
-        subject, body = success_mail(target, checked_at, stats, structure)
+        subject, body = success_mail(
+            target, checked_at, stats, structure,
+            locations=locations, split_by_site=split_by_site,
+        )
         notified = send(subject, body, progress=progress)
         if notified:
             state["success_notified_week"] = target.isoformat()
             _save_state(settings.next_week_state_path, state)
 
+    message = (
+        f"{target.isoformat()} 주차 게시글을 확인하고 수집·저장했습니다"
+        f"({'·'.join(locations)}). 월요일 00시부터 바로 조회할 수 있고, 남은 폴링은 건너뜁니다."
+    )
+    progress(message)
     return NextWeekWatchResult(
         target_week_start=target,
         already_confirmed=False,
         found=True,
         confirmed=True,
-        message=(
-            f"{target.isoformat()} 주차 게시글을 확인하고 미리 수집·저장했습니다. "
-            "월요일 00시부터 바로 조회할 수 있고, 이번 주말 남은 폴링은 건너뜁니다."
-        ),
+        servable=True,
+        message=message,
         stats=stats,
         notified=notified,
     )
@@ -249,10 +303,33 @@ def _week_for(today: date) -> date:
     return today - timedelta(days=today.weekday())
 
 
-def _db_has_week(settings: Settings, week_start: date) -> bool:
+def _db_can_serve_week(settings: Settings, week_start: date) -> bool:
+    """그 주차를 **챗봇이 실제로 답할 수 있는지**.
+
+    단순히 행이 있는지로 판단하면 안 된다. 2026-08-24 주차에 [화성]과 [안양]
+    게시글만 올라오고 [뷰웍스] 게시글이 없었던 적이 있는데, 그때 113건이
+    저장돼 "수집 완료" 메일까지 나갔지만 챗봇은 공통 식단을 못 골라
+    "확인할 수 없어요"로 답했다. 알림과 실제 응답이 어긋나면 안 되므로
+    응답을 만들 때 쓰는 바로 그 기준(_choose_common_menu)으로 판단한다.
+    """
     db = MenuDB(settings.database_path)
     try:
-        return any(db.query(week_start + timedelta(days=offset)) for offset in range(5))
+        return any(
+            _choose_common_menu(db.query(week_start + timedelta(days=offset)))
+            for offset in range(5)
+        )
+    finally:
+        db.close()
+
+
+def _week_locations(settings: Settings, week_start: date) -> list[str]:
+    """그 주차에 저장된 사업장 목록(알림 본문에서 사정을 설명하는 데 쓴다)."""
+    db = MenuDB(settings.database_path)
+    try:
+        found: set[str] = set()
+        for offset in range(5):
+            found.update(row["location"] for row in db.query(week_start + timedelta(days=offset)))
+        return sorted(found)
     finally:
         db.close()
 
@@ -281,8 +358,12 @@ def ensure_week_menu(
     state = _state_for_target(settings.next_week_state_path, target)
     checked_at = f"{current:%Y-%m-%d %H:%M} ({settings.timezone})"
 
-    if _db_has_week(settings, target):
-        # 확보 사실을 상태 파일에도 남겨, 주말 폴링과 마감 점검이 헛돌지 않게 한다.
+    if _db_can_serve_week(settings, target):
+        # 답할 수 있으면 그 주는 끝났다. [뷰웍스] 한 건이든 [안양]·[화성]
+        # 두 건이든 마찬가지다 — 식당은 두 사업장 메뉴가 같을 때 통합으로
+        # 올리고 운영 예외가 있는 주에만 나눠 올리므로, 사업장 게시글이
+        # 올라왔다면 그것이 그 주 식단표다. 여기서 루프가 멈춘다
+        # (그룹웨어에 접속하지 않고 즉시 끝난다).
         if state.get("confirmed_week_start") != target.isoformat():
             state["confirmed_week_start"] = target.isoformat()
             state["confirmed_at"] = current.isoformat(timespec="seconds")
@@ -292,14 +373,29 @@ def ensure_week_menu(
             already_confirmed=True,
             found=True,
             confirmed=True,
+            servable=True,
             message=f"{target.isoformat()} 주차 식단이 이미 저장돼 있어 재시도를 건너뜁니다.",
         )
 
-    progress(f"{target.isoformat()} 주차 식단이 아직 없어 다시 수집을 시도합니다.")
-    return _collect_week(
+    progress(f"{target.isoformat()} 주차 식단을 아직 답할 수 없어 다시 수집을 시도합니다.")
+    result = _collect_week(
         settings, target, current, state, checked_at,
         scraper=scraper, image_dir=image_dir, progress=progress, process=process, send=send,
     )
+
+    # 이미 그 주가 시작된 뒤(월~금)인데도 답할 수 없으면 사람이 알아야 한다.
+    # 일요일 22시 마감 점검이 지나간 뒤에 사정이 드러나는 경우(예: 다른
+    # 사업장 게시글만 올라와 확보로 잘못 처리됐던 주차)를 위한 안전망이라,
+    # 주차당 한 번만 보낸다.
+    if not result.servable and current.date().weekday() < 5:
+        state = _state_for_target(settings.next_week_state_path, target)
+        if state.get("deadline_alert_sent_week") != target.isoformat():
+            subject, body = deadline_alert_mail(target, checked_at, state)
+            if send(subject, body, progress=progress):
+                state["deadline_alert_sent_week"] = target.isoformat()
+                _save_state(settings.next_week_state_path, state)
+
+    return result
 
 
 def check_next_week_deadline(

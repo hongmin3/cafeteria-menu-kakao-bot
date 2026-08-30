@@ -41,16 +41,18 @@ class FakeScraper:
         self.list_calls = 0
         self.collect_calls = 0
 
+    @staticmethod
+    def _id(title: str) -> str:
+        # 게시글마다 다른 id여야 한다. 같은 id면 "이미 처리한 게시글"로 걸러진다.
+        return "post-" + str(abs(hash(title)) % 10**8)
+
     def list_recent_titles(self, max_pages: int = 1) -> list[dict]:
         self.list_calls += 1
-        return [{"id": f"post-{i}", "title": title} for i, title in enumerate(self.titles)]
+        return [{"id": self._id(t), "title": t} for t in self.titles]
 
     def collect(self, max_pages: int = 1) -> list[dict]:
         self.collect_calls += 1
-        return [
-            {"id": f"post-{i}", "title": title, "images": []}
-            for i, title in enumerate(self.titles)
-        ]
+        return [{"id": self._id(t), "title": t, "images": []} for t in self.titles]
 
 
 class ExplodingScraper:
@@ -400,6 +402,77 @@ def test_ensure_menu_keeps_retrying_while_post_is_absent(tmp_path: Path):
         # 게시글이 없는 것은 이상 상황이 아니므로 오류로 표시하지 않는다(종료 코드 0).
         assert result.error is None
     assert _results(_state(settings)) == ["not_posted"] * 3
+    # 일요일 밤에는 조용하지만, 그 주가 시작된 뒤(월요일)에도 답할 수 없으면
+    # 한 번은 알려야 한다. 화요일에 또 보내지는 않는다.
+    assert len(mail.sent) == 1
+    assert "아직 못 받았습니다" in mail.sent[0][0]
+
+
+def _other_sites_process(week_start_default=date(2026, 8, 24)):
+    """뷰웍스 게시글 없이 다른 사업장 게시글만 올라온 상황을 재현한다."""
+
+    def process(rows, db, image_dir, progress=print, week_start=None):
+        from menu_bot.models import SourcePost
+
+        week = week_start or week_start_default
+        for index, location in enumerate(("화성", "안양")):
+            post = SourcePost(post_id=f"other-{index}", title=f"[{location}] {week}",
+                              location=location, start_date=week, image_urls=[])
+            db.save_post(post)
+            db.replace_entries(post.post_id, [
+                MenuEntry(service_date=week, location=location, meal_type="중식",
+                          category="일반식", menu_text="지점메뉴", source_post_id=post.post_id),
+            ])
+        return {"posts": 2, "images": 2, "entries": 2,
+                "filtered_entries": 0, "skipped_images": 0, "errors": []}
+
+    return process
+
+
+def test_site_split_posts_count_as_the_week_being_posted(tmp_path: Path):
+    """식당은 두 사업장 메뉴가 같을 때 [뷰웍스] 하나로 올리고, 운영 예외가 있는
+    주에만 [안양]·[화성]으로 나눠 올린다. 그러므로 사업장 게시글이 올라왔으면
+    그것이 그 주 식단표다 — 기다릴 [뷰웍스] 게시글은 없다.
+    """
+    settings = _settings(tmp_path)
+    mail = MailSpy()
+    result = check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
+        process=_other_sites_process(), send=mail, progress=lambda *_: None,
+    )
+    assert result.found is True
+    assert result.servable is True
+    assert result.confirmed is True
+    state = _state(settings)
+    assert state["confirmed_week_start"] == TARGET
+    assert _results(state) == ["confirmed"]
+    subject, body = mail.sent[0]
+    assert "식단 수집 완료" in subject
+    assert "사업장별로 나뉘어 올라왔습니다" in body
+
+
+def test_site_split_posts_stop_the_hourly_retry(tmp_path: Path):
+    settings = _settings(tmp_path)
+    ensure_week_menu(
+        settings, now=SUNDAY_LATE, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
+        process=_other_sites_process(), send=MailSpy(), progress=lambda *_: None,
+    )
+    # 확보됐으니 이후 시각에는 그룹웨어에 접속하지 않아야 한다.
+    for moment in (MONDAY_EARLY, TUESDAY):
+        result = ensure_week_menu(settings, now=moment, scraper=ExplodingScraper())
+        assert result.already_confirmed is True
+        assert result.confirmed is True
+
+
+def test_deadline_is_quiet_after_site_split_posts(tmp_path: Path):
+    settings = _settings(tmp_path)
+    check_next_week_posted(
+        settings, now=NOW, scraper=FakeScraper([f"[화성] {TARGET} ~ 08-28"]),
+        process=_other_sites_process(), send=MailSpy(), progress=lambda *_: None,
+    )
+    mail = MailSpy()
+    result = check_next_week_deadline(settings, now=SUNDAY_NIGHT, send=mail)
+    assert result.confirmed is True
     assert mail.sent == []
 
 

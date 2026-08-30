@@ -72,12 +72,30 @@ def test_vertical_menu_format(tmp_path: Path):
     assert "- 샌드위치\n\n<공통 PLUS>" in result
 
 
+def test_special_status_is_explicitly_emphasized(tmp_path: Path):
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "special",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "해물백짬뽕 · 유린기",
+                       status="special", source_post_id="special")],
+        )
+        result = answer(db, "오늘 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "✨ 특식 <일반식>" in result
+    assert "해물백짬뽕" in result
+
+
 def test_full_day_response_splits_into_meal_bubbles():
     response = kakao_response("날짜\n\n[조식]\n- A\n\n[중식]\n- B\n\n[석식]\n- C")
     outputs = response["template"]["outputs"]
     assert len(outputs) == 3
     assert outputs[0]["simpleText"]["text"].startswith("날짜\n\n[조식]")
     assert response["template"]["quickReplies"] == [
+        {"action": "message", "label": "오늘의 아침", "messageText": "오늘 아침"},
+        {"action": "message", "label": "오늘의 점심", "messageText": "오늘 점심"},
+        {"action": "message", "label": "오늘의 저녁", "messageText": "오늘 저녁"},
         {"action": "message", "label": "사용방법", "messageText": "사용방법"}
     ]
 

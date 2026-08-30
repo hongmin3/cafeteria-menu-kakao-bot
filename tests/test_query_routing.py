@@ -227,6 +227,13 @@ def test_help_text_explains_each_supported_form(fragment: str):
     assert fragment in HELP_TEXT
 
 
+def test_help_text_promotes_today_meal_buttons():
+    assert "입력하지 않아도 오늘 식단" in HELP_TEXT
+    assert "오늘의 아침" in HELP_TEXT
+    assert "오늘의 점심" in HELP_TEXT
+    assert "오늘의 저녁" in HELP_TEXT
+
+
 def test_help_text_stays_one_bubble_when_prefixed():
     """카카오 응답은 '\\n\\n[' 를 기준으로 말풍선을 나눈다. 안내문이 쪼개지면 안 된다."""
     from menu_bot.web import kakao_response
@@ -234,6 +241,55 @@ def test_help_text_stays_one_bubble_when_prefixed():
     response = kakao_response("‘커피’(은)는 제가 알아듣지 못했어요. 😅\n\n" + HELP_TEXT)
     assert len(response["template"]["outputs"]) == 1
     assert "…메뉴가 길어" not in response["template"]["outputs"][0]["simpleText"]["text"]
+
+
+# ── 지점 게시글만 올라온 주차 ────────────────────────────────
+@pytest.fixture
+def sites_db(tmp_path: Path):
+    """뷰웍스 게시글 없이 [안양]·[화성] 게시글만 올라온 주차(2026-08-24 실제 상황).
+
+    두 지점 식단은 42칸 중 31칸이 같고, 진짜 차이는 조식 미운영 요일뿐이다.
+    """
+    database = MenuDB(tmp_path / "menus.db")
+    monday, tuesday = date(2026, 8, 17), date(2026, 8, 18)
+    rows = []
+    for site in ("안양", "화성"):
+        # 월요일 중식은 두 지점이 같다.
+        rows.append(MenuEntry(monday, site, "중식", "일반식", "제육볶음 · 콩나물국",
+                              source_post_id=site))
+        rows.append(MenuEntry(monday, site, "중식", "PLUS 코너", "숭늉", source_post_id=site))
+    # 화요일 조식만 갈린다: 안양 미운영, 화성 운영.
+    rows.append(MenuEntry(tuesday, "안양", "조식", "안내", "조식 미운영",
+                          status="no_service", source_post_id="안양"))
+    rows.append(MenuEntry(tuesday, "화성", "조식", "일반식", "*볶음밥DAY* · 참치김치볶음밥",
+                          status="special", source_post_id="화성"))
+    rows.append(MenuEntry(tuesday, "화성", "조식", "PLUS 코너", "숭늉", source_post_id="화성"))
+    database.replace_entries("sites", rows)
+    yield database
+    database.close()
+
+
+def test_identical_site_menus_are_merged_without_labels(sites_db):
+    """두 사업장이 같은 끼니는 사업장을 밝히지 않고 한 번만 보여준다."""
+    result = answer(sites_db, "월요일 점심", "Asia/Seoul", now=NOW)
+    assert "제육볶음" in result
+    for site in ("안양", "화성", "뷰웍스", "사업장"):
+        assert site not in result, result
+    assert result.count("제육볶음") == 1
+
+
+def test_differing_meal_shows_both_sites(sites_db):
+    """한쪽만 쉬는 끼니는 두 사업장을 나란히 보여준다.
+
+    사업장을 나눠 올렸다는 것 자체가 그 주에 운영 예외가 있다는 뜻이고,
+    사용자는 둘 중 한 곳에 있다. 한쪽만 골라 보여주면 나머지 절반이 닫힌
+    식당으로 가게 된다.
+    """
+    result = answer(sites_db, "화요일 아침", "Asia/Seoul", now=NOW)
+    assert "〔안양〕" in result and "조식 미운영" in result
+    assert "〔화성〕" in result and "볶음밥DAY" in result
+    # 다만 "뷰웍스 식단표가 없어서…" 같은 사정 설명은 넣지 않는다.
+    assert "뷰웍스" not in result
 
 
 def test_query_issue_uses_configured_locations():
