@@ -203,6 +203,7 @@ def test_two_character_menus_survive(item: str):
         ("홍합탕 · 고줏잎무침", "홍합탕 · 고춧잎무침"),
         ("열무비빔밥*양넘고추장", "열무비빔밥*양념고추장"),
         ("승늄", "숭늉"),
+        ("롯나물무침", "톳나물무침"),
     ],
 )
 def test_this_week_misreadings_are_fixed(wrong: str, right: str):

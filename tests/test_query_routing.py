@@ -228,10 +228,11 @@ def test_help_text_explains_each_supported_form(fragment: str):
 
 
 def test_help_text_promotes_today_meal_buttons():
-    assert "입력하지 않아도 오늘 식단" in HELP_TEXT
-    assert "오늘의 아침" in HELP_TEXT
-    assert "오늘의 점심" in HELP_TEXT
-    assert "오늘의 저녁" in HELP_TEXT
+    assert "아래 버튼으로 오늘 조식·중식·석식" in HELP_TEXT
+
+
+def test_help_text_is_compact_enough_to_avoid_kakao_fold():
+    assert len(HELP_TEXT) < 350
 
 
 def test_help_text_stays_one_bubble_when_prefixed():
