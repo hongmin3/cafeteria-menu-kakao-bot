@@ -130,7 +130,15 @@ SUBSTITUTIONS = {
     # 2026-08-24 주차 목요일 중식 실제 서버 OCR 결과.
     "백쌈뽕": "백짬뽕",
     "짝두)": "깍두기",
+    # `톳`을 `롯`으로 읽는 계통 오류. `롯` 하나만 잡으면 `롯데`류가 깨지므로
+    # 뒤 글자까지 묶는다(`톳나물`은 2026-08-24, `톳두부`는 2026-08-31 확인).
     "롯나물무침": "톳나물무침",
+    "롯두부": "톳두부",
+    # 2026-08-31 사용자 확인분.
+    "누륭지": "누룽지",
+    # `나초`는 그 자체로 쓰이는 표기라 앞 글자를 함께 고정한다.
+    "돈육나초": "돈육나쵸",
+    "가마보끄": "가마보꼬",
     # ── 표준 표기로 통일 ──
     # OCR 오인식인지 인쇄 표기인지 가릴 수 없지만 한쪽이 표준 표기이고 빈도도
     # 훨씬 높은 것들. `마늘쫑`(16회) 대 `마늘종`(9회)처럼 빈도가 비슷한 표기는
@@ -139,6 +147,89 @@ SUBSTITUTIONS = {
     "케접": "케첩",
     "모듬콩": "모둠콩",
 }
+
+
+# 위 목록은 근거를 확인해 코드에 고정한 것이고, 아래 파일은 **운영하면서
+# 눈에 띈 것을 그때그때 넣는 자리**다. 코드를 고치고 배포하지 않아도 되도록
+# 분리했다. JSON이 아니라 한 줄에 하나인 텍스트인 이유는, 쉼표 하나 빠뜨리면
+# 전체가 깨지는 형식을 사람 손에 맡기지 않기 위해서다.
+USER_CORRECTIONS_PATH = "data/menu_corrections.txt"
+
+USER_CORRECTIONS_HEADER = """\
+# 메뉴 표기 교정 목록
+#
+# 한 줄에 하나씩,  잘못읽은표기 = 올바른표기  형식으로 적습니다.
+# '#'으로 시작하는 줄과 빈 줄은 무시합니다.
+#
+# 이름 일부만 적어도 되고(예: 누륭지 = 누룽지), 전체를 적어도 됩니다.
+# 짧게 적을수록 널리 적용되니, 다른 메뉴에도 들어갈 수 있는 글자라면
+# 앞뒤를 함께 적어 좁히세요(예: 나초 = 나쵸  ← 위험 / 돈육나초 = 돈육나쵸  ← 안전).
+#
+# 고친 뒤 이미 저장된 식단에도 반영하려면:  menu-bot correct apply
+"""
+
+
+def parse_user_corrections(text: str) -> dict[str, str]:
+    """`잘못 = 올바름` 줄들을 읽는다. 이해할 수 없는 줄은 조용히 건너뛴다.
+
+    한 줄이 잘못됐다고 나머지 교정까지 버리면, 오타 하나로 식단 표기가 통째로
+    되돌아간다. 파일을 편집하는 사람이 개발자가 아니라는 전제로 만든다.
+    """
+    rules: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        wrong, _, right = stripped.partition("=")
+        wrong, right = wrong.strip(), right.strip()
+        # 빈 쪽이 있거나 서로 같으면 규칙이 아니다. 자기 자신으로 바꾸는
+        # 규칙을 허용하면 무한히 같은 값을 덮어쓰는 혼란만 남는다.
+        if wrong and right and wrong != right:
+            rules[wrong] = right
+    return rules
+
+
+def load_user_corrections(path: str | Path | None = None) -> dict[str, str]:
+    """사용자 교정 파일을 읽는다. 없거나 읽을 수 없으면 빈 dict."""
+    resolved = Path(path or os.getenv("MENU_CORRECTIONS_PATH") or USER_CORRECTIONS_PATH)
+    try:
+        return parse_user_corrections(resolved.read_text(encoding="utf-8"))
+    except OSError:
+        return {}
+
+
+_cached_substitutions: dict[str, str] | None = None
+
+
+def active_substitutions() -> dict[str, str]:
+    """코드에 고정된 목록 + 사용자 파일. 사용자 파일이 이긴다.
+
+    같은 표기를 두 곳에서 다르게 고치라고 하면 사람이 방금 적은 쪽을 따른다.
+    현장에서 본 것이 1년치 조사보다 최신이기 때문이다.
+    """
+    global _cached_substitutions
+    if _cached_substitutions is None:
+        _cached_substitutions = {**SUBSTITUTIONS, **load_user_corrections()}
+    return _cached_substitutions
+
+
+def reset_substitutions_cache() -> None:
+    """교정 파일을 고친 뒤 다시 읽게 한다(같은 프로세스에서 이어 쓸 때)."""
+    global _cached_substitutions
+    _cached_substitutions = None
+
+
+def apply_substitutions(text: str, table: dict[str, str] | None = None) -> str:
+    """표기 교정만 적용한다(노이즈 판정·어휘집 교정 없이).
+
+    이미 저장된 식단에 새 교정을 다시 입힐 때 쓴다. 저장된 값은 이미 한 번
+    걸러진 결과라, 그 위에 노이즈 규칙을 다시 돌리면 멀쩡한 안내 문구까지
+    지울 위험이 있다. 새로 추가한 규칙만 반영하는 것이 목적이다.
+    """
+    for wrong, right in (table if table is not None else active_substitutions()).items():
+        if wrong in text:
+            text = text.replace(wrong, right)
+    return text
 
 
 def is_noise(item: str) -> bool:
@@ -206,9 +297,7 @@ def correct_item(item: str, vocabulary: dict[str, int] | None = None) -> str | N
     text = item.strip()
     if not text or is_noise(text):
         return None
-    for wrong, right in SUBSTITUTIONS.items():
-        if wrong in text:
-            text = text.replace(wrong, right)
+    text = apply_substitutions(text)
     fixed = _vocabulary_fix(text, vocabulary or {})
     return fixed or text
 

@@ -9,7 +9,16 @@ import sys
 from zoneinfo import ZoneInfo
 
 from .config import get_settings
-from .corrections import MIN_VOCAB_COUNT, build_vocabulary
+from .corrections import (
+    MIN_VOCAB_COUNT,
+    SUBSTITUTIONS,
+    USER_CORRECTIONS_HEADER,
+    USER_CORRECTIONS_PATH,
+    apply_substitutions,
+    build_vocabulary,
+    load_user_corrections,
+    reset_substitutions_cache,
+)
 from .db import MenuDB
 from .next_week_watch import (
     check_next_week_deadline,
@@ -106,6 +115,26 @@ def main() -> None:
     vocab.add_argument("manifest", type=Path, help="어휘를 모을 게시물 목록 JSON")
     vocab.add_argument("--image-dir", type=Path, default=Path("data/images"))
     vocab.add_argument("--output", type=Path, default=Path("data/menu_vocab.json"))
+
+    correct = sub.add_parser(
+        "correct",
+        help="메뉴 표기 교정 목록을 관리한다(코드 수정·배포 없이 그 자리에서)",
+    )
+    correct_sub = correct.add_subparsers(dest="correct_command", required=True)
+    correct_add = correct_sub.add_parser("add", help="교정 규칙 하나를 추가한다")
+    correct_add.add_argument("wrong", help="잘못 읽힌 표기 (예: 누륭지)")
+    correct_add.add_argument("right", help="올바른 표기 (예: 누룽지)")
+    correct_add.add_argument(
+        "--apply", action="store_true",
+        help="추가한 뒤 이미 저장된 식단에도 곧바로 반영한다",
+    )
+    correct_sub.add_parser("list", help="지금 적용 중인 교정 목록을 보여준다")
+    correct_test = correct_sub.add_parser("test", help="교정 결과를 미리 본다(저장하지 않음)")
+    correct_test.add_argument("text", help="확인할 문구 (예: 누륭지닭곰탕)")
+    correct_sub.add_parser(
+        "apply", help="이미 저장된 식단에 지금 교정 목록을 다시 입힌다(OCR 재실행 없음)",
+    )
+
     args = parser.parse_args()
     settings = get_settings()
 
@@ -203,6 +232,74 @@ def main() -> None:
             f"이미지 {images}장에서 메뉴 이름 {len(vocabulary)}종(총 {sum(vocabulary.values())}회)을 모아 "
             f"{args.output}에 저장했습니다. 교정 후보로 쓰이는 {MIN_VOCAB_COUNT}회 이상 항목은 {frequent}종입니다."
         )
+    elif args.command == "correct":
+        _run_correct(args, settings)
+
+
+def _corrections_file() -> Path:
+    return Path(os.getenv("MENU_CORRECTIONS_PATH") or USER_CORRECTIONS_PATH)
+
+
+def _reapply(settings) -> int:
+    """저장된 식단에 지금 교정 목록을 다시 입히고 바뀐 건수를 알려 준다."""
+    reset_substitutions_cache()
+    db = MenuDB(settings.database_path)
+    try:
+        changed = db.reapply_corrections(apply_substitutions)
+    finally:
+        db.close()
+    for before, after in changed[:20]:
+        print(f"  {before}\n  → {after}")
+    if len(changed) > 20:
+        print(f"  … 외 {len(changed) - 20}건")
+    print(f"저장된 식단 {len(changed)}건을 고쳤습니다.")
+    return len(changed)
+
+
+def _run_correct(args, settings) -> None:
+    path = _corrections_file()
+    if args.correct_command == "add":
+        wrong, right = args.wrong.strip(), args.right.strip()
+        if not wrong or not right:
+            sys.exit("잘못된 표기와 올바른 표기를 모두 적어야 합니다.")
+        if wrong == right:
+            sys.exit("두 표기가 같습니다. 고칠 것이 없습니다.")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_text(USER_CORRECTIONS_HEADER, encoding="utf-8")
+        existing = load_user_corrections(path)
+        if existing.get(wrong) == right:
+            print(f"이미 있는 규칙입니다: {wrong} = {right}")
+        else:
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(f"{wrong} = {right}\n")
+            print(f"추가했습니다: {wrong} = {right}  ({path})")
+            if wrong in existing:
+                print(f"  주의: 같은 표기에 대한 이전 규칙({existing[wrong]})을 덮어씁니다.")
+        # 넓게 적용되는 짧은 규칙은 다른 메뉴까지 바꿀 수 있으니 미리 알린다.
+        if len(wrong) <= 2:
+            print(
+                f"  주의: '{wrong}'은(는) 짧아서 다른 메뉴 이름에도 들어갈 수 있습니다. "
+                "의도치 않게 바뀌는 것이 있는지 `menu-bot correct apply` 결과를 확인하세요."
+            )
+        if args.apply:
+            _reapply(settings)
+        else:
+            print("이미 저장된 식단에도 반영하려면: menu-bot correct apply")
+    elif args.correct_command == "list":
+        user = load_user_corrections(path)
+        print(f"코드에 고정된 규칙 {len(SUBSTITUTIONS)}건, 직접 추가한 규칙 {len(user)}건 ({path})")
+        for wrong, right in user.items():
+            overrides = " (코드 목록을 덮어씀)" if wrong in SUBSTITUTIONS else ""
+            print(f"  {wrong} = {right}{overrides}")
+        if not user:
+            print("  (아직 직접 추가한 규칙이 없습니다)")
+    elif args.correct_command == "test":
+        reset_substitutions_cache()
+        fixed = apply_substitutions(args.text)
+        print(f"{args.text}\n→ {fixed}" + ("   (바뀌는 것 없음)" if fixed == args.text else ""))
+    elif args.correct_command == "apply":
+        _reapply(settings)
 
 
 if __name__ == "__main__":

@@ -95,6 +95,24 @@ class MenuDB:
         sql += " ORDER BY location, CASE meal_type WHEN '조식' THEN 1 WHEN '중식' THEN 2 ELSE 3 END, id"
         return list(self.conn.execute(sql, params))
 
+    def reapply_corrections(self, fix) -> list[tuple[str, str]]:
+        """저장된 메뉴 문구에 교정을 다시 입히고, 바뀐 (이전, 이후)를 돌려준다.
+
+        OCR을 다시 돌리지 않는다. 교정 규칙을 하나 추가한 사람이 이번 주
+        식단이 곧바로 고쳐지는 것을 보게 하는 것이 목적이라, 이미 저장된
+        문자열만 손본다. 다음 수집부터는 어차피 새 규칙이 적용된다.
+        """
+        changed: list[tuple[str, str]] = []
+        for row in list(self.conn.execute("SELECT id, menu_text FROM menu_entries")):
+            fixed = fix(row["menu_text"])
+            if fixed != row["menu_text"]:
+                changed.append((row["menu_text"], fixed))
+                self.conn.execute(
+                    "UPDATE menu_entries SET menu_text=? WHERE id=?", (fixed, row["id"])
+                )
+        self.conn.commit()
+        return changed
+
     def count_entries(self) -> int:
         return int(self.conn.execute("SELECT COUNT(*) FROM menu_entries").fetchone()[0])
 
