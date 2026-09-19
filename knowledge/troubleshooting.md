@@ -1,7 +1,7 @@
 # Troubleshooting
 
 ## Current-week rule
-<!-- akela: id=current-week scope=develop,test,operate tier=must -->
+<!-- akela: id=current-week scope=develop,test,operate tier=should -->
 사용자 응답은 현재 주 메뉴만 제공하고 과거 데이터는 OCR·parser 학습 검증용으로 분리한다. 이 경계를 오류 수정 과정에서 합치지 않는다.
 
 ## Diagnostic scope

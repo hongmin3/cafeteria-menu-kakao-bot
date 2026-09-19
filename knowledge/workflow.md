@@ -9,5 +9,5 @@
 수집, 운영 DB 갱신, 서버·터널 실행은 외부 시스템이나 로컬 데이터를 바꿀 수 있다. 사용자 요청 범위에 포함될 때만 README의 운영 순서를 사용한다.
 
 ## Kakao contract
-<!-- akela: id=kakao-contract scope=develop,test,deploy tier=must -->
+<!-- akela: id=kakao-contract scope=develop,test,deploy tier=should -->
 카카오 응답 형식, 웹훅 token 처리, 운영 script와 배포 Workflow는 관련 요구와 회귀 검증 없이 변경하지 않는다.
