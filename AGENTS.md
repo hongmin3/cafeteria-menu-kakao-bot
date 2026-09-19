@@ -1,5 +1,7 @@
 # 뷰밥 메뉴 알리미 AI 인덱스
 
+Invoke the `task-observer` skill before the first tool call.
+
 Follow `akela/PROTOCOL.md` for every task. 프로젝트 도메인 규칙은 compile된 slice를 기준으로 사용한다.
 
 ## 목적과 구조
