@@ -8,7 +8,7 @@
 | Project Version | 0.1.0 |
 | Last Updated | 2026-09-19 |
 | Status | active |
-| Owner | (TBD) |
+| Owner | hongmin |
 
 이 문서는 `cafeteria-menu-kakao-bot`가 **어떻게 동작해야 하는가**를 정의하는 기준이다.
 코드가 현재 그렇게 동작한다는 사실은 사양이 아니다. 사양과 구현이 다르면 코드에 맞춰 이
@@ -780,14 +780,84 @@ DB 기준 확보 판정, 항목 0건에서 확보로 넘어가지 않는지, 메
 확보 상태에서는 조용하고, 미확보는 사유가 담긴 알림으로 한 번만 드러나며, 발송이 실패하면
 다음 실행에서 다시 시도한다.
 
+### TEST-PARSE-002
+
+#### 검증 대상
+REQ-PARSE-002
+
+#### 선행 조건
+없음. 그룹웨어도 OCR provider도 타지 않고 OCR 줄을 직접 만들어 파서만 검사한다
+(14절이 적어 둔 "파서 쪽부터 고정" 지점이다).
+
+#### 절차
+`tests/test_parse_status.py`를 실행한다 (`.venv/bin/python -m pytest`).
+
+#### Expected Result
+대체휴무·공휴일·전사휴무는 그날 세 끼 모두에 미운영으로 들어가고, `조식 미제공`은 조식에만
+들어간다. 영양사 픽 같은 문구는 미운영이 아니라 특식이다. 평범한 식단은 `normal`이다
+(마지막 단언이 없으면 분류기가 무엇이든 미운영으로 답해도 앞 검사들이 통과한다).
+
+### TEST-SCRAPE-001
+
+#### 검증 대상
+REQ-SCRAPE-001
+
+#### 선행 조건
+사내망 접속과 그룹웨어 계정. 자동화할 수 없다 — 외부 시스템의 로그인과 게시판 구조에
+의존하고, 그 구조는 이쪽에서 고정할 수 없다.
+
+#### 절차
+1. `.venv/bin/menu-bot collect`를 실행한다.
+2. 받은 이미지 수와 게시물 제목을 출력에서 확인한다.
+3. 같은 주차로 한 번 더 실행해 게시물 단위로 교체되는지 본다.
+
+#### Expected Result
+현재 주 게시물을 찾아 이미지를 모두 내려받고, 재실행이 중복 항목을 만들지 않는다.
+
+### TEST-OCR-001
+
+#### 검증 대상
+REQ-OCR-001, NFR-PORT-001(provider 비교 부분)
+
+#### 선행 조건
+플랫폼별 OCR provider가 설치돼 있어야 한다(macOS Apple Vision, Windows·Linux PaddleOCR).
+두 플랫폼이 모두 필요하므로 자동화하지 않는다.
+
+#### 절차
+같은 이미지를 두 provider로 처리하고 `<이미지>.ocr.json` 캐시를 비교한다.
+
+#### Expected Result
+좌표 규약(정규화 x·y·width·height)이 같고, 셀 구성과 휴무·특식 판정이 일치한다.
+
+### TEST-OPS-001
+
+#### 검증 대상
+NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
+
+#### 선행 조건
+없음. 자격 증명도 network도 쓰지 않는다. 이 절이 덮는 것은 세 요구사항의 '측정' 중 기계가
+답할 수 있는 부분뿐이다 — 상시 유닛 강제 종료 후 자동 복구와 두 provider의 실제 이미지
+비교는 각각 아래 수동 절차와 TEST-OCR-001이 맡는다.
+
+#### 절차
+`tests/test_operational_contracts.py`를 실행한다 (`.venv/bin/python -m pytest`). 이어서 운영
+서버에서 `systemctl kill menubot-web` 후 유닛이 스스로 올라오는지 확인한다(수동).
+
+#### Expected Result
+`.env`·DB·원본 이미지·어휘집이 추적되지 않고 git이 실제로 무시한다. 웹훅 토큰 불일치는
+404다(설정이 없는 환경에서는 소스 수준 단언이 대신 고정하며, 건너뛴 경우 그 사실이 출력에
+남는다). 상시 유닛 둘은 서로 다른 파일이고 각각 `Restart=always`이며, 수집·다음주 확인
+유닛에는 메모리 상한이 있고, 타이머마다 짝이 되는 서비스가 있다. 시간대는 설정값에서 오고
+파서·조회에 시간대 없는 `datetime.now()`가 없다.
+
 ## 12. 요구사항 추적성
 
 | Requirement | Implementation | Test | Status |
 |---|---|---|---|
-| REQ-SCRAPE-001 | `src/menu_bot/scraper.py` | (없음) | implemented |
-| REQ-OCR-001 | `src/menu_bot/ocr_provider.py` | (없음) | implemented |
+| REQ-SCRAPE-001 | `src/menu_bot/scraper.py` | TEST-SCRAPE-001 (수동) | implemented |
+| REQ-OCR-001 | `src/menu_bot/ocr_provider.py` | TEST-OCR-001 (수동) | implemented |
 | REQ-PARSE-001 | `src/menu_bot/parser.py` | TEST-PARSE-001 | verified |
-| REQ-PARSE-002 | `src/menu_bot/parser.py` | (없음) | implemented |
+| REQ-PARSE-002 | `src/menu_bot/parser.py` | TEST-PARSE-002 | verified |
 | REQ-CORRECT-001 | `src/menu_bot/corrections.py` | TEST-CORRECT-001 | verified |
 | REQ-STORE-001 | `src/menu_bot/pipeline.py` | TEST-STORE-001 | verified |
 | REQ-QUERY-001 | `src/menu_bot/query.py` | TEST-QUERY-001 | verified |
@@ -796,9 +866,9 @@ DB 기준 확보 판정, 항목 0건에서 확보로 넘어가지 않는지, 메
 | REQ-API-001 | `src/menu_bot/web.py` | TEST-API-001 | verified |
 | REQ-WATCH-001 | `src/menu_bot/next_week_watch.py` | TEST-WATCH-001 | verified |
 | REQ-WATCH-002 | `src/menu_bot/next_week_watch.py` | TEST-WATCH-002 | verified |
-| NFR-SEC-001 | `src/menu_bot/web.py` | (없음) | implemented |
-| NFR-OPS-001 | `scripts/systemd/` | (없음) | implemented |
-| NFR-PORT-001 | `src/menu_bot/ocr_provider.py` | (없음) | implemented |
+| NFR-SEC-001 | `src/menu_bot/web.py`, `.gitignore` | TEST-OPS-001 | verified |
+| NFR-OPS-001 | `scripts/systemd/menubot-web.service`, `scripts/systemd/menubot-tunnel.service`, `scripts/systemd/menubot-collect.service` | TEST-OPS-001 | implemented |
+| NFR-PORT-001 | `src/menu_bot/ocr_provider.py`, `src/menu_bot/config.py` | TEST-OPS-001, TEST-OCR-001 (수동) | implemented |
 
 Status 값: `draft` (사양만 있음) / `implemented` / `verified` (실제 실행까지 확인) /
 `deprecated`.
@@ -823,6 +893,7 @@ Status 값: `draft` (사양만 있음) / `implemented` / `verified` (실제 실�
 
 - 터널 무료 한도에 가까워지면 서버리스 무료 엔드포인트로 공개 경로를 옮긴다.
 - Windows 운영 시 터널 에이전트 최소 버전 요건을 사내 IT 승인 절차로 해소한다.
-- `REQ-SCRAPE-001` · `REQ-OCR-001` · `REQ-PARSE-002`에 자동 테스트가 없다. 외부 시스템과
-  플랫폼 의존이 큰 구간이므로, 저장된 OCR 캐시를 fixture로 삼아 파서 쪽부터 고정하는 것이
-  비용 대비 효과가 크다.
+- `REQ-PARSE-002`는 2026-09-22에 자동 테스트를 붙였다(TEST-PARSE-002). 남은 둘
+  (`REQ-SCRAPE-001` · `REQ-OCR-001`)은 각각 사내망 그룹웨어와 플랫폼별 OCR provider가
+  있어야 관찰되므로 수동 절차로 둔다. 자동화하려면 먼저 저장된 OCR 캐시를 저장소에 둘 수
+  있는 형태(개인정보·내부 주소 제거)로 만드는 결정이 필요하다.
