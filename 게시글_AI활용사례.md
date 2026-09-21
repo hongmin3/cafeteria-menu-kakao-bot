@@ -7,7 +7,7 @@
 
 ## 📱 지금 바로 사용해 보세요
 
-[![뷰밥 메뉴 알리미 카카오톡 채널 QR](assets/kakao-channel-qr.png)](https://pf.kakao.com/_xniMSX)
+![뷰밥 메뉴 알리미 카카오톡 채널 QR](assets/kakao-channel-qr.png)
 
 **QR 촬영 → 채널 추가 → 원하는 끼니 버튼 클릭**
 
@@ -38,6 +38,6 @@
 
 ### 오늘 식단이 궁금하다면, 지금 한 번 눌러보세요 🙌
 
-**[카카오톡 채널 바로가기](https://pf.kakao.com/_xniMSX)**
+위 QR을 휴대폰 카메라로 촬영해 채널을 추가해 주세요.
 
 이상한 답이나 잘못 읽힌 메뉴가 있으면 편하게 알려주세요!

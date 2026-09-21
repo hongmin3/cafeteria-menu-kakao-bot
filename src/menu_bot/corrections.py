@@ -36,7 +36,14 @@ PROMOTIONAL_NOISE = re.compile(
     r"이벤트(?:\s*DAY)?|"
     # 이번 주 어두운 HYUNDAI GREEN FOOD 로고를 `현대그콘푸드`로 읽은
     # 실제 서버 OCR 결과까지 포함한다. 음식 메뉴의 일반적인 `푸드`는 건드리지 않는다.
-    r"(?:HYUNDAI|현대)\s*(?:GREEN|그[린콘])\s*(?:FOOD|푸드)"
+    r"(?:HYUNDAI|현대)\s*(?:GREEN|그[린콘])\s*(?:FOOD|푸드)|"
+    # 명절 인사 배너. 2026-09-24(추석 연휴 직전 목요일) 조식 일반식·간편식,
+    # 중식 일반식 칸에 실제 메뉴 대신 인사말 배너가 들어와 "풍요로운"·"보내세요"
+    # 로 읽혔다(실측 서버 OCR, data/images/09161979294653b39319ba06.png). 같은
+    # 배너의 "한가위"는 신뢰도 0.43으로 "너4"까지 오인식됐다. 인사말 어미
+    # (...보내세요/...되세요)와 계절 형용사(풍요로운)는 실제 메뉴 이름에는
+    # 나타나지 않는 표현이라 그 자체로 안전한 신호다.
+    r"풍요로운|^너4$|보내세요|되세요$"
     r")",
     re.I,
 )
@@ -249,7 +256,7 @@ def is_noise(item: str) -> bool:
 
 
 def is_promotional_noise(item: str) -> bool:
-    """셰프·콜라보·행사 제목처럼 메뉴가 아닌 홍보 문구인지."""
+    """셰프·콜라보·행사 제목이나 명절 인사 배너처럼 메뉴가 아닌 문구인지."""
     text = item.strip()
     return bool(PROMOTIONAL_NOISE.search(text) or SPECIAL_BANNER_ONLY.fullmatch(text))
 

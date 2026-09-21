@@ -72,6 +72,30 @@ def test_vertical_menu_format(tmp_path: Path):
     assert "- 샌드위치\n\n<공통 PLUS>" in result
 
 
+def test_same_week_menu_from_two_posts_is_not_duplicated(tmp_path: Path):
+    """실측(2026-09-14 주차): 제목이 옛 주차인 게시물의 첨부 사진이 이미
+    다음 주 것으로 바뀌어 있어, 새로 올라온 정상 게시물과 같은 주 메뉴가
+    서로 다른 source_post_id로 두 벌 저장됐다. 답변에 같은 코너가 두 번
+    나오면 안 된다."""
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "old-post-stale-title",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "라면 · 연근",
+                       source_post_id="old-post-stale-title")],
+        )
+        db.replace_entries(
+            "new-post-correct-title",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "라면 · 연근",
+                       source_post_id="new-post-correct-title")],
+        )
+        result = answer(db, "오늘 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert result.count("라면") == 1
+    assert result.count("<일반식>") == 1
+
+
 def test_special_status_is_explicitly_emphasized(tmp_path: Path):
     db = MenuDB(tmp_path / "menus.db")
     try:

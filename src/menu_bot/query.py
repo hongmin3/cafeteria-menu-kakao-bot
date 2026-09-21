@@ -369,6 +369,26 @@ def _richer(candidate: dict, previous: dict) -> bool:
     )
 
 
+def _dedupe_posts(rows: list) -> list:
+    """같은 (사업장·끼니·코너)가 서로 다른 게시물로 중복 저장된 경우 하나만 남긴다.
+
+    평소엔 한 주에 게시물이 하나뿐이라 일어나지 않지만, 관리자가 예전 게시물을
+    복사해 새 주 사진으로 갱신하는 등 같은 서비스 날짜가 서로 다른
+    source_post_id로 남을 때가 있다(실측: 제목은 "9/7~9/11"인 옛 게시물인데
+    첨부 사진은 이미 다음 주 것으로 바뀌어 있어, 새로 올라온 정상 게시물과
+    같은 주 메뉴가 두 벌 저장됐다). 그대로 두면 카톡 답변에 같은 코너가
+    연달아 두 번 나온다. 코너별로 더 풍부하게 읽힌 쪽을 남긴다(pipeline의
+    이미지 내 중복 처리·사업장 병합과 같은 원칙).
+    """
+    best: dict[tuple, object] = {}
+    for row in rows:
+        key = (row["location"], row["meal_type"], row["category"])
+        previous = best.get(key)
+        if previous is None or _richer(row, previous):
+            best[key] = row
+    return list(best.values())
+
+
 def _choose_common_menu(rows: list) -> list:
     locations = sorted({row["location"] for row in rows})
     common = [row for row in rows if row["location"] == PRIMARY_LOCATION]
@@ -408,7 +428,7 @@ def answer(
     if parsed.day.weekday() >= 5:
         weekday = "토" if parsed.day.weekday() == 5 else "일"
         return f"{parsed.day:%m월 %d일}({weekday}) 주말에는 식당을 운영하지 않습니다."
-    rows = db.query(parsed.day, parsed.meal_type)
+    rows = _dedupe_posts(db.query(parsed.day, parsed.meal_type))
     if not rows:
         # 주말 폴링이나 월요일 수집이 아직 식단표를 못 받은 상태. 없는 식단을
         # 지어내지 않고 사정을 그대로 알린다. 서버는 확보될 때까지 1시간 간격
