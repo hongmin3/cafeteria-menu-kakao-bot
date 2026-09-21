@@ -430,10 +430,23 @@ def answer(
         return f"{parsed.day:%m월 %d일}({weekday}) 주말에는 식당을 운영하지 않습니다."
     rows = _dedupe_posts(db.query(parsed.day, parsed.meal_type))
     if not rows:
+        weekday = "월화수목금토일"[parsed.day.weekday()]
+        if parsed.meal_type and db.query(parsed.day):
+            # 그 날 다른 끼니는 올라와 있으니 "그 날 메뉴가 없다"고 하면 거짓말이다.
+            return f"{parsed.day:%m월 %d일}({weekday}) {parsed.meal_type}은 식단표에 없어요."
+        if db.has_board_for_week(this_monday):
+            # 식단표는 올라왔는데 그 날 칸이 비어 있다. 기다려도 생기지 않으므로
+            # 다시 물어보라고 하면 안 된다. 비어 있는 이유(공휴일·회사 휴무·식당
+            # 사정)는 식단표에 적혀 있지 않아 코드가 알 수 없으니 단정하지 않는다.
+            # 2026-09-23은 회사 자체 휴무일, 09-24~25는 추석 연휴였는데 식단표
+            # 상으로는 셋 다 똑같이 빈 칸이었다.
+            return (
+                f"{parsed.day:%m월 %d일}({weekday})은 식단표에 메뉴가 없습니다.\n"
+                "식당 운영 여부는 총무팀에 확인해 주세요."
+            )
         # 주말 폴링이나 월요일 수집이 아직 식단표를 못 받은 상태. 없는 식단을
         # 지어내지 않고 사정을 그대로 알린다. 서버는 확보될 때까지 1시간 간격
         # 으로 계속 다시 확인한다(menubot-ensure.timer).
-        weekday = "월화수목금토일"[parsed.day.weekday()]
         return (
             f"{parsed.day:%m월 %d일}({weekday}) 식단표가 아직 그룹웨어에 올라오지 않았어요.\n"
             "올라오면 자동으로 반영되니 조금 뒤에 다시 물어봐 주세요. 🙏"
