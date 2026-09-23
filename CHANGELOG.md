@@ -29,6 +29,7 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
 
 ### Changed
 
+- 문서: 공통 SPEC workflow v4(AGENTS.md) — SPEC·CHANGELOG 작성 규칙(제목 이름, 기능 그룹 표, CHANGELOG ID, 예시 블록 금지, flow 흐름도, 로컬 이미지, HTML 재생성)을 한 절로 모았다. `docs/SPEC.html` 렌더러 v4: 왼쪽 목차에 지금 읽는 절·요구사항 표시.
 - 준비 검사: CHANGELOG 형식 예시 블록에 실제 항목이 들어가면 `CHANGELOG_EXAMPLE_MODIFIED`로 경고한다(키트 관리 사본 `.project-check/project-readiness.js`, 기준 `.project-check/changelog-template.md`).
 - NFR-OPS-001: 추적성 표의 구현 열이 디렉터리(`scripts/systemd/`)를 가리켜 검사기가
   파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.
