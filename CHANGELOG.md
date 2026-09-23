@@ -29,6 +29,7 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
 
 ### Changed
 
+- 준비 검사: CHANGELOG 형식 예시 블록에 실제 항목이 들어가면 `CHANGELOG_EXAMPLE_MODIFIED`로 경고한다(키트 관리 사본 `.project-check/project-readiness.js`, 기준 `.project-check/changelog-template.md`).
 - NFR-OPS-001: 추적성 표의 구현 열이 디렉터리(`scripts/systemd/`)를 가리켜 검사기가
   파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.
 - REQ-SCRAPE-001 / REQ-OCR-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
