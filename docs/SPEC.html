@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="automation-workspace render-spec-html v2">
-<meta name="spec-html-renderer" content="v2">
-<meta name="spec-source-sha256" content="204c950448f98dd42c4ba6a8c14db44fc70225b6d4915a01ffc8242e6d9bd187">
+<meta name="generator" content="automation-workspace render-spec-html v3">
+<meta name="spec-html-renderer" content="v3">
+<meta name="spec-source-sha256" content="24b1bd695f40f88b177b1b78924c429423c1f7ccbe7151f9ae74635f5c165ca4">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;color-scheme:light}
@@ -47,6 +47,12 @@ details.history ul{margin:6px 0;padding-left:18px}.hist{color:var(--muted);font-
 tr.group th{background:var(--bg);text-align:left;font-size:14px;padding-top:12px}.gcode{font:600 12px/1.4 ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-right:4px}
 table.index td:first-child{white-space:nowrap}table.index td:nth-child(2){min-width:10em}table.index td:nth-child(4){min-width:13em}.untitled{color:var(--muted);font-style:italic}
 .toc .toc-id span{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--text)}
+figure.flow{margin:12px 0;overflow-x:auto}figure.flow svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.flow .node rect{fill:var(--panel);stroke:var(--accent);stroke-width:1.5}
+.flow text{font-size:13px;fill:var(--text);text-anchor:middle;dominant-baseline:central}
+.flow .edge{fill:none;stroke:var(--muted);stroke-width:1.5}.flow .edge.back{stroke-dasharray:5 4}.flow marker path{fill:var(--muted)}
+.flow .elabel{font-size:12px;fill:var(--muted);paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+.nohist{color:var(--muted)}
 main img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
 .table-wrap{overflow-x:auto;margin:10px 0}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
@@ -251,6 +257,12 @@ SMTP 서버(알림 발송). 이 밖으로 이미지나 인식 결과를 내보�
 <section class="card kind-req" id="REQ-SCRAPE-001">
 <h3><span class="idtag">REQ-SCRAPE-001</span> 게시판 식단표 이미지 수집</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/scraper.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a>을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
 <h4>목적</h4>
 <p>그룹웨어 자유게시판에서 식단 게시물과 본문 식단표 이미지의 URL을 얻는다.</p>
 <h4>입력</h4>
@@ -281,6 +293,12 @@ SMTP 서버(알림 발송). 이 밖으로 이미지나 인식 결과를 내보�
 <section class="card kind-req" id="REQ-OCR-001">
 <h3><span class="idtag">REQ-OCR-001</span> OCR 결과 공통 좌표 규약</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/ocr_provider.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a> (수동)</span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a>, <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a>을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
 <h4>목적</h4>
 <p>플랫폼과 무관하게 파서가 같은 좌표 규약으로 OCR 결과를 받는다.</p>
 <h4>입력</h4>
@@ -309,7 +327,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-PARSE-001">
 <h3><span class="idtag">REQ-PARSE-001</span> 식단표 날짜·끼니·코너 구조화</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>식단표 이미지의 OCR 라인을 날짜 · 끼니 · 코너로 구조화한다.</p>
 <h4>입력</h4>
@@ -374,7 +392,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-CORRECT-001">
 <h3><span class="idtag">REQ-CORRECT-001</span> 메뉴 이름 오인식 보정</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>사용자에게 그대로 보여줄 메뉴 이름에서 OCR 오인식과 노이즈 조각을 걷어낸다.</p>
 <h4>입력</h4>
@@ -406,7 +424,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-STORE-001">
 <h3><span class="idtag">REQ-STORE-001</span> 현재 주 식단 저장</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a>, <a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a>, <a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>운영 DB에는 현재 주 식단만 두고, 검증용 과거 데이터와 파일 단위로 분리한다.</p>
 <h4>입력</h4>
@@ -430,7 +448,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-QUERY-001">
 <h3><span class="idtag">REQ-QUERY-001</span> 질문에서 날짜·끼니 해석</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>평소 말투의 질문에서 날짜와 끼니를 읽는다.</p>
 <h4>입력</h4>
@@ -458,7 +476,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-QUERY-002">
 <h3><span class="idtag">REQ-QUERY-002</span> 답할 수 없는 질문 되묻기</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>, <a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a>, <a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>, <a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a>, <a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>답할 수 없는 질문에 엉뚱한 답을 주는 대신 무엇이 문제인지 되묻는다.</p>
 <h4>입력</h4>
@@ -492,7 +510,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-QUERY-003">
 <h3><span class="idtag">REQ-QUERY-003</span> 식단 응답 본문 생성</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>확정된 질문에 대해 현재 주 경계를 지키며 응답 본문을 만든다.</p>
 <h4>입력</h4>
@@ -522,7 +540,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-API-001">
 <h3><span class="idtag">REQ-API-001</span> 카카오 챗봇 Skill 응답</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/web.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/web.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>카카오 챗봇 Skill 서버로서 요청을 받아 규격에 맞는 응답을 돌려준다.</p>
 <h4>입력</h4>
@@ -550,7 +568,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-WATCH-001">
 <h3><span class="idtag">REQ-WATCH-001</span> 다음 주 식단표 주말 확보</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/next_week_watch.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/next_week_watch.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>다음 주 식단표가 주말에 게시되는 즉시 확보해, 월요일 0시부터 바로 응답할 수 있게 한다.</p>
 <h4>입력</h4>
@@ -585,7 +603,7 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 </section>
 <section class="card kind-req" id="REQ-WATCH-002">
 <h3><span class="idtag">REQ-WATCH-002</span> 식단 미확보 마감 점검</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/next_week_watch.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/next_week_watch.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <h4>목적</h4>
 <p>주말 폴링이 끝난 뒤에도 식단을 못 받은 상태를 방치하지 않는다.</p>
 <h4>입력</h4>
@@ -645,12 +663,14 @@ provider는 이 규약으로 변환해 내보낸다. 인식 결과는 이미지 
 <section class="card kind-nfr" id="NFR-OPS-001">
 <h3><span class="idtag">NFR-OPS-001</span> 무인 정기 실행과 자동 복구</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span></div>
-<details class="history"><summary>변경 이력 1</summary>
+<details class="history"><summary>변경 이력 2</summary>
 <ul>
 <li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a> / <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a> / <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>: 운영·보안·이식성 계약 검사(<a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>,
 <code>tests/test_operational_contracts.py</code>). 추적 파일 위생과 git 실제 무시 동작, 웹훅
 토큰 불일치 404, 상시 유닛의 Restart·분리·메모리 상한, 타이머-서비스 짝, 시간대
 설정 사용을 고정한다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a>: 추적성 표의 구현 열이 디렉터리(<code>scripts/systemd/</code>)를 가리켜 검사기가
+파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.</li>
 </ul>
 </details>
 <p><strong>정해진 시각에 사람 개입 없이 돌고, 죽으면 스스로 살아난다.</strong></p>
@@ -926,6 +946,12 @@ DB 기준 확보 판정, 항목 0건에서 확보로 넘어가지 않는지, 메
 </section>
 <section class="card kind-test" id="TEST-SCRAPE-001">
 <h3><span class="idtag">TEST-SCRAPE-001</span></h3>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a>을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
 <h4>검증 대상</h4>
 <p><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></p>
 <h4>선행 조건</h4>
@@ -943,6 +969,12 @@ DB 기준 확보 판정, 항목 0건에서 확보로 넘어가지 않는지, 메
 <section class="card kind-test" id="TEST-OCR-001">
 <h3><span class="idtag">TEST-OCR-001</span></h3>
 <div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a>을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
 <h4>검증 대상</h4>
 <p><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>, <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>(provider 비교 부분)</p>
 <h4>선행 조건</h4>

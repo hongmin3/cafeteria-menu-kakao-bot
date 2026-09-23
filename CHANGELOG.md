@@ -7,11 +7,6 @@
 
 ```text
 ### Changed
-
-- NFR-OPS-001: 추적성 표의 구현 열이 디렉터리(`scripts/systemd/`)를 가리켜 검사기가
-  파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.
-- REQ-SCRAPE-001 / REQ-OCR-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
-  적은 수동 절차 TEST-SCRAPE-001 · TEST-OCR-001을 추가하고 추적성 표를 채웠다.
 - REQ-EXPORT-002: HTML 파일명에 실행 시간을 포함하도록 변경
 
 ### Fixed
@@ -34,6 +29,13 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
 
 ### Changed
 
+- NFR-OPS-001: 추적성 표의 구현 열이 디렉터리(`scripts/systemd/`)를 가리켜 검사기가
+  파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.
+- REQ-SCRAPE-001 / REQ-OCR-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+  적은 수동 절차 TEST-SCRAPE-001 · TEST-OCR-001을 추가하고 추적성 표를 채웠다.
+- 문서: CHANGELOG 머리의 형식 예시 블록 안에 들어가 있던 위 두 항목을 이 절로 옮겼다 — 예시 블록은
+  이력으로 읽히지 않아 `docs/SPEC.html`의 요구사항별 변경 이력에서 빠져 있었다.
+- 문서: `docs/SPEC.html`을 렌더러 v3로 다시 만들었다 — 이력이 없는 요구사항에 "기록된 변경 없음" 표시.
 - 문서: `SPEC.md`의 REQ·NFR 제목 줄 15개에 기능 이름을 붙이고 5절에 기능 그룹 표를 추가했다.
   사양 내용은 바꾸지 않았다. 사람이 읽는 `docs/SPEC.html`(기능 목록·요구사항 카드·요구사항별
   변경 이력)과 렌더러 `.project-check/render-spec-html.js`를 추가하고 공통 SPEC workflow를 v3로
