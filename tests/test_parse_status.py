@@ -2,9 +2,9 @@
 
 Validates: REQ-PARSE-002
 
-SPEC 14절이 "저장된 OCR 캐시를 fixture로 삼아 파서 쪽부터 고정하는 것이 비용 대비 효과가
-크다"고 적어 둔 그 지점이다. 그룹웨어도 OCR provider도 타지 않고, OCR 줄을 직접 만들어
-파서만 검사하므로 어느 플랫폼에서든 같은 결과가 나온다.
+SPEC 11절 TEST-PARSE-002가 이 파일이다. 그룹웨어도 OCR provider도 타지 않고, OCR 줄을
+직접 만들어 파서만 검사하므로 어느 플랫폼에서든 같은 결과가 나온다. 저장된 OCR 캐시는 쓰지
+않는다(캐시를 저장소에 둘지는 SPEC 14절에 미정으로 남아 있다).
 
 fixture 좌표 규약은 `tests/test_corrections.py::test_parser_applies_corrections`와 같다.
 """

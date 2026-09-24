@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="automation-workspace render-spec-html v5">
 <meta name="spec-html-renderer" content="v5">
-<meta name="spec-source-sha256" content="06c0fa93cf82d1f417b760457f70aadd4235e03be74f519791673a80a3f388cd">
+<meta name="spec-source-sha256" content="adbdae46296f4c6c93d24515d0e9804074f309ea021c5c4ae9fd215841d9286a">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -152,7 +152,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <tr><td><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td>식단표를 날짜·끼니·코너로 나누기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
 <tr><td><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td>미운영·특식 상태 구분</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">CORRECT</span> 메뉴 보정</th></tr>
-<tr><td><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td>메뉴 이름 오인식 바로잡기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/corrections.py</code></td><td><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a></td></tr>
+<tr><td><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td>메뉴 이름 오인식 바로잡기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/corrections.py</code></td><td><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">STORE</span> 저장</th></tr>
 <tr><td><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td>현재 주 식단 저장</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/pipeline.py</code></td><td><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">QUERY</span> 질문 해석·응답</th></tr>
@@ -319,8 +319,9 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <section class="card kind-req" id="REQ-SCRAPE-001">
 <h3><span class="idtag">REQ-SCRAPE-001</span> 게시판에서 식단표 이미지 모으기</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/scraper.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a></span></div>
-<details class="history"><summary>변경 이력 1</summary>
+<details class="history"><summary>변경 이력 2</summary>
 <ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
 <li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
 적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
 </ul>
@@ -362,14 +363,15 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <p><code>src/menu_bot/scraper.py</code>, <code>src/menu_bot/config.py</code></p>
 </div></section>
 <section class="field"><h4>관련 테스트</h4><div class="field-body">
-<p>(없음)</p>
+<p><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</p>
 </div></section>
 </section>
 <section class="card kind-req" id="REQ-OCR-001">
 <h3><span class="idtag">REQ-OCR-001</span> OCR 결과의 공통 좌표 규칙</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/ocr_provider.py</code></span><span class="meta"><b>테스트</b> TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</span></div>
-<details class="history"><summary>변경 이력 1</summary>
+<details class="history"><summary>변경 이력 2</summary>
 <ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
 <li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
 적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
 </ul>
@@ -411,7 +413,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <p><code>src/menu_bot/ocr.py</code>, <code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/vision_ocr.swift</code></p>
 </div></section>
 <section class="field"><h4>관련 테스트</h4><div class="field-body">
-<p>(없음)</p>
+<p>TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</p>
 </div></section>
 </section>
 <section class="card kind-req" id="REQ-PARSE-001">
@@ -458,11 +460,12 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <section class="card kind-req" id="REQ-PARSE-002">
 <h3><span class="idtag">REQ-PARSE-002</span> 미운영·특식 상태 구분</h3>
 <div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></span></div>
-<details class="history"><summary>변경 이력 1</summary>
+<details class="history"><summary>변경 이력 2</summary>
 <ul>
 <li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 셀 상태 분류 자동 테스트(<a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a>, <code>tests/test_parse_status.py</code>).
 전일 휴무는 세 끼 모두, <code>조식 미제공</code>은 그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만, <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>은 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>이 아닌 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>으로
 분류되는지 본다. 14절이 적어 둔 &quot;<span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 쪽부터 고정&quot;을 실행한 것이다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
 </ul>
 </details>
 <section class="field"><h4>목적</h4><div class="field-body">
@@ -497,12 +500,12 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <p><code>src/menu_bot/parser.py</code></p>
 </div></section>
 <section class="field"><h4>관련 테스트</h4><div class="field-body">
-<p>(없음)</p>
+<p><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></p>
 </div></section>
 </section>
 <section class="card kind-req" id="REQ-CORRECT-001">
 <h3><span class="idtag">REQ-CORRECT-001</span> 메뉴 이름 오인식 바로잡기</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
 <section class="field"><h4>목적</h4><div class="field-body">
 <p>사용자에게 그대로 보여줄 메뉴 이름에서, <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>이 잘못 읽은 글자와 잡음 조각을 걷어낸다.</p>
 </div></section>
@@ -1224,6 +1227,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 </section>
 <section class="card kind-test" id="TEST-PARSE-002">
 <h3><span class="idtag">TEST-PARSE-002</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></span></div>
 <details class="history"><summary>변경 이력 1</summary>
 <ul>
 <li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 셀 상태 분류 자동 테스트(<a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a>, <code>tests/test_parse_status.py</code>).
@@ -1237,7 +1241,8 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <section class="field"><h4>선행 조건</h4><div class="field-body">
 <p>없음. <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>도 <span class="term" title="글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다" tabindex="0">OCR provider</span>도 거치지 않는다. <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 줄을 직접 만들어 <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>만 검사한다.</p>
 <aside class="callout callout-info"><span class="callout-label">참고</span>
-<p>14절에 적어 둔 &quot;<span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 쪽부터 고정&quot; 지점이 이것이다.</p>
+<p>14절에서 자동 테스트를 붙이기로 한 <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>가 이 검사다.
+저장된 <span class="term" title="이미지 옆에 저장해 둔 OCR 결과 JSON 파일. 있으면 다시 인식하지 않는다" tabindex="0">OCR 캐시</span>는 쓰지 않는다. 캐시를 저장소에 둘지는 아직 정하지 않았다(14절).</p>
 </aside>
 </div></section>
 <section class="field"><h4>절차</h4><div class="field-body">
@@ -1256,8 +1261,10 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 </section>
 <section class="card kind-test" id="TEST-SCRAPE-001">
 <h3><span class="idtag">TEST-SCRAPE-001</span></h3>
-<details class="history"><summary>변경 이력 1</summary>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></span></div>
+<details class="history"><summary>변경 이력 2</summary>
 <ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
 <li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
 적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
 </ul>
@@ -1270,14 +1277,18 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <p class="why"><span class="why-label">이유</span> 바깥 시스템의 로그인과 게시판 구조에 기대는데, 그 구조는 이쪽에서 고정할 수 없다.</p>
 </div></section>
 <section class="field"><h4>절차</h4><div class="field-body">
+<p>운영 수집 스크립트(<code>scripts/run-linux-collect.sh</code>, <code>scripts/run-windows-collect.ps1</code>)와 같은 두 명령을 차례로 쓴다.</p>
 <ol>
-<li><code>.venv/bin/menu-bot collect</code>를 실행한다.</li>
-<li>받은 이미지 수와 게시물 제목을 출력에서 확인한다.</li>
-<li>같은 주차로 한 번 더 실행해 게시물 단위로 바꿔 넣는지 본다.</li>
+<li><code>.venv/bin/menu-bot scrape --pages 2 --output data/latest_manifest.json</code>을 실행한다.
+목록 2쪽에서 식단 게시물을 찾아 <span class="term" title="식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다" tabindex="0">게시물 번호</span>·제목·이미지 URL을 이 파일에 저장한다.</li>
+<li>출력의 게시물 수를 보고, 저장된 파일에서 게시물 제목과 이미지 URL을 확인한다.</li>
+<li><code>.venv/bin/menu-bot ingest data/latest_manifest.json</code>을 실행한다.
+이미지를 내려받아 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>하고 저장한 뒤, 게시물·이미지·항목 수와 오류 목록을 출력한다.</li>
+<li>3번을 한 번 더 실행해 게시물 단위로 바꿔 넣는지 본다.</li>
 </ol>
 </div></section>
 <section class="field"><h4>Expected Result</h4><div class="field-body">
-<p><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 게시물을 찾아 이미지를 모두 내려받는다. 다시 실행해도 중복 항목이 생기지 않는다.</p>
+<p><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 게시물을 찾아 이미지를 모두 내려받는다. 다시 실행해도 항목 수가 같고 중복 항목이 생기지 않는다.</p>
 </div></section>
 </section>
 <section class="card kind-test" id="TEST-OCR-001">
@@ -1350,7 +1361,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <tr><td>REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001</td><td><code>src/menu_bot/ocr_provider.py</code></td><td>TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
 <tr><td><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td><code>src/menu_bot/corrections.py</code></td><td><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
+<tr><td><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td><code>src/menu_bot/corrections.py</code></td><td><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
 <tr><td><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td><code>src/menu_bot/pipeline.py</code></td><td><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
 <tr><td><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
 <tr><td><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td><td><span class="badge st-verified">verified</span></td></tr>

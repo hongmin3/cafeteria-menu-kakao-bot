@@ -188,7 +188,7 @@ ID 규칙: `REQ-<CATEGORY>-NNN`. CATEGORY는 대문자·숫자, NNN은 세 자�
 `src/menu_bot/scraper.py`, `src/menu_bot/config.py`
 
 #### 관련 테스트
-(없음)
+TEST-SCRAPE-001 (수동)
 
 ### REQ-OCR-001 OCR 결과의 공통 좌표 규칙
 
@@ -223,7 +223,7 @@ ID 규칙: `REQ-<CATEGORY>-NNN`. CATEGORY는 대문자·숫자, NNN은 세 자�
 `src/menu_bot/ocr.py`, `src/menu_bot/ocr_provider.py`, `src/menu_bot/vision_ocr.swift`
 
 #### 관련 테스트
-(없음)
+TEST-OCR-001 (수동)
 
 ### REQ-PARSE-001 식단표를 날짜·끼니·코너로 나누기
 
@@ -291,7 +291,7 @@ REQ-PARSE-001이 칸에 넣은 글자.
 `src/menu_bot/parser.py`
 
 #### 관련 테스트
-(없음)
+TEST-PARSE-002
 
 ### REQ-CORRECT-001 메뉴 이름 오인식 바로잡기
 
@@ -916,7 +916,8 @@ REQ-PARSE-002
 #### 선행 조건
 없음. 그룹웨어도 OCR provider도 거치지 않는다. OCR 줄을 직접 만들어 파서만 검사한다.
 
-> **참고** 14절에 적어 둔 "파서 쪽부터 고정" 지점이 이것이다.
+> **참고** 14절에서 자동 테스트를 붙이기로 한 REQ-PARSE-002가 이 검사다.
+> 저장된 OCR 캐시는 쓰지 않는다. 캐시를 저장소에 둘지는 아직 정하지 않았다(14절).
 
 #### 절차
 `tests/test_parse_status.py`를 실행한다 (`.venv/bin/python -m pytest`).
@@ -938,12 +939,17 @@ REQ-SCRAPE-001
 이유: 바깥 시스템의 로그인과 게시판 구조에 기대는데, 그 구조는 이쪽에서 고정할 수 없다.
 
 #### 절차
-1. `.venv/bin/menu-bot collect`를 실행한다.
-2. 받은 이미지 수와 게시물 제목을 출력에서 확인한다.
-3. 같은 주차로 한 번 더 실행해 게시물 단위로 바꿔 넣는지 본다.
+운영 수집 스크립트(`scripts/run-linux-collect.sh`, `scripts/run-windows-collect.ps1`)와 같은 두 명령을 차례로 쓴다.
+
+1. `.venv/bin/menu-bot scrape --pages 2 --output data/latest_manifest.json`을 실행한다.
+   목록 2쪽에서 식단 게시물을 찾아 게시물 번호·제목·이미지 URL을 이 파일에 저장한다.
+2. 출력의 게시물 수를 보고, 저장된 파일에서 게시물 제목과 이미지 URL을 확인한다.
+3. `.venv/bin/menu-bot ingest data/latest_manifest.json`을 실행한다.
+   이미지를 내려받아 OCR하고 저장한 뒤, 게시물·이미지·항목 수와 오류 목록을 출력한다.
+4. 3번을 한 번 더 실행해 게시물 단위로 바꿔 넣는지 본다.
 
 #### Expected Result
-현재 주 게시물을 찾아 이미지를 모두 내려받는다. 다시 실행해도 중복 항목이 생기지 않는다.
+현재 주 게시물을 찾아 이미지를 모두 내려받는다. 다시 실행해도 항목 수가 같고 중복 항목이 생기지 않는다.
 
 ### TEST-OCR-001
 
@@ -993,7 +999,7 @@ NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
 | REQ-OCR-001 | `src/menu_bot/ocr_provider.py` | TEST-OCR-001 (수동) | implemented |
 | REQ-PARSE-001 | `src/menu_bot/parser.py` | TEST-PARSE-001 | verified |
 | REQ-PARSE-002 | `src/menu_bot/parser.py` | TEST-PARSE-002 | verified |
-| REQ-CORRECT-001 | `src/menu_bot/corrections.py` | TEST-CORRECT-001 | verified |
+| REQ-CORRECT-001 | `src/menu_bot/corrections.py` | TEST-CORRECT-001, TEST-PARSE-001 | verified |
 | REQ-STORE-001 | `src/menu_bot/pipeline.py` | TEST-STORE-001 | verified |
 | REQ-QUERY-001 | `src/menu_bot/query.py` | TEST-QUERY-001 | verified |
 | REQ-QUERY-002 | `src/menu_bot/query.py` | TEST-QUERY-002 | verified |
