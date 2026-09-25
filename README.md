@@ -333,7 +333,7 @@ sudo systemctl start menubot-nextweek.service
 요구사항: macOS 14+, Python 3.11+, Google Chrome, Xcode Command Line Tools.
 
 ```bash
-cd "/Users/hongmin/Desktop/자동화/cafeteria-menu-kakao-bot"
+cd projects/cafeteria-menu-kakao-bot   # 워크스페이스 루트에서
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
