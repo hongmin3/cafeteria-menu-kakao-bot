@@ -45,6 +45,7 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
   변경 이력)과 렌더러 `.project-check/render-spec-html.js`를 추가하고 공통 SPEC workflow를 v3로
   갱신했다 — `SPEC.md`나 `CHANGELOG.md`를 고치면 HTML을 다시 만든다.
 - 2026-09-25: 워크스페이스가 프로젝트를 `projects/` 아래로 모으면서 README의 `cd` 경로를 배치와 무관한 형태로 고쳤다. 준비 검사와 자체 테스트 통과.
+- 2026-09-25: 공통 키트 이름이 Botyard로 바뀌어 `.project-check/`의 SPEC HTML 렌더러와 `docs/SPEC.html`의 생성기 표시를 갱신했다(형식·내용 변경 없음). 준비 검사와 자체 테스트 통과.
 
 ### Fixed
 
