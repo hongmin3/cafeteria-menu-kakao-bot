@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="generator" content="botyard render-spec-html v6">
-<meta name="spec-html-renderer" content="v6">
-<meta name="spec-source-sha256" content="0d153a9d2e4793b1b59f6d8cbefc19cf9a6f750764cb9071a6127028d24af471">
+<meta name="generator" content="botyard render-spec-html v7">
+<meta name="spec-html-renderer" content="v7">
+<meta name="spec-source-sha256" content="188167f012f8c60447577bf9f0dc0ba2bab2c95efdc5151a980284e5c353b8b3">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -16,8 +16,8 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;word-break:keep-all;overflow-wrap:break-word}
 a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
-code{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);border-radius:4px;padding:.1em .35em}
-pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto}pre code{background:none;padding:0}
+code{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code);border-radius:4px;padding:.1em .35em;overflow-wrap:anywhere}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}pre code{background:none;padding:0}
 .top{background:var(--panel);border-bottom:1px solid var(--line);padding:24px 32px}
 .top h1{margin:0 0 12px;font-size:26px;line-height:1.3}
 .chips,.stats{display:flex;flex-wrap:wrap;gap:8px}.chips{margin-bottom:14px}
@@ -26,7 +26,7 @@ pre{background:var(--code);border:1px solid var(--line);border-radius:8px;paddin
 .stat{border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:96px;background:var(--bg)}
 .stat b{display:block;font-size:22px;line-height:1.2}.stat span{font-size:12px;color:var(--muted)}
 .stat.st-draft b{color:var(--draft)}.stat.st-implemented b{color:var(--implemented)}.stat.st-verified b{color:var(--verified)}.stat.st-deprecated b{color:var(--deprecated)}
-.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:28px;max-width:1280px;margin:0 auto;padding:24px 32px}
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;max-width:1800px;margin:0 auto;padding:24px 24px}
 .toc{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;font-size:13px}
 .toc input{width:100%;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);margin-bottom:10px;font:inherit}
 .toc ul{list-style:none;margin:0;padding:0}.toc li{margin:1px 0}.toc a{display:block;padding:2px 8px;border-radius:6px;color:var(--text)}
@@ -41,6 +41,7 @@ main{min-width:0}
 .card{padding:4px 20px 12px}.card p,.card li{max-width:46em}.card p{margin:.4em 0 .9em;line-height:1.85}
 .field{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:0 18px;border-top:1px solid var(--line);padding:10px 0 2px}
 .field>h4,.field>h5,.field>h6{margin:.15em 0 0;font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.field-body{min-width:0}
 .field-body>:first-child{margin-top:0}.field-body>:last-child{margin-bottom:.4em}
 .field-body ol{list-style:none;counter-reset:step;padding-left:0}
 .field-body ol>li{counter-increment:step;position:relative;padding-left:2.1em;margin:.45em 0}
@@ -56,13 +57,15 @@ p.why{color:var(--muted);border-left:3px solid var(--line);padding-left:10px}.wh
 .idtag{font:600 13px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--req);color:#fff;border-radius:6px;padding:2px 8px}
 .kind-nfr .idtag{background:var(--nfr)}.kind-test .idtag{background:var(--test)}
 .idref{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;white-space:nowrap}
+td .idref,.meta .idref{white-space:normal;overflow-wrap:anywhere}td .badge{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .idtag,.badge{white-space:nowrap}
-.card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;margin:2px 0 6px}
+.card-meta{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;justify-items:start;font-size:13px;margin:2px 0 6px}
+.meta{min-width:0;max-width:100%;overflow-wrap:anywhere}
 .meta b{color:var(--muted);font-weight:600;margin-right:4px}
 details.history{font-size:13px;margin:4px 0 8px}details.history summary{cursor:pointer;color:var(--muted)}
 details.history ul{margin:6px 0;padding-left:18px}.hist{color:var(--muted);font-size:12px}
 tr.group th{background:var(--bg);text-align:left;font-size:14px;padding-top:12px}.gcode{font:600 12px/1.4 ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-right:4px}
-table.index td:first-child{white-space:nowrap}table.index td:nth-child(2){min-width:10em}table.index td:nth-child(4){min-width:13em}.untitled{color:var(--muted);font-style:italic}
+table.index th:nth-child(1){width:16%}table.index th:nth-child(2){width:24%}table.index th:nth-child(3){width:12%}table.index th:nth-child(4){width:24%}table.index th:nth-child(5){width:24%}.untitled{color:var(--muted);font-style:italic}
 .toc .toc-id span{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--text)}
 .toc a.active{background:var(--code);color:var(--accent);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}.toc a.in-chapter{color:var(--accent)}
 figure.flow{margin:12px 0;overflow-x:auto}figure.flow svg{display:block;max-width:100%;height:auto;margin:0 auto}
@@ -73,16 +76,17 @@ figure.flow{margin:12px 0;overflow-x:auto}figure.flow svg{display:block;max-widt
 .nohist{color:var(--muted)}
 main img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
 .table-wrap{overflow-x:auto;margin:10px 0}
-table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:14px}th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
 th{background:var(--code);font-weight:600}
 .badge{display:inline-block;border-radius:999px;padding:0 10px;font-size:12px;font-weight:600;color:#fff;background:var(--draft)}
 .st-implemented.badge{background:var(--implemented)}.st-verified.badge{background:var(--verified)}.st-deprecated.badge{background:var(--deprecated)}.st-active.badge{background:var(--active)}
 blockquote{margin:10px 0;padding:4px 16px;border-left:4px solid var(--line);color:var(--muted)}
 li.task{list-style:none;margin-left:-1.2em}
 hr{border:0;border-top:1px solid var(--line);margin:20px 0}
-footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);font-size:13px}
+footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);font-size:13px}
 .hidden{display:none}
 @media (max-width:860px){.field{grid-template-columns:1fr}.layout{grid-template-columns:1fr;padding:16px}.toc{position:static;max-height:260px}.top{padding:18px 16px}.chapter{padding:2px 14px 12px}footer{padding:8px 16px 32px}}
+@media screen and (max-width:600px){table.responsive,table.responsive tbody,table.responsive tr,table.responsive td{display:block;width:100%}table.responsive thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}table.responsive tr{margin-bottom:12px;border:1px solid var(--line);border-radius:6px}table.responsive td{border:0;border-top:1px solid var(--line)}table.responsive td::before{content:attr(data-label);display:block;font-size:12px;font-weight:600;color:var(--muted)}table.responsive tr.group th{display:block;width:100%;border:0}.card{padding:4px 12px 12px}}
 @media print{.toc,footer{display:none}.layout{display:block;padding:0}.chapter{break-inside:auto;border:0}.card{break-inside:avoid}body{background:#fff}}</style>
 </head>
 <body>
@@ -141,35 +145,35 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <main>
 <section class="chapter" id="feature-index">
 <h2>기능 목록</h2>
-<div class="table-wrap"><table class="index">
+<div class="table-wrap"><table class="index responsive">
 <thead><tr><th>ID</th><th>이름</th><th>상태</th><th>구현</th><th>테스트</th></tr></thead>
 <tbody>
 <tr class="group"><th colspan="5"><span class="gcode">SCRAPE</span> 게시판 수집</th></tr>
-<tr><td><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></td><td>게시판에서 식단표 이미지 모으기</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/scraper.py</code></td><td><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></td><td data-label="이름">게시판에서 식단표 이미지 모으기</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/scraper.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">OCR</span> 이미지 인식</th></tr>
-<tr><td><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td>OCR 결과의 공통 좌표 규칙</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/ocr_provider.py</code></td><td>TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td data-label="이름">OCR 결과의 공통 좌표 규칙</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/ocr_provider.py</code></td><td data-label="테스트">TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">PARSE</span> 식단표 해석</th></tr>
-<tr><td><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td>식단표를 날짜·끼니·코너로 나누기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
-<tr><td><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td>미운영·특식 상태 구분</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td data-label="이름">식단표를 날짜·끼니·코너로 나누기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td data-label="이름">미운영·특식 상태 구분</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">CORRECT</span> 메뉴 보정</th></tr>
-<tr><td><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td>메뉴 이름 오인식 바로잡기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/corrections.py</code></td><td><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td data-label="이름">메뉴 이름 오인식 바로잡기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/corrections.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">STORE</span> 저장</th></tr>
-<tr><td><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td>현재 주 식단 저장</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/pipeline.py</code></td><td><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td data-label="이름">현재 주 식단 저장</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">QUERY</span> 질문 해석·응답</th></tr>
-<tr><td><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td>질문에서 날짜·끼니 읽기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td></tr>
-<tr><td><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td>답할 수 없는 질문 되묻기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td></tr>
-<tr><td><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></td><td>식단 응답 본문 만들기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td data-label="이름">질문에서 날짜·끼니 읽기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td data-label="이름">답할 수 없는 질문 되묻기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></td><td data-label="이름">식단 응답 본문 만들기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">API</span> 챗봇 서버</th></tr>
-<tr><td><a class="idref" href="#REQ-API-001">REQ-API-001</a></td><td>카카오 챗봇 Skill 응답</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/web.py</code></td><td><a class="idref" href="#TEST-API-001">TEST-API-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-API-001">REQ-API-001</a></td><td data-label="이름">카카오 챗봇 Skill 응답</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/web.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-API-001">TEST-API-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">WATCH</span> 다음 주 식단 감시</th></tr>
-<tr><td><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></td><td>다음 주 식단표를 주말에 미리 받기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/next_week_watch.py</code></td><td><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></td></tr>
-<tr><td><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></td><td>식단을 못 받았을 때 마감 점검</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/next_week_watch.py</code></td><td><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></td><td data-label="이름">다음 주 식단표를 주말에 미리 받기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></td><td data-label="이름">식단을 못 받았을 때 마감 점검</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">NFR SEC</span> 보안</th></tr>
-<tr><td><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a></td><td>비밀값·실제 데이터를 밖에 내보내지 않기</td><td><span class="badge st-verified">verified</span></td><td><code>src/menu_bot/web.py</code>, <code>.gitignore</code></td><td><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a></td><td data-label="이름">비밀값·실제 데이터를 밖에 내보내지 않기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/web.py</code>, <code>.gitignore</code></td><td data-label="테스트"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">NFR OPS</span> 운영</th></tr>
-<tr><td><a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a></td><td>사람 없이 정해진 시각에 돌고 스스로 복구</td><td><span class="badge st-implemented">implemented</span></td><td><code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></td><td><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a></td><td data-label="이름">사람 없이 정해진 시각에 돌고 스스로 복구</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></td><td data-label="테스트"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">NFR PORT</span> 이식성</th></tr>
-<tr><td><a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></td><td>macOS·Windows·Linux 동일 결과</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></td><td><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td></tr>
+<tr><td data-label="ID"><a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></td><td data-label="이름">macOS·Windows·Linux 동일 결과</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td></tr>
 </tbody>
 </table></div>
 </section>
@@ -189,6 +193,34 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <li>근무일(월~금) 업무 시작 시각에 그 주 식단이 DB에 들어와 있다.</li>
 <li>카카오 질문에는 <strong>실제 날짜가 적힌</strong> 메뉴 응답이 돌아간다. 답할 수 없으면 까닭이 분명한 안내가 돌아간다.</li>
 </ul>
+<h3>한눈에 보기</h3>
+<p>예약 실행이 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>의 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 이미지를 읽어 DB에 넣고, 카카오 질문이 오면 그 DB에서 답한다.
+수집이 실패하면 시간마다 다시 시도하고, 답할 수 없는 질문에는 되묻는다.</p>
+<figure class="flow">
+<svg viewBox="0 0 374 452" width="374" height="452" role="img" aria-label="정기 수집·주말 확인 → 그룹웨어 식단 게시물 찾기, 그룹웨어 식단 게시물 찾기 → 이미지 OCR, 이미지 OCR → 날짜·끼니·코너 칸 나누기, 날짜·끼니·코너 칸 나누기 → 식단 DB(SQLite), 그룹웨어 식단 게시물 찾기 → 시간마다 재시도, 시간마다 재시도 → 그룹웨어 식단 게시물 찾기, 카카오 질문 → 날짜·끼니 해석, 날짜·끼니 해석 → 식단 DB(SQLite), 식단 DB(SQLite) → 끼니별 말풍선 응답, 날짜·끼니 해석 → 되묻기">
+<defs><marker id="flow-arrow-1" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker></defs>
+<path class="edge" d="M115.5 44 L105.5 88" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M105.5 124 L54.5 168" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M54.5 204 L176 248" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M176 284 L176 328" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M105.5 124 L186.5 168" marker-end="url(#flow-arrow-1)"/><text class="elabel" x="146" y="146">실패·미게시</text>
+<path class="edge back" d="M248 186 H356 V106 H200.5" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M263.5 44 L283 88" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M283 124 L176 328" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M176 364 L176 408" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M283 124 L308 168" marker-end="url(#flow-arrow-1)"/><text class="elabel" x="295.5" y="146">애매·미지원</text>
+<g class="node"><rect x="40" y="8" width="151" height="36" rx="8"/><text x="115.5" y="26">정기 수집·주말 확인</text></g>
+<g class="node"><rect x="10.5" y="88" width="190" height="36" rx="8"/><text x="105.5" y="106">그룹웨어 식단 게시물 찾기</text></g>
+<g class="node"><rect x="8" y="168" width="93" height="36" rx="8"/><text x="54.5" y="186">이미지 OCR</text></g>
+<g class="node"><rect x="84" y="248" width="184" height="36" rx="8"/><text x="176" y="266">날짜·끼니·코너 칸 나누기</text></g>
+<g class="node"><rect x="109.5" y="328" width="133" height="36" rx="8"/><text x="176" y="346">식단 DB(SQLite)</text></g>
+<g class="node"><rect x="125" y="168" width="123" height="36" rx="8"/><text x="186.5" y="186">시간마다 재시도</text></g>
+<g class="node"><rect x="215" y="8" width="97" height="36" rx="8"/><text x="263.5" y="26">카카오 질문</text></g>
+<g class="node"><rect x="224.5" y="88" width="117" height="36" rx="8"/><text x="283" y="106">날짜·끼니 해석</text></g>
+<g class="node"><rect x="104.5" y="408" width="143" height="36" rx="8"/><text x="176" y="426">끼니별 말풍선 응답</text></g>
+<g class="node"><rect x="272" y="168" width="72" height="36" rx="8"/><text x="308" y="186">되묻기</text></g>
+</svg>
+</figure>
 <h3>이 문서에서 쓰는 말</h3>
 <p>아래 말에는 <code>docs/SPEC.html</code>에서 마우스를 올리면 뜻이 보인다.</p>
 <div class="table-wrap"><table>
@@ -948,25 +980,25 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <section class="chapter" id="sec-8">
 <h2>8. Configuration 사양</h2>
 <p>모든 설정은 환경변수이며 <code>.env</code>에서 읽는다. 값 예시는 <code>.env.example</code>에 있다.</p>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table class="responsive">
 <thead><tr><th>키</th><th>필수</th><th>기본값</th><th>용도</th></tr></thead>
 <tbody>
-<tr><td><code>GROUPWARE_USER</code> / <code>GROUPWARE_PASSWORD</code></td><td>수집 시 필수</td><td>없음</td><td><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 로그인</td></tr>
-<tr><td><code>GROUPWARE_URL</code></td><td>수집 시 필수</td><td>없음</td><td>게시판 진입 주소</td></tr>
-<tr><td><code>POST_PREFIXES</code></td><td>선택</td><td>사업장 4곳</td><td>대상 게시물 제목의 앞머리, 질문에서 &quot;아는 말&quot; 판정</td></tr>
-<tr><td><code>DEFAULT_LOCATION</code></td><td>선택</td><td>빈 값</td><td>기본 사업장(13절 참조)</td></tr>
-<tr><td><code class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">DATABASE_PATH</code></td><td>선택</td><td>data 디렉터리의 SQLite 파일</td><td>운영 SQLite 경로</td></tr>
-<tr><td><code>TIMEZONE</code></td><td>선택</td><td><code>Asia/Seoul</code></td><td>모든 날짜·시각 해석 기준</td></tr>
-<tr><td><code class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">KAKAO_WEBHOOK_TOKEN</code></td><td>운영 시 필수</td><td>빈 값</td><td>웹훅 경로 토큰. 비면 토큰 검사를 하지 않음</td></tr>
-<tr><td><code>OCR_PROVIDER</code></td><td>선택</td><td><code>auto</code></td><td><code>auto</code> / <code>apple_vision</code> / <code>paddleocr</code></td></tr>
-<tr><td><code>PADDLE_DET_MODEL</code> / <code>PADDLE_REC_MODEL</code> / <code>PADDLE_ENABLE_MKLDNN</code></td><td>선택</td><td>검증된 조합</td><td>PaddleOCR 모델·가속 선택</td></tr>
-<tr><td><code>BROWSER_CHANNEL</code></td><td>선택</td><td><code>auto</code></td><td>Playwright 브라우저 채널</td></tr>
-<tr><td><code class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">NEXT_WEEK_STATE_PATH</code></td><td>선택</td><td>data 디렉터리의 JSON</td><td>주말 감시 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span></td></tr>
-<tr><td><code class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">MENU_VOCAB_PATH</code></td><td>선택</td><td>data 디렉터리의 JSON</td><td><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 경로</td></tr>
-<tr><td><code>SMTP_HOST</code> / <code>SMTP_PORT</code> / <code>SMTP_SECURITY</code> / <code>SMTP_USER</code> / <code>SMTP_PASSWORD</code> / <code>SMTP_TIMEOUT</code></td><td>알림 시 필수</td><td>보안 방식에 따른 포트 기본값</td><td>알림 메일 발송</td></tr>
-<tr><td><code>NOTIFY_EMAIL_FROM</code> / <code>NOTIFY_EMAIL_TO</code></td><td>알림 시 필수</td><td>발신자는 계정으로 대신함</td><td>알림 수신자</td></tr>
-<tr><td><code>MENUBOT_PORT</code></td><td>선택</td><td>운영 스크립트 기본값</td><td>서버 포트</td></tr>
-<tr><td><code>NGROK_DOMAIN</code></td><td>선택</td><td>빈 값</td><td>고정 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span> 도메인</td></tr>
+<tr><td data-label="키"><code>GROUPWARE_USER</code> / <code>GROUPWARE_PASSWORD</code></td><td data-label="필수">수집 시 필수</td><td data-label="기본값">없음</td><td data-label="용도"><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 로그인</td></tr>
+<tr><td data-label="키"><code>GROUPWARE_URL</code></td><td data-label="필수">수집 시 필수</td><td data-label="기본값">없음</td><td data-label="용도">게시판 진입 주소</td></tr>
+<tr><td data-label="키"><code>POST_PREFIXES</code></td><td data-label="필수">선택</td><td data-label="기본값">사업장 4곳</td><td data-label="용도">대상 게시물 제목의 앞머리, 질문에서 &quot;아는 말&quot; 판정</td></tr>
+<tr><td data-label="키"><code>DEFAULT_LOCATION</code></td><td data-label="필수">선택</td><td data-label="기본값">빈 값</td><td data-label="용도">기본 사업장(13절 참조)</td></tr>
+<tr><td data-label="키"><code class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">DATABASE_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 SQLite 파일</td><td data-label="용도">운영 SQLite 경로</td></tr>
+<tr><td data-label="키"><code>TIMEZONE</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>Asia/Seoul</code></td><td data-label="용도">모든 날짜·시각 해석 기준</td></tr>
+<tr><td data-label="키"><code class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">KAKAO_WEBHOOK_TOKEN</code></td><td data-label="필수">운영 시 필수</td><td data-label="기본값">빈 값</td><td data-label="용도">웹훅 경로 토큰. 비면 토큰 검사를 하지 않음</td></tr>
+<tr><td data-label="키"><code>OCR_PROVIDER</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>auto</code></td><td data-label="용도"><code>auto</code> / <code>apple_vision</code> / <code>paddleocr</code></td></tr>
+<tr><td data-label="키"><code>PADDLE_DET_MODEL</code> / <code>PADDLE_REC_MODEL</code> / <code>PADDLE_ENABLE_MKLDNN</code></td><td data-label="필수">선택</td><td data-label="기본값">검증된 조합</td><td data-label="용도">PaddleOCR 모델·가속 선택</td></tr>
+<tr><td data-label="키"><code>BROWSER_CHANNEL</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>auto</code></td><td data-label="용도">Playwright 브라우저 채널</td></tr>
+<tr><td data-label="키"><code class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">NEXT_WEEK_STATE_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 JSON</td><td data-label="용도">주말 감시 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span></td></tr>
+<tr><td data-label="키"><code class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">MENU_VOCAB_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 JSON</td><td data-label="용도"><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 경로</td></tr>
+<tr><td data-label="키"><code>SMTP_HOST</code> / <code>SMTP_PORT</code> / <code>SMTP_SECURITY</code> / <code>SMTP_USER</code> / <code>SMTP_PASSWORD</code> / <code>SMTP_TIMEOUT</code></td><td data-label="필수">알림 시 필수</td><td data-label="기본값">보안 방식에 따른 포트 기본값</td><td data-label="용도">알림 메일 발송</td></tr>
+<tr><td data-label="키"><code>NOTIFY_EMAIL_FROM</code> / <code>NOTIFY_EMAIL_TO</code></td><td data-label="필수">알림 시 필수</td><td data-label="기본값">발신자는 계정으로 대신함</td><td data-label="용도">알림 수신자</td></tr>
+<tr><td data-label="키"><code>MENUBOT_PORT</code></td><td data-label="필수">선택</td><td data-label="기본값">운영 스크립트 기본값</td><td data-label="용도">서버 포트</td></tr>
+<tr><td data-label="키"><code>NGROK_DOMAIN</code></td><td data-label="필수">선택</td><td data-label="기본값">빈 값</td><td data-label="용도">고정 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span> 도메인</td></tr>
 </tbody>
 </table></div>
 <p>값만 비워 둔 환경변수는 &quot;지정하지 않음&quot;으로 보고 기본값을 쓴다.
@@ -1354,24 +1386,24 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 </section>
 <section class="chapter" id="sec-12">
 <h2>12. 요구사항 추적성</h2>
-<div class="table-wrap"><table>
+<div class="table-wrap"><table class="responsive">
 <thead><tr><th>Requirement</th><th>Implementation</th><th>Test</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></td><td><code>src/menu_bot/scraper.py</code></td><td><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</td><td><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td>REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001</td><td><code>src/menu_bot/ocr_provider.py</code></td><td>TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td><code>src/menu_bot/parser.py</code></td><td><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td><code>src/menu_bot/corrections.py</code></td><td><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td><code>src/menu_bot/pipeline.py</code></td><td><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-API-001">REQ-API-001</a></td><td><code>src/menu_bot/web.py</code></td><td><a class="idref" href="#TEST-API-001">TEST-API-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></td><td><code>src/menu_bot/next_week_watch.py</code></td><td><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></td><td><code>src/menu_bot/next_week_watch.py</code></td><td><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a></td><td><code>src/menu_bot/web.py</code>, <code>.gitignore</code></td><td><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td><td><span class="badge st-verified">verified</span></td></tr>
-<tr><td><a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a></td><td><code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></td><td><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td><td><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td><a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></td><td><code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></td><td><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></td><td data-label="Implementation"><code>src/menu_bot/scraper.py</code></td><td data-label="Test"><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement">REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001</td><td data-label="Implementation"><code>src/menu_bot/ocr_provider.py</code></td><td data-label="Test">TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td data-label="Implementation"><code>src/menu_bot/corrections.py</code></td><td data-label="Test"><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td data-label="Implementation"><code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-API-001">REQ-API-001</a></td><td data-label="Implementation"><code>src/menu_bot/web.py</code></td><td data-label="Test"><a class="idref" href="#TEST-API-001">TEST-API-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></td><td data-label="Implementation"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="Test"><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></td><td data-label="Implementation"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="Test"><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a></td><td data-label="Implementation"><code>src/menu_bot/web.py</code>, <code>.gitignore</code></td><td data-label="Test"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a></td><td data-label="Implementation"><code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></td><td data-label="Test"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></td><td data-label="Implementation"><code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></td><td data-label="Test"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
 </tbody>
 </table></div>
 <p>Status 값: <code>draft</code> (사양만 있음) / <code>implemented</code> / <code>verified</code> (실제 실행까지 확인) /
