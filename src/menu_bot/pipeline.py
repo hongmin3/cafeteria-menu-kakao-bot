@@ -9,6 +9,7 @@ from .db import MenuDB
 from .models import MenuEntry
 from .ocr import recognize
 from .parser import parse_ocr_lines, post_from_title
+from .service_notices import is_inferred_notice
 
 
 def image_path(url: str, image_dir: Path) -> Path:
@@ -53,6 +54,10 @@ def process_manifest(
                     all_entries.extend(parsed)
                 else:
                     stats["skipped_images"] += 1
+            # 여러 첨부 중 음식이 있는 날짜는 이름만으로 만든 휴무 안내를 제외한다.
+            menu_days = {(e.service_date, e.location) for e in all_entries if e.status != 'no_service'}
+            all_entries = [e for e in all_entries if
+                           (e.service_date, e.location) not in menu_days or not is_inferred_notice(e)]
             # 같은 이미지/겹친 레이아웃의 중복은 가장 긴 OCR 결과를 남긴다.
             best: dict[tuple, MenuEntry] = {}
             for entry in all_entries:
@@ -72,4 +77,3 @@ def process_manifest(
             stats["errors"].append({"title": row.get("title"), "error": str(exc)})
             progress(f"[{index}/{len(rows)}] 오류: {row.get('title')} — {exc}")
     return stats
-

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="botyard render-spec-html v6">
 <meta name="spec-html-renderer" content="v6">
-<meta name="spec-source-sha256" content="b99b38653ecf834dfcd3c4b792128cf9d94aa8bc2f8eec5bbeb083b4a9b397b7">
+<meta name="spec-source-sha256" content="b307aacfe43219708e053a546b06afe5600376842c3b38894c6d1758882eef21">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -89,7 +89,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <header class="top">
 <h1>뷰밥 메뉴 알리미 사양서</h1>
 <div class="chips"><span class="chip"><span>Document Version</span><b>0.1.0</b></span><span class="chip"><span>Last Updated</span><b>2026-10-06</b></span><span class="chip"><span>Status</span><b>draft — 기존 계약 일부의 근거 기반 사양화</b></span></div>
-<div class="stats"><div class="stat"><b>4</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>4</b><span>implemented</span></div></div>
+<div class="stats"><div class="stat"><b>5</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>5</b><span>implemented</span></div></div>
 </header>
 <div class="layout">
 <nav class="toc" aria-label="목차">
@@ -102,6 +102,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <li class="toc-id kind-req"><a href="#REQ-CORE-002">REQ-CORE-002 <span>주말 요일 해석</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-CORE-003">REQ-CORE-003 <span>다음 주 거부</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-OCR-001">REQ-OCR-001 <span>공휴일 이름으로 표시한 휴무</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-OCR-002">REQ-OCR-002 <span>연휴 안내의 범위와 문구 구분</span></a></li>
 <li class="toc-2"><a href="#sec-9">9. 오류 처리 정책</a></li>
 <li class="toc-2"><a href="#sec-11">11. 테스트 사양</a></li>
 <li class="toc-id kind-test"><a href="#TEST-CORE-001">TEST-CORE-001</a></li>
@@ -122,6 +123,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <tr><td><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a></td><td>다음 주 거부</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">OCR</span> 식단표의 운영 안내 구분</th></tr>
 <tr><td><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td>공휴일 이름으로 표시한 휴무</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></td><td><code>tests/test_holiday_notices.py</code></td></tr>
+<tr><td><a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a></td><td>연휴 안내의 범위와 문구 구분</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td><code>tests/test_holiday_notices.py</code></td></tr>
 </tbody>
 </table></div>
 </section>
@@ -132,7 +134,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 </section>
 <section class="chapter" id="sec-2">
 <h2>2. 프로젝트 범위</h2>
-<p>이번 기준선에 포함: 조회 입력의 날짜 해석과 다음 주 제한.</p>
+<p>이번 기준선에 포함: 조회 입력의 날짜 해석, 다음 주 제한, 식단표의 휴무·연휴 안내 구분.</p>
 <p>이번 기준선의 확정 범위 밖: 실제 그룹웨어 접근, OCR 정확도 전체, 운영 채널 전송. 기존 기능을 제거하거나 변경한다는 뜻이 아니다.</p>
 </section>
 <section class="chapter" id="sec-5">
@@ -180,6 +182,32 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <li><code>한글날 특식</code>, <code>추석 송편</code> 같은 음식·행사 문구를 휴무로 바꾸지 않는다.</li>
 <li><code>중식 미운영</code>처럼 끼니를 지정한 안내는 그 끼니에만 적용한다.</li>
 </ul>
+</section>
+<section class="card kind-req" id="REQ-OCR-002">
+<h3><span class="idtag">REQ-OCR-002</span> 연휴 안내의 범위와 문구 구분</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span></div>
+<details class="history"><summary>변경 이력 4</summary>
+<ul>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 설 명절·한가위 연휴·임시 공휴일·대체 휴일과 식당 휴무 문구를 처리한다. 장식 기호·요일·휴무 안내 어미도 구분한다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 같은 날짜에서 가까이 붙은 OCR 조각을 안내 문구로 합친다. 날짜·기간이 붙거나 여러 날짜에 걸친 안내를 해당 날짜별로 처리한다. 잘못된 날짜는 다른 메뉴 수집을 중단하지 않는다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 공휴일 특식을 휴무로 오인하거나 끼니별 미운영을 전일 휴무로 확대하는 문제를 고쳤다. 한 게시물의 다른 이미지에 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 회귀 테스트를 71개로 확장했다. 운영 서버의 과거 OCR 캐시 57장에서 정상 메뉴 변경이 없고 현재 운영 항목 154개도 동일함을 확인했다.</li>
+</ul>
+</details>
+<p><code>설 명절</code>, <code>한가위 연휴</code>, <code>대체 휴일</code>, <code>임시 공휴일</code>도 음식이 없는 날짜의 전일 미운영 안내로 읽는다. 별표나 장식 괄호가 있어도 같은 안내로 처리한다.</p>
+<ol>
+<li><code>식당 휴무</code>, <code>전사 휴무</code>처럼 식당 전체를 지정한 안내는 세 끼에 적용한다.</li>
+<li><code>석식 공휴일 미운영</code>은 석식만, <code>조식·석식 미운영</code>은 지정한 두 끼니만 처리한다.</li>
+<li><code>건강식 미운영</code> 같은 코너 안내를 다른 코너나 끼니의 휴무로 확대하지 않는다.</li>
+<li><code>공휴일 특식</code>, <code>노동절 특식</code>과 정상 운영 문구는 휴무를 뜻하지 않는다.</li>
+</ol>
+<p>같은 날짜 칸에서 가까이 붙어 있는 OCR 조각이 알려진 안내 문구를 이루면 합쳐 읽는다. 다른 날짜의 글자를 이어 붙이거나 잘못 읽은 글자를 추측해 휴일 이름으로 바꾸지 않는다.</p>
+<p>날짜가 붙은 안내는 표 안의 해당 날짜에 적용한다. 날짜 범위가 적혀 있거나 안내 글자가 여러 날짜 열에 걸쳐 있으면 해당 열을 각각 판단한다. 이름만 있는 연휴 안내는 음식이 있는 날짜를 휴무로 바꾸지 않는다.</p>
+<p><code>10/08~09</code>는 같은 달의 8일부터 9일까지로 읽는다. 날짜가 틀렸거나 끝 날짜가 시작 날짜보다 이르면 휴무 날짜를 추정하지 않는다. 해당 문구만 건너뛰고 다른 날짜 메뉴는 처리한다.</p>
+<p>한 게시물의 여러 이미지를 합칠 때도 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다. <code>식당 휴무</code>처럼 미운영이 적힌 안내는 유지한다.</p>
+<blockquote>
+<p><strong>한계</strong> 휴일 이름이 OCR에서 사라졌거나 글자가 알아볼 수 없게 틀리면 휴무를 확정할 수 없다. 기존 메뉴 없음 안내를 유지하며 달력만 보고 추정하지 않는다.</p>
+</blockquote>
 <aside class="callout callout-info"><span class="callout-label">참고</span>
 <p>달력만 보고 휴무를 추정하지 않는다. 이름도 메뉴도 없는 빈 칸은 기존의 메뉴 없음 안내를 유지한다.</p>
 </aside>
@@ -216,6 +244,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <tr><td><a class="idref" href="#REQ-CORE-002">REQ-CORE-002</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a>: <code>tests/test_query.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></td><td><code>tests/test_holiday_notices.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td><a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a></td><td><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td><code>tests/test_holiday_notices.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
 </tbody>
 </table></div>
 <p>implemented는 연결된 구현·테스트 소스가 존재한다는 뜻이며 실제 실행 통과를 뜻하지 않는다.</p>
