@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="botyard render-spec-html v6">
 <meta name="spec-html-renderer" content="v6">
-<meta name="spec-source-sha256" content="aefe8c0396fdda74fad2f16ff7873821c623afd9c4a760bbcf24a1dfd86fd132">
+<meta name="spec-source-sha256" content="b99b38653ecf834dfcd3c4b792128cf9d94aa8bc2f8eec5bbeb083b4a9b397b7">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -88,8 +88,8 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <body>
 <header class="top">
 <h1>뷰밥 메뉴 알리미 사양서</h1>
-<div class="chips"><span class="chip"><span>Document Version</span><b>0.1.0</b></span><span class="chip"><span>Last Updated</span><b>2026-09-21</b></span><span class="chip"><span>Status</span><b>draft — 기존 계약 일부의 근거 기반 사양화</b></span></div>
-<div class="stats"><div class="stat"><b>3</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>3</b><span>implemented</span></div></div>
+<div class="chips"><span class="chip"><span>Document Version</span><b>0.1.0</b></span><span class="chip"><span>Last Updated</span><b>2026-10-06</b></span><span class="chip"><span>Status</span><b>draft — 기존 계약 일부의 근거 기반 사양화</b></span></div>
+<div class="stats"><div class="stat"><b>4</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>4</b><span>implemented</span></div></div>
 </header>
 <div class="layout">
 <nav class="toc" aria-label="목차">
@@ -101,6 +101,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <li class="toc-id kind-req"><a href="#REQ-CORE-001">REQ-CORE-001 <span>끼니만 입력</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-CORE-002">REQ-CORE-002 <span>주말 요일 해석</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-CORE-003">REQ-CORE-003 <span>다음 주 거부</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-OCR-001">REQ-OCR-001 <span>공휴일 이름으로 표시한 휴무</span></a></li>
 <li class="toc-2"><a href="#sec-9">9. 오류 처리 정책</a></li>
 <li class="toc-2"><a href="#sec-11">11. 테스트 사양</a></li>
 <li class="toc-id kind-test"><a href="#TEST-CORE-001">TEST-CORE-001</a></li>
@@ -115,10 +116,12 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <div class="table-wrap"><table class="index">
 <thead><tr><th>ID</th><th>이름</th><th>상태</th><th>구현</th><th>테스트</th></tr></thead>
 <tbody>
-<tr class="group"><th colspan="5"><span class="gcode">CORE</span></th></tr>
+<tr class="group"><th colspan="5"><span class="gcode">CORE</span> 식단 질문 해석</th></tr>
 <tr><td><a class="idref" href="#REQ-CORE-001">REQ-CORE-001</a></td><td>끼니만 입력</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a>: <code>tests/test_query.py</code></td></tr>
 <tr><td><a class="idref" href="#REQ-CORE-002">REQ-CORE-002</a></td><td>주말 요일 해석</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a>: <code>tests/test_query.py</code></td></tr>
 <tr><td><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a></td><td>다음 주 거부</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">OCR</span> 식단표의 운영 안내 구분</th></tr>
+<tr><td><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td>공휴일 이름으로 표시한 휴무</td><td><span class="badge st-implemented">implemented</span></td><td><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></td><td><code>tests/test_holiday_notices.py</code></td></tr>
 </tbody>
 </table></div>
 </section>
@@ -134,6 +137,13 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 </section>
 <section class="chapter" id="sec-5">
 <h2>5. 기능 요구사항</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>카테고리</th><th>이름</th></tr></thead>
+<tbody>
+<tr><td>CORE</td><td>식단 질문 해석</td></tr>
+<tr><td>OCR</td><td>식단표의 운영 안내 구분</td></tr>
+</tbody>
+</table></div>
 <section class="card kind-req" id="REQ-CORE-001">
 <h3><span class="idtag">REQ-CORE-001</span> 끼니만 입력</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a>: <code>tests/test_query.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
@@ -152,6 +162,28 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <p>다음 주를 명시한 질문은 현재 주나 오늘로 바꿔 식단을 제공하지 않는다. 조회 범위 안내를 반환하고 다음 주 데이터를 제공하지 않는다.</p>
 <p>관련 구현: <code>src/menu_bot/query.py</code>. 관련 테스트: <code>tests/test_query.py</code>의 <code>test_next_week_is_never_served_or_falls_back_to_today</code>.</p>
 </section>
+<section class="card kind-req" id="REQ-OCR-001">
+<h3><span class="idtag">REQ-OCR-001</span> 공휴일 이름으로 표시한 휴무</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span></div>
+<details class="history"><summary>변경 이력 3</summary>
+<ul>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 식단표에 공휴일 이름만 있는 날짜를 세 끼 모두 식당 미운영으로 안내한다. 한글날을 중식 일반식 메뉴로 표시하던 문제를 고쳤다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 공휴일 이름의 띄어쓰기·괄호를 처리한다. 음식이 함께 있는 날짜, 공휴일 특식과 끼니별 미운영 안내는 유지한다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 휴무 이름 20종·표기, 특식 4종, 음식이 있는 날짜와 끼니별 휴무를 확인하는 회귀 테스트를 추가했다.</li>
+</ul>
+</details>
+<p>식단표의 날짜 칸에 <code>한글날</code>이나 <code>개천절</code>만 있고 음식 메뉴가 없으면, 조식·중식·석식 모두 식당 미운영으로 안내한다. 공휴일 이름을 일반식 메뉴로 표시하지 않는다.</p>
+<ul>
+<li>이름 안의 띄어쓰기와 이름을 감싼 괄호는 같은 안내로 읽는다.</li>
+<li>다른 공휴일도 식단표에 이름만 적혀 있으면 같은 기준을 적용한다.</li>
+<li>같은 날짜에 음식 메뉴가 있으면 공휴일 이름만으로 전일 휴무를 결정하지 않는다.</li>
+<li><code>한글날 특식</code>, <code>추석 송편</code> 같은 음식·행사 문구를 휴무로 바꾸지 않는다.</li>
+<li><code>중식 미운영</code>처럼 끼니를 지정한 안내는 그 끼니에만 적용한다.</li>
+</ul>
+<aside class="callout callout-info"><span class="callout-label">참고</span>
+<p>달력만 보고 휴무를 추정하지 않는다. 이름도 메뉴도 없는 빈 칸은 기존의 메뉴 없음 안내를 유지한다.</p>
+</aside>
+</section>
 </section>
 <section class="chapter" id="sec-9">
 <h2>9. 오류 처리 정책</h2>
@@ -159,8 +191,8 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 </section>
 <section class="chapter" id="sec-11">
 <h2>11. 테스트 사양</h2>
-<p>격리된 개발 환경에서 프로젝트 의존성을 준비하고 저장소 루트에서 아래 명령을 실행한다. 현재 작업에서는 테스트 코드를 읽었으며 실제 실행 결과는 아직 확보하지 않았다. 테스트 파일의 설정이 운영 자원을 가리키지 않는지 먼저 확인한다.</p>
-<pre><code class="language-text">python -m pytest tests/test_query.py -q
+<p>격리된 개발 환경에서 프로젝트 의존성을 준비하고 저장소 루트에서 아래 명령을 실행한다. 테스트 파일의 설정이 운영 자원을 가리키지 않는지 먼저 확인한다. 실행 결과와 운영 확인 기록은 <code>progress.md</code>에 적는다.</p>
+<pre><code class="language-text">python -m pytest -q
 </code></pre>
 <section class="card kind-test" id="TEST-CORE-001">
 <h3><span class="idtag">TEST-CORE-001</span></h3>
@@ -183,6 +215,7 @@ footer{max-width:1280px;margin:0 auto;padding:8px 32px 40px;color:var(--muted);f
 <tr><td><a class="idref" href="#REQ-CORE-001">REQ-CORE-001</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a>: <code>tests/test_query.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td><a class="idref" href="#REQ-CORE-002">REQ-CORE-002</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a>: <code>tests/test_query.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a></td><td><code>src/menu_bot/query.py</code></td><td><a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></td><td><code>tests/test_holiday_notices.py</code></td><td><span class="badge st-implemented">implemented</span></td></tr>
 </tbody>
 </table></div>
 <p>implemented는 연결된 구현·테스트 소스가 존재한다는 뜻이며 실제 실행 통과를 뜻하지 않는다.</p>

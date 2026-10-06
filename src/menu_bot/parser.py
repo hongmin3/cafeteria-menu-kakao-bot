@@ -16,6 +16,12 @@ CATEGORIES = {
 }
 NO_SERVICE_PATTERNS = re.compile(r"대체\s*휴무|휴무|미운영|미제공|운영\s*없|제공\s*없|공휴일|휴일")
 FULL_DAY_PATTERNS = re.compile(r"대체\s*휴무|대체\s*공휴일|공휴일|전사\s*휴무|노동절")
+# 이름만 있는 휴일 그림과 `한글날 특식` 같은 메뉴 제목을 구분한다.
+HOLIDAY_NOTICE_PATTERN = re.compile(
+    r"(?:신정|새해첫날|설날|설연휴|삼일절|3[.·ㆍ]1절|어린이날|부처님오신날|"
+    r"석가탄신일|현충일|광복절|개천절|한글날|추석|추석연휴|성탄절|크리스마스|근로자의날)"
+    r"(?:(?:식당)?(?:휴무|미운영|미제공|운영없음|제공없음))?"
+)
 SPECIAL_PATTERNS = re.compile(r"특식|DAY|데이|영양사\s*픽|스페셜", re.I)
 
 
@@ -137,6 +143,7 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
 
     cells: dict[tuple[date, str, str], list[tuple[float, str, float]]] = defaultdict(list)
     full_day_texts: dict[date, list[str]] = defaultdict(list)
+    holiday_texts: dict[date, list[str]] = defaultdict(list)
     meal_exception_texts: dict[tuple[date, str], list[str]] = defaultdict(list)
     excluded = set(MEAL_WORDS) | {k.replace(" ", "") for k in CATEGORIES}
     min_date_x, max_date_x = min(x for x, _ in date_headers), max(x for x, _ in date_headers)
@@ -157,6 +164,9 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
             continue
         meal = meal_for_y(y)
         named_meal = next((value for word, value in MEAL_WORDS.items() if word in text), None)
+        if HOLIDAY_NOTICE_PATTERN.fullmatch(re.sub(r"[\s()\[\]{}]+", "", text)):
+            holiday_texts[service_day].append(text)
+            continue
         if FULL_DAY_PATTERNS.search(text):
             full_day_texts[service_day].append(text)
             continue
@@ -197,7 +207,14 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
             confidence=sum(v[2] for v in values) / len(values),
         ))
 
-    # 대체휴무/공휴일처럼 명시적인 전일 휴무만 세 끼 전체에 적용한다.
+    # 휴일 이름만 있고 음식 메뉴가 없는 날짜는 글자가 놓인 행과 무관하게
+    # 전일 휴무다. 실제 음식이 있으면 이름만으로 운영 여부를 바꾸지 않는다.
+    menu_days = {entry.service_date for entry in entries if entry.status != "no_service"}
+    for service_day, messages in holiday_texts.items():
+        if service_day not in menu_days:
+            full_day_texts[service_day].extend(f"{text} (식당 미운영)" for text in messages)
+
+    # 대체휴무/공휴일처럼 명시적인 전일 휴무도 세 끼 전체에 적용한다.
     for service_day, messages in full_day_texts.items():
         message = " · ".join(dict.fromkeys(messages))
         for meal in ("조식", "중식", "석식"):
