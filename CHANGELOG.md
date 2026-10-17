@@ -50,6 +50,7 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
 - 2026-09-26: 공통 키트 자동 반영용 검증 명령 파일 `botyard.json` 추가(키트 관리 파일만 바뀌면 이 명령과 준비 검사를 통과한 뒤 자동으로 커밋·push된다).
 - 2026-09-26: 공통 키트(Botyard 59e195f) 갱신 반영 — .project-check/agents-spec-section.md, .project-check/manifest.json, .project-check/project-readiness.js, .project-check/render-spec-html.js, AGENTS.md, docs/SPEC.html. 준비 검사와 자체 테스트 통과.
 - 2026-09-28: 공통 키트(Botyard a71bac0) 갱신 반영 — .project-check/manifest.json, .project-check/render-spec-html.js. 준비 검사와 자체 테스트 통과.
+- 2026-10-17: 공통 키트(Botyard aa65a66) 갱신 반영 — .project-check/agents-spec-section.md, .project-check/manifest.json, .project-check/project-readiness.js, AGENTS.md. 준비 검사와 자체 테스트 통과.
 
 ### Fixed
 
