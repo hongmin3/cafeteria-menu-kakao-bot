@@ -16,6 +16,9 @@ CATEGORIES = {
     "PLUS": "PLUS 코너", "간편식": "간편식", "건강식": "건강식",
 }
 SPECIAL_PATTERNS = re.compile(r"특식|DAY|데이|영양사\s*픽|스페셜", re.I)
+# 행사 그림 글씨로 볼 최소 높이(이미지 높이 비율). 일반 메뉴 글자는 0.02~0.04,
+# 2026-10-22 체육대회 그림 글씨는 0.095~0.099였다.
+BANNER_MIN_HEIGHT = 0.06
 
 
 def post_from_title(post_id: str, title: str, image_urls: list[str]) -> SourcePost:
@@ -116,7 +119,8 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
         # 휴무 안내 그림 안의 `8.17` 같은 큰 숫자를 날짜 헤더로 오인하지 않는다.
         if match and line["y"] > 0.78:
             parsed = _resolve_date(int(match.group(1)), int(match.group(2)), post.start_date)
-            if parsed is not None and abs((parsed - post.start_date).days) <= 10:
+            # 다음 주 식단표가 지난주 게시글에 붙어 올라오는 경우가 있어 2주까지 받는다.
+            if parsed is not None and abs((parsed - post.start_date).days) <= 14:
                 date_headers.append((x, parsed))
                 date_header_ys.append(_center(line)[1])
     dedup_dates: dict[date, float] = {}
@@ -193,6 +197,7 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
         return categories[-1][1]
 
     cells: dict[tuple[date, str, str], list[tuple[float, str, float]]] = defaultdict(list)
+    day_heights: dict[date, list[float]] = defaultdict(list)
     full_day_texts: dict[date, list[str]] = defaultdict(list)
     holiday_texts: dict[date, list[str]] = defaultdict(list)
     meal_exception_texts: dict[tuple[date, str], list[str]] = defaultdict(list)
@@ -266,9 +271,27 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
         category = category_for_y(meal, y)
         confidence = float(line.get("confidence", 0.0))
         cells[(service_day, meal, category)].append((-y, text, confidence))
+        day_heights[service_day].append(float(line["height"]))
+
+    vocabulary = active_vocabulary()
+    # 날짜 칸의 글자가 모두 그림 글씨처럼 크면(체육대회 같은 행사 그림) 메뉴가
+    # 아니라 그날 식당을 운영하지 않는다는 안내다. 보통 크기 글자가 하나라도
+    # 있으면 메뉴 옆의 홍보 그림일 수 있으므로 그대로 둔다.
+    all_heights = sorted(h for heights in day_heights.values() for h in heights)
+    normal_height = all_heights[len(all_heights) // 2] if all_heights else 0.0
+    banner_height = max(BANNER_MIN_HEIGHT, normal_height * 2)
+    for service_day, heights in day_heights.items():
+        if not heights or min(heights) < banner_height:
+            continue
+        banner_cells = [(key, values) for key, values in cells.items() if key[0] == service_day]
+        banner = sorted(value for _, values in banner_cells for value in values)
+        for key, _ in banner_cells:
+            del cells[key]
+        words = clean_items([text for _, text, _ in banner], vocabulary)
+        if words:
+            full_day_texts[service_day].append(" ".join(words) + INFERRED_SUFFIX)
 
     entries: list[MenuEntry] = []
-    vocabulary = active_vocabulary()
     for (service_day, meal, category), values in cells.items():
         values.sort()
         # OCR 글자 오인식과 장식 서체에서 끼어든 조각을 여기서 걸러낸다
