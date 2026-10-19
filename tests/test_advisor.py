@@ -220,6 +220,12 @@ def test_failed_mail_is_retried_next_time(image):
     ('API Error: 500 Internal server error', 'unstable'),
     ('Connection error.', 'unstable'),
     ('종료 코드 1: ', 'unstable'),
+    # 2026-10-20 서버 CLI(2.1.299)에서 관찰·추출한 실제 문구.
+    ('Not logged in · Please run /login', 'auth'),
+    ('You have hit your session limit · resets 3pm', 'limit'),
+    ('weekly limit reached', 'limit'),
+    ('Budget limit reached ($5.00 spent of the $5 maximum)', 'limit'),
+    ('Context limit reached', 'unstable'),
 ])
 def test_classify_failure(text, kind):
     assert advisor.classify_failure(text) == kind
@@ -235,6 +241,13 @@ class Completed:
     (Completed(json.dumps({'is_error': True, 'result': 'Invalid API key · Please run /login'})), 'auth'),
     (Completed('', 'API Error: 529 Overloaded', 1), 'unstable'),
     (Completed('<html>gateway</html>', '', 0), 'unstable'),
+    # 실제 미로그인 출력(서버에서 빈 설정 폴더로 관찰): 상태 코드 없이 문구만 온다.
+    (Completed(json.dumps({'is_error': True, 'api_error_status': None,
+                           'result': 'Not logged in · Please run /login'}), returncode=1), 'auth'),
+    # 상태 코드가 있으면 문구보다 코드를 먼저 본다.
+    (Completed(json.dumps({'is_error': True, 'api_error_status': 429, 'result': 'API Error'}), returncode=1), 'limit'),
+    (Completed(json.dumps({'is_error': True, 'api_error_status': 401, 'result': 'API Error'}), returncode=1), 'auth'),
+    (Completed(json.dumps({'is_error': True, 'api_error_status': 529, 'result': 'rate limit'}), returncode=1), 'unstable'),
 ])
 def test_run_claude_classifies_cli_errors(monkeypatch, tmp_path, completed, kind):
     monkeypatch.setattr(advisor, 'claude_path', lambda: 'claude')

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="botyard render-spec-html v7">
 <meta name="spec-html-renderer" content="v7">
-<meta name="spec-source-sha256" content="ba8f891601c83f8c6a398813828598ee060135c747c19e873f513dea637c090a">
+<meta name="spec-source-sha256" content="74938b57b4b38c579b3d2284b6a2dcb06daa3abf66bef260b784f104179a2da4">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -313,8 +313,9 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <section class="card kind-req" id="REQ-ADV-003">
 <h3><span class="idtag">REQ-ADV-003</span> Claude 자문 실패 알림</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
-<details class="history"><summary>변경 이력 1</summary>
+<details class="history"><summary>변경 이력 2</summary>
 <ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>: Claude CLI 출력의 HTTP 상태 코드(<code>api_error_status</code>)로 실패 종류를 먼저 가린다. 실제 미로그인 문구 <code>Not logged in · Please run /login</code>과 <code>hit your session limit</code> 같은 한도 문구를 확인해 반영했다. <code>Context limit reached</code>를 한도 초과로 잘못 분류하던 문제를 고쳤다.</li>
 <li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>: Claude 자문이 사용 한도 초과, 로그인 만료, 시간 초과, 서비스 오류, 답 형식 오류, CLI 없음으로 실패하면 읽은 결과를 그대로 저장하고 알림 메일을 보낸다. 같은 종류는 12시간에 한 번 보낸다. <code>menu-bot advisor-check</code> 명령을 추가했다.</li>
 </ul>
 </details>
@@ -322,15 +323,16 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <div class="table-wrap"><table>
 <thead><tr><th>실패 종류</th><th>알아보는 방법</th><th>다시 묻기</th></tr></thead>
 <tbody>
-<tr><td>사용 한도 초과</td><td>오류에 <code>usage limit</code>, <code>hit your limit</code>, <code>429</code>, <code>credit balance</code> 같은 말이 있음</td><td>하지 않음</td></tr>
-<tr><td>로그인 만료·인증 실패</td><td>오류에 <code>/login</code>, <code>OAuth</code>, <code>API key</code>, <code>401</code> 같은 말이 있음</td><td>하지 않음</td></tr>
+<tr><td>사용 한도 초과</td><td>HTTP 429, 또는 오류에 <code>usage limit</code>, <code>hit your session limit</code>, <code>weekly limit</code>, <code>credit balance</code> 같은 말이 있음</td><td>하지 않음</td></tr>
+<tr><td>로그인 만료·인증 실패</td><td>HTTP 401·403, 또는 오류에 <code>Not logged in</code>, <code>/login</code>, <code>OAuth</code>, <code>API key</code> 같은 말이 있음</td><td>하지 않음</td></tr>
 <tr><td>시간 초과</td><td>3분 안에 끝나지 않음</td><td>하지 않음</td></tr>
-<tr><td>서비스 오류·불안정</td><td>그 밖의 오류(<code>529 Overloaded</code>, <code>500</code>, 연결 오류 등)</td><td>20초 뒤 한 번</td></tr>
+<tr><td>서비스 오류·불안정</td><td>그 밖의 오류(HTTP 529·500, 연결 오류, <code>Context limit reached</code> 등)</td><td>20초 뒤 한 번</td></tr>
 <tr><td>답을 읽을 수 없음</td><td>정해진 JSON 형식이 아니거나 반영 중 오류</td><td>하지 않음</td></tr>
 <tr><td>CLI 없음</td><td><code>MENU_ADVISOR=on</code>인데 <code>claude</code>를 실행할 수 없음</td><td>하지 않음</td></tr>
 </tbody>
 </table></div>
 <ul>
+<li>CLI 출력에 HTTP 상태 코드(<code>api_error_status</code>)가 있으면 문구보다 코드를 먼저 본다.</li>
 <li>같은 종류의 실패 메일은 12시간에 한 번만 보낸다. 메일 발송이 실패하면 다음 실패 때 다시 보낸다.</li>
 <li>실패한 답은 저장하지 않는다. 다음 수집에서 다시 묻는다.</li>
 <li>학습용 수집(<code>ingest --learning</code>)에서는 Claude에게 묻지 않는다.</li>

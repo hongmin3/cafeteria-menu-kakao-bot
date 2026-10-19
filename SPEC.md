@@ -132,13 +132,14 @@ Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 �
 
 | 실패 종류 | 알아보는 방법 | 다시 묻기 |
 |---|---|---|
-| 사용 한도 초과 | 오류에 `usage limit`, `hit your limit`, `429`, `credit balance` 같은 말이 있음 | 하지 않음 |
-| 로그인 만료·인증 실패 | 오류에 `/login`, `OAuth`, `API key`, `401` 같은 말이 있음 | 하지 않음 |
+| 사용 한도 초과 | HTTP 429, 또는 오류에 `usage limit`, `hit your session limit`, `weekly limit`, `credit balance` 같은 말이 있음 | 하지 않음 |
+| 로그인 만료·인증 실패 | HTTP 401·403, 또는 오류에 `Not logged in`, `/login`, `OAuth`, `API key` 같은 말이 있음 | 하지 않음 |
 | 시간 초과 | 3분 안에 끝나지 않음 | 하지 않음 |
-| 서비스 오류·불안정 | 그 밖의 오류(`529 Overloaded`, `500`, 연결 오류 등) | 20초 뒤 한 번 |
+| 서비스 오류·불안정 | 그 밖의 오류(HTTP 529·500, 연결 오류, `Context limit reached` 등) | 20초 뒤 한 번 |
 | 답을 읽을 수 없음 | 정해진 JSON 형식이 아니거나 반영 중 오류 | 하지 않음 |
 | CLI 없음 | `MENU_ADVISOR=on`인데 `claude`를 실행할 수 없음 | 하지 않음 |
 
+- CLI 출력에 HTTP 상태 코드(`api_error_status`)가 있으면 문구보다 코드를 먼저 본다.
 - 같은 종류의 실패 메일은 12시간에 한 번만 보낸다. 메일 발송이 실패하면 다음 실패 때 다시 보낸다.
 - 실패한 답은 저장하지 않는다. 다음 수집에서 다시 묻는다.
 - 학습용 수집(`ingest --learning`)에서는 Claude에게 묻지 않는다.

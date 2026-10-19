@@ -53,7 +53,11 @@ FAILURE_ACTIONS = {
     "unstable": "Anthropic 서비스 상태(status.claude.com)를 확인하세요. 한 번 다시 시도한 뒤에도 실패했습니다.",
     "bad_answer": "그림 옆 `.advice.json`이 저장되지 않았습니다. 반복되면 프롬프트 형식을 점검하세요.",
 }
-_LIMIT_RE = re.compile(r"usage limit|limit reached|hit your limit|rate.?limit|\b429\b|credit balance|quota", re.I)
+# 문구는 2026-10-20 서버 CLI(2.1.299) 실행 파일과 실제 미로그인 출력에서 확인했다.
+# `Context limit reached`는 입력이 너무 긴 것이라 한도 초과가 아니다.
+_LIMIT_RE = re.compile(
+    r"usage limit|(?<!context )limit reached|hit your (?:\w+ )?limit|(?:session|weekly) limit|"
+    r"rate.?limit|\b429\b|credit balance|spend.?cap|quota", re.I)
 _AUTH_RE = re.compile(r"/login|log ?in|oauth|api key|\b401\b|\b403\b|authenticat|unauthori[sz]ed|expired", re.I)
 _UNSTABLE_RE = re.compile(r"overloaded|\b5\d\d\b|api error|connection|network|ECONN|ETIMEDOUT|socket", re.I)
 
@@ -70,6 +74,17 @@ def classify_failure(text: str) -> str:
     if _LIMIT_RE.search(text):
         return "limit"
     if _AUTH_RE.search(text):
+        return "auth"
+    return "unstable"
+
+
+def classify_status(status) -> str | None:
+    """CLI JSON의 `api_error_status`(HTTP 코드)로 가린다. 코드가 없으면 None."""
+    if not isinstance(status, int):
+        return None
+    if status == 429:
+        return "limit"
+    if status in (401, 403):
         return "auth"
     return "unstable"
 
@@ -111,8 +126,11 @@ def run_claude(prompt: str, cwd: Path) -> str:
         outer = None
     if completed.returncode != 0 or not isinstance(outer, dict) or outer.get("is_error"):
         detail = str(outer.get("result") if isinstance(outer, dict) else "") or completed.stderr or completed.stdout
+        status = outer.get("api_error_status") if isinstance(outer, dict) else None
         detail = f"종료 코드 {completed.returncode}: {' '.join(detail.split())[:300]}"
-        raise AdvisorError(classify_failure(detail), detail)
+        if isinstance(status, int):
+            detail += f" (HTTP {status})"
+        raise AdvisorError(classify_status(status) or classify_failure(detail), detail)
     return str(outer.get("result", ""))
 
 

@@ -2,6 +2,8 @@
 
 ## 2026-10-20
 
+- REQ-ADV-003: Claude CLI 출력의 HTTP 상태 코드(`api_error_status`)로 실패 종류를 먼저 가린다. 실제 미로그인 문구 `Not logged in · Please run /login`과 `hit your session limit` 같은 한도 문구를 확인해 반영했다. `Context limit reached`를 한도 초과로 잘못 분류하던 문제를 고쳤다.
+
 - REQ-ADV-001: 식단표 읽은 결과에 이상 신호(메뉴 0건인 날짜, 일반식 1~2개, 메뉴로 남은 큰 글씨)가 있으면 운영 서버의 Claude CLI에게 그림을 보여 주고 판정을 묻는다. 같은 그림의 답은 저장해 두고 다시 묻지 않는다.
 - REQ-ADV-002: Claude 답 중 "음식이 아닌 항목"과 "식당 미운영"만 반영한다. 이미 읽은 글자와 맞을 때만 반영하고 메뉴를 새로 만들지 않는다.
 - REQ-ADV-003: Claude 자문이 사용 한도 초과, 로그인 만료, 시간 초과, 서비스 오류, 답 형식 오류, CLI 없음으로 실패하면 읽은 결과를 그대로 저장하고 알림 메일을 보낸다. 같은 종류는 12시간에 한 번 보낸다. `menu-bot advisor-check` 명령을 추가했다.
