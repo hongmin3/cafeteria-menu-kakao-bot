@@ -110,7 +110,8 @@ def _join_notice_fragments(lines: list[dict], date_headers: list[tuple[float, da
     return joined
 
 
-def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list[MenuEntry]:
+def find_date_headers(post: SourcePost, lines: list[dict]) -> tuple[list[tuple[float, date]], list[float]]:
+    """표 위쪽의 날짜 줄을 (가로 위치, 날짜) 목록과 세로 위치 목록으로 돌려준다."""
     date_headers: list[tuple[float, date]] = []
     date_header_ys: list[float] = []
     for line in lines:
@@ -126,7 +127,11 @@ def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list
     dedup_dates: dict[date, float] = {}
     for x, day in date_headers:
         dedup_dates.setdefault(day, x)
-    date_headers = sorted((x, day) for day, x in dedup_dates.items())
+    return sorted((x, day) for day, x in dedup_dates.items()), date_header_ys
+
+
+def parse_ocr_lines(post: SourcePost, image_url: str, lines: list[dict]) -> list[MenuEntry]:
+    date_headers, date_header_ys = find_date_headers(post, lines)
     if not date_headers:
         return []
 

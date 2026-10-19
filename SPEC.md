@@ -26,6 +26,7 @@
 |---|---|
 | CORE | 식단 질문 해석 |
 | OCR | 식단표의 운영 안내 구분 |
+| ADV | 이상한 식단표의 Claude 자문 |
 
 ### REQ-CORE-001 끼니만 입력
 
@@ -95,6 +96,56 @@
 
 이유: 그룹웨어에서 다음 주 식단표가 지난주 게시글에 추가로 올라오고 이번 주 게시글에는 그림이 없는 경우가 있었다. 10일 제한 때문에 금요일 메뉴가 통째로 빠졌다.
 
+### REQ-ADV-001 이상 신호가 있을 때 Claude에게 묻기
+
+식단표 그림을 읽은 결과가 이상해 보이면, 운영 서버에 로그인된 Claude CLI(`claude`)에게 그 그림을 보여 주고 판정을 묻는다. 이상 신호가 없으면 묻지 않는다.
+
+| 이상 신호 | 예 |
+|---|---|
+| 날짜 줄에는 있는데 그날 메뉴가 하나도 없음 | 그림만 있는 휴일 칸 |
+| 일반식 칸의 항목이 1~2개뿐임(미운영 안내 제외) | `체육대황` 한 줄만 있는 중식 일반식 |
+| 메뉴로 남은 글자가 일반 메뉴보다 훨씬 큼 | 메뉴 옆 홍보 그림 글씨 |
+
+1. 그림 한 장에 한 번만 묻는다. 물어볼 날짜와 지금 읽은 메뉴를 함께 보낸다.
+2. 답은 정해진 JSON 형식으로만 받는다.
+3. 같은 그림과 같은 이상 신호에 대한 답은 그림 옆에 저장해 두고 다시 묻지 않는다.
+4. `MENU_ADVISOR=off`이거나 `claude`를 찾을 수 없으면 묻지 않고 지금처럼 처리한다.
+
+> **주의** Claude 호출이 실패하거나, 시간이 3분을 넘거나, 답을 읽을 수 없으면 읽은 결과를 그대로 저장한다. 자문 때문에 식단 수집이 멈추면 안 된다.
+
+### REQ-ADV-002 Claude 답을 반영하는 범위
+
+Claude의 답 중 아래 두 가지만 반영한다. 메뉴 이름을 새로 만들거나 고치라는 답은 반영하지 않는다.
+
+- **음식이 아닌 항목:** 그날 읽은 메뉴에 글자가 똑같이 있는 항목만 지운다. 항목을 지워 칸이 비면 그 칸을 없앤다.
+- **식당 미운영:** 그날 남은 메뉴가 모두 이상 신호에 걸린 항목뿐일 때만 세 끼를 미운영 안내로 바꾼다. 안내 문구는 Claude가 준 이름에 `(식당 미운영)`을 붙인다. 이름이 휴일 이름도 아니고 그 칸의 글자에도 없으면 `식단표에 메뉴 없음 (식당 미운영)`으로 쓴다.
+
+> **예외** 메뉴가 하나도 없던 날짜는 Claude가 준 이름이 휴일 이름이거나 그 칸의 글자에 있을 때만 미운영으로 바꾼다. 이름을 확인할 수 없으면 기존의 메뉴 없음 안내를 유지한다(REQ-OCR-002의 빈 칸 기준).
+
+이유: Claude가 그림을 잘못 보거나 글자를 지어내도 사용자에게 없는 메뉴가 보이지 않게 한다. 자문은 잘못 읽은 것을 덜어내는 데만 쓴다.
+
+> **참고** 물은 내용과 답, 실제로 반영한 변경은 그림 옆 `<그림>.advice.json`에 남는다. 운영자가 나중에 확인할 수 있다.
+
+### REQ-ADV-003 Claude 자문 실패 알림
+
+Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 저장하고 운영자에게 알림 메일을 보낸다. 메일에는 실패 종류, 오류 내용, 게시글, 확인이 필요한 날짜와 의심 항목, 조치 방법을 적는다.
+
+| 실패 종류 | 알아보는 방법 | 다시 묻기 |
+|---|---|---|
+| 사용 한도 초과 | 오류에 `usage limit`, `hit your limit`, `429`, `credit balance` 같은 말이 있음 | 하지 않음 |
+| 로그인 만료·인증 실패 | 오류에 `/login`, `OAuth`, `API key`, `401` 같은 말이 있음 | 하지 않음 |
+| 시간 초과 | 3분 안에 끝나지 않음 | 하지 않음 |
+| 서비스 오류·불안정 | 그 밖의 오류(`529 Overloaded`, `500`, 연결 오류 등) | 20초 뒤 한 번 |
+| 답을 읽을 수 없음 | 정해진 JSON 형식이 아니거나 반영 중 오류 | 하지 않음 |
+| CLI 없음 | `MENU_ADVISOR=on`인데 `claude`를 실행할 수 없음 | 하지 않음 |
+
+- 같은 종류의 실패 메일은 12시간에 한 번만 보낸다. 메일 발송이 실패하면 다음 실패 때 다시 보낸다.
+- 실패한 답은 저장하지 않는다. 다음 수집에서 다시 묻는다.
+- 학습용 수집(`ingest --learning`)에서는 Claude에게 묻지 않는다.
+- `menu-bot advisor-check`는 짧은 질문 하나로 설치·로그인·한도 상태를 확인한다. `--mail`을 붙이면 실패 메일도 보낸다.
+
+> **주의** 운영 서버는 `.env`에 `MENU_ADVISOR=on`을 둔다. `auto`는 `claude`가 없으면 조용히 자문을 건너뛰므로 개발 PC에서만 쓴다.
+
 ## 9. 오류 처리 정책
 
 모호하거나 지원하지 않는 질문은 날짜나 끼니를 임의 선택하지 않고 안내한다. parser가 날짜를 해석할 수 있어도 answer 단계의 조회 제한을 우회해서는 안 된다.
@@ -130,6 +181,9 @@ REQ-CORE-003 검증: `tests/test_query.py`의 `test_next_week_is_never_served_or
 | REQ-OCR-002 | `src/menu_bot/service_notices.py`, `src/menu_bot/parser.py`, `src/menu_bot/pipeline.py` | `tests/test_holiday_notices.py` | implemented |
 | REQ-OCR-003 | `src/menu_bot/parser.py`, `src/menu_bot/corrections.py` | `tests/test_event_banners.py` | implemented |
 | REQ-OCR-004 | `src/menu_bot/parser.py` | `tests/test_event_banners.py` | implemented |
+| REQ-ADV-001 | `src/menu_bot/advisor.py`, `src/menu_bot/pipeline.py` | `tests/test_advisor.py` | implemented |
+| REQ-ADV-002 | `src/menu_bot/advisor.py` | `tests/test_advisor.py` | implemented |
+| REQ-ADV-003 | `src/menu_bot/advisor.py`, `src/menu_bot/cli.py`, `src/menu_bot/pipeline.py` | `tests/test_advisor.py` | implemented |
 
 implemented는 연결된 구현·테스트 소스가 존재한다는 뜻이며 실제 실행 통과를 뜻하지 않는다.
 

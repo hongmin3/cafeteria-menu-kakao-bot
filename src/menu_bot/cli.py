@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 from zoneinfo import ZoneInfo
 
+from . import advisor
 from .config import get_settings
 from .corrections import (
     MIN_VOCAB_COUNT,
@@ -20,6 +21,7 @@ from .corrections import (
     reset_substitutions_cache,
 )
 from .db import MenuDB
+from .models import SourcePost
 from .next_week_watch import (
     check_next_week_deadline,
     check_next_week_posted,
@@ -108,6 +110,13 @@ def main() -> None:
         "notify-test",
         help="알림 메일 설정이 실제로 동작하는지 시험 메일 1통으로 확인(비밀번호는 출력하지 않음)",
     )
+    advisor_check = sub.add_parser(
+        "advisor-check",
+        help="Claude 자문을 쓸 수 있는지(설치·로그인·사용 한도) 짧은 질문 1번으로 확인",
+    )
+    advisor_check.add_argument(
+        "--mail", action="store_true", help="실패하면 운영 중과 같은 실패 알림 메일도 보낸다",
+    )
     vocab = sub.add_parser(
         "build-vocab",
         help="OCR 오인식 교정에 쓸 메뉴 이름 어휘집을 만든다(실제 메뉴 데이터이므로 저장소에 넣지 않음)",
@@ -154,7 +163,9 @@ def main() -> None:
         try:
             today = datetime.now(ZoneInfo(settings.timezone)).date()
             week_start = None if args.learning else today - timedelta(days=today.weekday())
-            stats = process_manifest(rows, db, Path("data/images"), week_start=week_start)
+            # 1년치 학습 수집에서 Claude를 부르면 호출과 실패 메일이 수십 건 쌓인다.
+            stats = process_manifest(rows, db, Path("data/images"), week_start=week_start,
+                                     use_advisor=not args.learning)
             print(json.dumps(stats, ensure_ascii=False, indent=2))
         finally:
             db.close()
@@ -204,6 +215,19 @@ def main() -> None:
             mail=mail,
         )
         sys.exit(0 if ok else 1)
+    elif args.command == "advisor-check":
+        print(f"MENU_ADVISOR={advisor.advisor_mode()}  claude={advisor.claude_path() or '(없음)'}")
+        try:
+            reply = advisor.run_claude("숫자 1만 출력해.", Path.cwd())
+        except advisor.AdvisorError as exc:
+            print(f"실패: {exc}")
+            print(f"조치: {advisor.FAILURE_ACTIONS.get(exc.kind, '')}")
+            if args.mail:
+                post = SourcePost(post_id="advisor-check", title="advisor-check 수동 점검",
+                                  location="", start_date=datetime.now(ZoneInfo(settings.timezone)).date())
+                advisor.report_failure(exc, post, "(없음)", [], state_path=Path(advisor.ALERT_STATE_PATH + ".check"))
+            sys.exit(1)
+        print(f"정상: Claude가 응답했습니다({reply.strip()[:20]})")
     elif args.command == "build-vocab":
         # 어휘집을 만드는 동안에는 어휘집 교정 자체를 끈다. 안 그러면 직전
         # 어휘집을 근거로 값을 고친 뒤 그 결과로 새 어휘집을 만드는 꼴이 된다.

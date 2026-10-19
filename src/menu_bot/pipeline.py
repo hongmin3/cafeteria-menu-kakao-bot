@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 import requests
 
+from .advisor import advise
 from .db import MenuDB
 from .models import MenuEntry
 from .ocr import recognize
@@ -35,7 +36,8 @@ def filter_entries_to_week(entries: list[MenuEntry], week_start: date) -> tuple[
 
 
 def process_manifest(
-    rows: list[dict], db: MenuDB, image_dir: Path, progress=print, week_start: date | None = None
+    rows: list[dict], db: MenuDB, image_dir: Path, progress=print, week_start: date | None = None,
+    use_advisor: bool = True,
 ) -> dict:
     stats = {
         "posts": 0, "images": 0, "entries": 0, "filtered_entries": 0,
@@ -48,7 +50,11 @@ def process_manifest(
             all_entries: list[MenuEntry] = []
             for url in urls:
                 path = _download(url, image_dir)
-                parsed = parse_ocr_lines(post, url, recognize(path))
+                lines = recognize(path)
+                # 이상 신호가 있을 때만 Claude에게 그림을 보여 주고 묻는다(REQ-ADV-001).
+                parsed = parse_ocr_lines(post, url, lines)
+                if use_advisor:
+                    parsed = advise(post, path, lines, parsed, progress=progress)
                 stats["images"] += 1
                 if parsed:
                     all_entries.extend(parsed)

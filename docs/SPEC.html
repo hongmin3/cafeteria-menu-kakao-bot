@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="botyard render-spec-html v7">
 <meta name="spec-html-renderer" content="v7">
-<meta name="spec-source-sha256" content="8f17f37e4911db2bb48b5e6e5bc33f4168e443668ec32022f1c6517e33ee7512">
+<meta name="spec-source-sha256" content="ba8f891601c83f8c6a398813828598ee060135c747c19e873f513dea637c090a">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -93,7 +93,7 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <header class="top">
 <h1>뷰밥 메뉴 알리미 사양서</h1>
 <div class="chips"><span class="chip"><span>Document Version</span><b>0.1.0</b></span><span class="chip"><span>Last Updated</span><b>2026-10-20</b></span><span class="chip"><span>Status</span><b>draft — 기존 계약 일부의 근거 기반 사양화</b></span></div>
-<div class="stats"><div class="stat"><b>7</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>7</b><span>implemented</span></div></div>
+<div class="stats"><div class="stat"><b>10</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>10</b><span>implemented</span></div></div>
 </header>
 <div class="layout">
 <nav class="toc" aria-label="목차">
@@ -109,6 +109,9 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <li class="toc-id kind-req"><a href="#REQ-OCR-002">REQ-OCR-002 <span>연휴 안내의 범위와 문구 구분</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-OCR-003">REQ-OCR-003 <span>행사 그림만 있는 날짜</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-OCR-004">REQ-OCR-004 <span>다른 주 게시글에 붙은 식단표</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-ADV-001">REQ-ADV-001 <span>이상 신호가 있을 때 Claude에게 묻기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-ADV-002">REQ-ADV-002 <span>Claude 답을 반영하는 범위</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-ADV-003">REQ-ADV-003 <span>Claude 자문 실패 알림</span></a></li>
 <li class="toc-2"><a href="#sec-9">9. 오류 처리 정책</a></li>
 <li class="toc-2"><a href="#sec-11">11. 테스트 사양</a></li>
 <li class="toc-id kind-test"><a href="#TEST-CORE-001">TEST-CORE-001</a></li>
@@ -132,6 +135,10 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <tr><td data-label="ID"><a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a></td><td data-label="이름">연휴 안내의 범위와 문구 구분</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_holiday_notices.py</code></td></tr>
 <tr><td data-label="ID"><a class="idref" href="#REQ-OCR-003">REQ-OCR-003</a></td><td data-label="이름">행사 그림만 있는 날짜</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></td><td data-label="테스트"><code>tests/test_event_banners.py</code></td></tr>
 <tr><td data-label="ID"><a class="idref" href="#REQ-OCR-004">REQ-OCR-004</a></td><td data-label="이름">다른 주 게시글에 붙은 식단표</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><code>tests/test_event_banners.py</code></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">ADV</span> 이상한 식단표의 Claude 자문</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a></td><td data-label="이름">이상 신호가 있을 때 Claude에게 묻기</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></td><td data-label="이름">Claude 답을 반영하는 범위</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a></td><td data-label="이름">Claude 자문 실패 알림</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
 </tbody>
 </table></div>
 </section>
@@ -152,6 +159,7 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <tbody>
 <tr><td>CORE</td><td>식단 질문 해석</td></tr>
 <tr><td>OCR</td><td>식단표의 운영 안내 구분</td></tr>
+<tr><td>ADV</td><td>이상한 식단표의 Claude 자문</td></tr>
 </tbody>
 </table></div>
 <section class="card kind-req" id="REQ-CORE-001">
@@ -193,7 +201,7 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 </section>
 <section class="card kind-req" id="REQ-OCR-002">
 <h3><span class="idtag">REQ-OCR-002</span> 연휴 안내의 범위와 문구 구분</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span></div>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></span></div>
 <details class="history"><summary>변경 이력 4</summary>
 <ul>
 <li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 설 명절·한가위 연휴·임시 공휴일·대체 휴일과 식당 휴무 문구를 처리한다. 장식 기호·요일·휴무 안내 어미도 구분한다.</li>
@@ -254,6 +262,84 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 </ul>
 <p class="why"><span class="why-label">이유</span> 그룹웨어에서 다음 주 식단표가 지난주 게시글에 추가로 올라오고 이번 주 게시글에는 그림이 없는 경우가 있었다. 10일 제한 때문에 금요일 메뉴가 통째로 빠졌다.</p>
 </section>
+<section class="card kind-req" id="REQ-ADV-001">
+<h3><span class="idtag">REQ-ADV-001</span> 이상 신호가 있을 때 Claude에게 묻기</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a>: 식단표 읽은 결과에 이상 신호(메뉴 0건인 날짜, 일반식 1~2개, 메뉴로 남은 큰 글씨)가 있으면 운영 서버의 Claude CLI에게 그림을 보여 주고 판정을 묻는다. 같은 그림의 답은 저장해 두고 다시 묻지 않는다.</li>
+</ul>
+</details>
+<p>식단표 그림을 읽은 결과가 이상해 보이면, 운영 서버에 로그인된 Claude CLI(<code>claude</code>)에게 그 그림을 보여 주고 판정을 묻는다. 이상 신호가 없으면 묻지 않는다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>이상 신호</th><th>예</th></tr></thead>
+<tbody>
+<tr><td>날짜 줄에는 있는데 그날 메뉴가 하나도 없음</td><td>그림만 있는 휴일 칸</td></tr>
+<tr><td>일반식 칸의 항목이 1~2개뿐임(미운영 안내 제외)</td><td><code>체육대황</code> 한 줄만 있는 중식 일반식</td></tr>
+<tr><td>메뉴로 남은 글자가 일반 메뉴보다 훨씬 큼</td><td>메뉴 옆 홍보 그림 글씨</td></tr>
+</tbody>
+</table></div>
+<ol>
+<li>그림 한 장에 한 번만 묻는다. 물어볼 날짜와 지금 읽은 메뉴를 함께 보낸다.</li>
+<li>답은 정해진 JSON 형식으로만 받는다.</li>
+<li>같은 그림과 같은 이상 신호에 대한 답은 그림 옆에 저장해 두고 다시 묻지 않는다.</li>
+<li><code>MENU_ADVISOR=off</code>이거나 <code>claude</code>를 찾을 수 없으면 묻지 않고 지금처럼 처리한다.</li>
+</ol>
+<aside class="callout callout-warn"><span class="callout-label">주의</span>
+<p>Claude 호출이 실패하거나, 시간이 3분을 넘거나, 답을 읽을 수 없으면 읽은 결과를 그대로 저장한다. 자문 때문에 식단 수집이 멈추면 안 된다.</p>
+</aside>
+</section>
+<section class="card kind-req" id="REQ-ADV-002">
+<h3><span class="idtag">REQ-ADV-002</span> Claude 답을 반영하는 범위</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a>: Claude 답 중 &quot;음식이 아닌 항목&quot;과 &quot;식당 미운영&quot;만 반영한다. 이미 읽은 글자와 맞을 때만 반영하고 메뉴를 새로 만들지 않는다.</li>
+</ul>
+</details>
+<p>Claude의 답 중 아래 두 가지만 반영한다. 메뉴 이름을 새로 만들거나 고치라는 답은 반영하지 않는다.</p>
+<ul>
+<li><strong>음식이 아닌 항목:</strong> 그날 읽은 메뉴에 글자가 똑같이 있는 항목만 지운다. 항목을 지워 칸이 비면 그 칸을 없앤다.</li>
+<li><strong>식당 미운영:</strong> 그날 남은 메뉴가 모두 이상 신호에 걸린 항목뿐일 때만 세 끼를 미운영 안내로 바꾼다. 안내 문구는 Claude가 준 이름에 <code>(식당 미운영)</code>을 붙인다. 이름이 휴일 이름도 아니고 그 칸의 글자에도 없으면 <code>식단표에 메뉴 없음 (식당 미운영)</code>으로 쓴다.</li>
+</ul>
+<aside class="callout callout-warn"><span class="callout-label">예외</span>
+<p>메뉴가 하나도 없던 날짜는 Claude가 준 이름이 휴일 이름이거나 그 칸의 글자에 있을 때만 미운영으로 바꾼다. 이름을 확인할 수 없으면 기존의 메뉴 없음 안내를 유지한다(<a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>의 빈 칸 기준).</p>
+</aside>
+<p class="why"><span class="why-label">이유</span> Claude가 그림을 잘못 보거나 글자를 지어내도 사용자에게 없는 메뉴가 보이지 않게 한다. 자문은 잘못 읽은 것을 덜어내는 데만 쓴다.</p>
+<aside class="callout callout-info"><span class="callout-label">참고</span>
+<p>물은 내용과 답, 실제로 반영한 변경은 그림 옆 <code>&lt;그림&gt;.advice.json</code>에 남는다. 운영자가 나중에 확인할 수 있다.</p>
+</aside>
+</section>
+<section class="card kind-req" id="REQ-ADV-003">
+<h3><span class="idtag">REQ-ADV-003</span> Claude 자문 실패 알림</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>: Claude 자문이 사용 한도 초과, 로그인 만료, 시간 초과, 서비스 오류, 답 형식 오류, CLI 없음으로 실패하면 읽은 결과를 그대로 저장하고 알림 메일을 보낸다. 같은 종류는 12시간에 한 번 보낸다. <code>menu-bot advisor-check</code> 명령을 추가했다.</li>
+</ul>
+</details>
+<p>Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 저장하고 운영자에게 알림 메일을 보낸다. 메일에는 실패 종류, 오류 내용, 게시글, 확인이 필요한 날짜와 의심 항목, 조치 방법을 적는다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>실패 종류</th><th>알아보는 방법</th><th>다시 묻기</th></tr></thead>
+<tbody>
+<tr><td>사용 한도 초과</td><td>오류에 <code>usage limit</code>, <code>hit your limit</code>, <code>429</code>, <code>credit balance</code> 같은 말이 있음</td><td>하지 않음</td></tr>
+<tr><td>로그인 만료·인증 실패</td><td>오류에 <code>/login</code>, <code>OAuth</code>, <code>API key</code>, <code>401</code> 같은 말이 있음</td><td>하지 않음</td></tr>
+<tr><td>시간 초과</td><td>3분 안에 끝나지 않음</td><td>하지 않음</td></tr>
+<tr><td>서비스 오류·불안정</td><td>그 밖의 오류(<code>529 Overloaded</code>, <code>500</code>, 연결 오류 등)</td><td>20초 뒤 한 번</td></tr>
+<tr><td>답을 읽을 수 없음</td><td>정해진 JSON 형식이 아니거나 반영 중 오류</td><td>하지 않음</td></tr>
+<tr><td>CLI 없음</td><td><code>MENU_ADVISOR=on</code>인데 <code>claude</code>를 실행할 수 없음</td><td>하지 않음</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>같은 종류의 실패 메일은 12시간에 한 번만 보낸다. 메일 발송이 실패하면 다음 실패 때 다시 보낸다.</li>
+<li>실패한 답은 저장하지 않는다. 다음 수집에서 다시 묻는다.</li>
+<li>학습용 수집(<code>ingest --learning</code>)에서는 Claude에게 묻지 않는다.</li>
+<li><code>menu-bot advisor-check</code>는 짧은 질문 하나로 설치·로그인·한도 상태를 확인한다. <code>--mail</code>을 붙이면 실패 메일도 보낸다.</li>
+</ul>
+<aside class="callout callout-warn"><span class="callout-label">주의</span>
+<p>운영 서버는 <code>.env</code>에 <code>MENU_ADVISOR=on</code>을 둔다. <code>auto</code>는 <code>claude</code>가 없으면 조용히 자문을 건너뛰므로 개발 PC에서만 쓴다.</p>
+</aside>
+</section>
 </section>
 <section class="chapter" id="sec-9">
 <h2>9. 오류 처리 정책</h2>
@@ -289,6 +375,9 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a></td><td data-label="Implementation"><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_holiday_notices.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-003">REQ-OCR-003</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></td><td data-label="Test"><code>tests/test_event_banners.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
 <tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-004">REQ-OCR-004</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><code>tests/test_event_banners.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
 </tbody>
 </table></div>
 <p>implemented는 연결된 구현·테스트 소스가 존재한다는 뜻이며 실제 실행 통과를 뜻하지 않는다.</p>

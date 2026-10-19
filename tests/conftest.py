@@ -33,3 +33,11 @@ def block_outgoing_mail(monkeypatch):
     # 돌려주므로 테스트는 "발송 실패"로 흘러가고, 진짜 메일은 나가지 않는다.
     monkeypatch.setattr(smtplib, "SMTP", _BlockedSMTP)
     monkeypatch.setattr(smtplib, "SMTP_SSL", _BlockedSMTP)
+
+
+@pytest.fixture(autouse=True)
+def block_claude_advisor(monkeypatch):
+    # 개발 PC와 운영 서버 모두 `claude`가 로그인돼 있다. 테스트가 실제 자문을
+    # 부르면 비용이 나가고 결과가 매번 달라지므로 기본으로 끈다. 자문을 검증하는
+    # 테스트는 runner를 주입하고 enabled=True로 직접 켠다.
+    monkeypatch.setenv("MENU_ADVISOR", "off")
