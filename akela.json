@@ -9,6 +9,6 @@
   ],
   "learnings": "akela/LEARNINGS.md",
   "runs": ".akela/runs",
-  "activities": ["deploy", "ocr-fix", "query-debug", "known-issue-triage"],
+  "activities": ["develop", "test", "operate", "deploy", "ocr-fix", "query-debug", "known-issue-triage"],
   "compiler": {}
 }

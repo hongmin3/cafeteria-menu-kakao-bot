@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="botyard render-spec-html v7">
 <meta name="spec-html-renderer" content="v7">
-<meta name="spec-source-sha256" content="74938b57b4b38c579b3d2284b6a2dcb06daa3abf66bef260b784f104179a2da4">
+<meta name="spec-source-sha256" content="5e11445c00a48c14d3ddab8d10f27b4e9eb1036b559f98b6410ac7fe89465ed6">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -92,8 +92,8 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <body>
 <header class="top">
 <h1>뷰밥 메뉴 알리미 사양서</h1>
-<div class="chips"><span class="chip"><span>Document Version</span><b>0.1.0</b></span><span class="chip"><span>Last Updated</span><b>2026-10-20</b></span><span class="chip"><span>Status</span><b>draft — 기존 계약 일부의 근거 기반 사양화</b></span></div>
-<div class="stats"><div class="stat"><b>10</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>0</b><span>비기능 NFR</span></div><div class="stat"><b>3</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>10</b><span>implemented</span></div></div>
+<div class="chips"><span class="chip"><span>Document Version</span><b>1.2.0</b></span><span class="chip"><span>Project Version</span><b>0.1.0</b></span><span class="chip"><span>Last Updated</span><b>2026-10-20</b></span><span class="chip"><span>Status</span><b><span class="badge st-active">active</span></b></span><span class="chip"><span>Owner</span><b>hongmin</b></span></div>
+<div class="stats"><div class="stat"><b>19</b><span>기능 요구사항 REQ</span></div><div class="stat"><b>3</b><span>비기능 NFR</span></div><div class="stat"><b>13</b><span>테스트 TEST</span></div><div class="stat st-implemented"><b>4</b><span>implemented</span></div><div class="stat st-verified"><b>18</b><span>verified</span></div></div>
 </header>
 <div class="layout">
 <nav class="toc" aria-label="목차">
@@ -101,24 +101,53 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <ul><li class="toc-2"><a href="#feature-index">기능 목록</a></li>
 <li class="toc-2"><a href="#sec-1">1. 목적</a></li>
 <li class="toc-2"><a href="#sec-2">2. 프로젝트 범위</a></li>
+<li class="toc-2"><a href="#sec-3">3. 시스템 구성</a></li>
+<li class="toc-2"><a href="#sec-4">4. 전체 동작 흐름</a></li>
 <li class="toc-2"><a href="#sec-5">5. 기능 요구사항</a></li>
-<li class="toc-id kind-req"><a href="#REQ-CORE-001">REQ-CORE-001 <span>끼니만 입력</span></a></li>
-<li class="toc-id kind-req"><a href="#REQ-CORE-002">REQ-CORE-002 <span>주말 요일 해석</span></a></li>
-<li class="toc-id kind-req"><a href="#REQ-CORE-003">REQ-CORE-003 <span>다음 주 거부</span></a></li>
-<li class="toc-id kind-req"><a href="#REQ-OCR-001">REQ-OCR-001 <span>공휴일 이름으로 표시한 휴무</span></a></li>
-<li class="toc-id kind-req"><a href="#REQ-OCR-002">REQ-OCR-002 <span>연휴 안내의 범위와 문구 구분</span></a></li>
-<li class="toc-id kind-req"><a href="#REQ-OCR-003">REQ-OCR-003 <span>행사 그림만 있는 날짜</span></a></li>
-<li class="toc-id kind-req"><a href="#REQ-OCR-004">REQ-OCR-004 <span>다른 주 게시글에 붙은 식단표</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-SCRAPE-001">REQ-SCRAPE-001 <span>게시판에서 식단표 이미지 모으기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-OCR-001">REQ-OCR-001 <span>OCR 결과의 공통 좌표 규칙</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-PARSE-001">REQ-PARSE-001 <span>식단표를 날짜·끼니·코너로 나누기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-PARSE-002">REQ-PARSE-002 <span>미운영·특식 상태 구분</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-PARSE-003">REQ-PARSE-003 <span>공휴일 이름으로 표시한 휴무</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-PARSE-004">REQ-PARSE-004 <span>연휴 안내의 범위와 문구 구분</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-PARSE-005">REQ-PARSE-005 <span>행사 그림만 있는 날짜</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-PARSE-006">REQ-PARSE-006 <span>다른 주 게시글에 붙은 식단표</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-CORRECT-001">REQ-CORRECT-001 <span>메뉴 이름 오인식 바로잡기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-STORE-001">REQ-STORE-001 <span>현재 주 식단 저장</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-QUERY-001">REQ-QUERY-001 <span>질문에서 날짜·끼니 읽기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-QUERY-002">REQ-QUERY-002 <span>답할 수 없는 질문 되묻기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-QUERY-003">REQ-QUERY-003 <span>식단 응답 본문 만들기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-API-001">REQ-API-001 <span>카카오 챗봇 Skill 응답</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-WATCH-001">REQ-WATCH-001 <span>다음 주 식단표를 주말에 미리 받기</span></a></li>
+<li class="toc-id kind-req"><a href="#REQ-WATCH-002">REQ-WATCH-002 <span>식단을 못 받았을 때 마감 점검</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-ADV-001">REQ-ADV-001 <span>이상 신호가 있을 때 Claude에게 묻기</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-ADV-002">REQ-ADV-002 <span>Claude 답을 반영하는 범위</span></a></li>
 <li class="toc-id kind-req"><a href="#REQ-ADV-003">REQ-ADV-003 <span>Claude 자문 실패 알림</span></a></li>
+<li class="toc-2"><a href="#sec-6">6. 비기능 요구사항</a></li>
+<li class="toc-id kind-nfr"><a href="#NFR-SEC-001">NFR-SEC-001 <span>비밀값·실제 데이터를 밖에 내보내지 않기</span></a></li>
+<li class="toc-id kind-nfr"><a href="#NFR-OPS-001">NFR-OPS-001 <span>사람 없이 정해진 시각에 돌고 스스로 복구</span></a></li>
+<li class="toc-id kind-nfr"><a href="#NFR-PORT-001">NFR-PORT-001 <span>macOS·Windows·Linux 동일 결과</span></a></li>
+<li class="toc-2"><a href="#sec-7">7. 데이터 사양</a></li>
+<li class="toc-2"><a href="#sec-8">8. Configuration 사양</a></li>
 <li class="toc-2"><a href="#sec-9">9. 오류 처리 정책</a></li>
+<li class="toc-2"><a href="#sec-10">10. 보안 요구사항</a></li>
 <li class="toc-2"><a href="#sec-11">11. 테스트 사양</a></li>
-<li class="toc-id kind-test"><a href="#TEST-CORE-001">TEST-CORE-001</a></li>
-<li class="toc-id kind-test"><a href="#TEST-CORE-002">TEST-CORE-002</a></li>
-<li class="toc-id kind-test"><a href="#TEST-CORE-003">TEST-CORE-003</a></li>
+<li class="toc-id kind-test"><a href="#TEST-PARSE-001">TEST-PARSE-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-CORRECT-001">TEST-CORRECT-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-STORE-001">TEST-STORE-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-QUERY-001">TEST-QUERY-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-QUERY-002">TEST-QUERY-002</a></li>
+<li class="toc-id kind-test"><a href="#TEST-QUERY-003">TEST-QUERY-003</a></li>
+<li class="toc-id kind-test"><a href="#TEST-API-001">TEST-API-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-WATCH-001">TEST-WATCH-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-WATCH-002">TEST-WATCH-002</a></li>
+<li class="toc-id kind-test"><a href="#TEST-PARSE-002">TEST-PARSE-002</a></li>
+<li class="toc-id kind-test"><a href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-OCR-001">TEST-OCR-001</a></li>
+<li class="toc-id kind-test"><a href="#TEST-OPS-001">TEST-OPS-001</a></li>
 <li class="toc-2"><a href="#sec-12">12. 요구사항 추적성</a></li>
-<li class="toc-2"><a href="#sec-13">13. 미확정 사항</a></li></ul>
+<li class="toc-2"><a href="#sec-13">13. 미확정 사항</a></li>
+<li class="toc-2"><a href="#sec-14">14. 향후 개선 후보</a></li></ul>
 </nav>
 <main>
 <section class="chapter" id="feature-index">
@@ -126,156 +155,872 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <div class="table-wrap"><table class="index responsive">
 <thead><tr><th>ID</th><th>이름</th><th>상태</th><th>구현</th><th>테스트</th></tr></thead>
 <tbody>
-<tr class="group"><th colspan="5"><span class="gcode">CORE</span> 식단 질문 해석</th></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-CORE-001">REQ-CORE-001</a></td><td data-label="이름">끼니만 입력</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a>: <code>tests/test_query.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-CORE-002">REQ-CORE-002</a></td><td data-label="이름">주말 요일 해석</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a>: <code>tests/test_query.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a></td><td data-label="이름">다음 주 거부</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></td></tr>
-<tr class="group"><th colspan="5"><span class="gcode">OCR</span> 식단표의 운영 안내 구분</th></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td data-label="이름">공휴일 이름으로 표시한 휴무</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></td><td data-label="테스트"><code>tests/test_holiday_notices.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a></td><td data-label="이름">연휴 안내의 범위와 문구 구분</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_holiday_notices.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-OCR-003">REQ-OCR-003</a></td><td data-label="이름">행사 그림만 있는 날짜</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></td><td data-label="테스트"><code>tests/test_event_banners.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-OCR-004">REQ-OCR-004</a></td><td data-label="이름">다른 주 게시글에 붙은 식단표</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><code>tests/test_event_banners.py</code></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">SCRAPE</span> 게시판 수집</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></td><td data-label="이름">게시판에서 식단표 이미지 모으기</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/scraper.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">OCR</span> 이미지 인식</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td data-label="이름">OCR 결과의 공통 좌표 규칙</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/ocr_provider.py</code></td><td data-label="테스트">TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">PARSE</span> 식단표 해석</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td data-label="이름">식단표를 날짜·끼니·코너로 나누기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td data-label="이름">미운영·특식 상태 구분</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a></td><td data-label="이름">공휴일 이름으로 표시한 휴무</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/query.py</code></td><td data-label="테스트"><code>tests/test_holiday_notices.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a></td><td data-label="이름">연휴 안내의 범위와 문구 구분</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_holiday_notices.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a></td><td data-label="이름">행사 그림만 있는 날짜</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></td><td data-label="테스트"><code>tests/test_event_banners.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a></td><td data-label="이름">다른 주 게시글에 붙은 식단표</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/parser.py</code></td><td data-label="테스트"><code>tests/test_event_banners.py</code></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">CORRECT</span> 메뉴 보정</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td data-label="이름">메뉴 이름 오인식 바로잡기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/corrections.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">STORE</span> 저장</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td data-label="이름">현재 주 식단 저장</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">QUERY</span> 질문 해석·응답</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td data-label="이름">질문에서 날짜·끼니 읽기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td data-label="이름">답할 수 없는 질문 되묻기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></td><td data-label="이름">식단 응답 본문 만들기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/query.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">API</span> 챗봇 서버</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-API-001">REQ-API-001</a></td><td data-label="이름">카카오 챗봇 Skill 응답</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/web.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-API-001">TEST-API-001</a></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">WATCH</span> 다음 주 식단 감시</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></td><td data-label="이름">다음 주 식단표를 주말에 미리 받기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></td><td data-label="이름">식단을 못 받았을 때 마감 점검</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></td></tr>
 <tr class="group"><th colspan="5"><span class="gcode">ADV</span> 이상한 식단표의 Claude 자문</th></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a></td><td data-label="이름">이상 신호가 있을 때 Claude에게 묻기</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></td><td data-label="이름">Claude 답을 반영하는 범위</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
-<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a></td><td data-label="이름">Claude 자문 실패 알림</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a></td><td data-label="이름">이상 신호가 있을 때 Claude에게 묻기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></td><td data-label="이름">Claude 답을 반영하는 범위</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
+<tr><td data-label="ID"><a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a></td><td data-label="이름">Claude 자문 실패 알림</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="테스트"><code>tests/test_advisor.py</code></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">NFR SEC</span> 보안</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a></td><td data-label="이름">비밀값·실제 데이터를 밖에 내보내지 않기</td><td data-label="상태"><span class="badge st-verified">verified</span></td><td data-label="구현"><code>src/menu_bot/web.py</code>, <code>.gitignore</code></td><td data-label="테스트"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">NFR OPS</span> 운영</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a></td><td data-label="이름">사람 없이 정해진 시각에 돌고 스스로 복구</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></td><td data-label="테스트"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td></tr>
+<tr class="group"><th colspan="5"><span class="gcode">NFR PORT</span> 이식성</th></tr>
+<tr><td data-label="ID"><a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></td><td data-label="이름">macOS·Windows·Linux 동일 결과</td><td data-label="상태"><span class="badge st-implemented">implemented</span></td><td data-label="구현"><code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></td><td data-label="테스트"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td></tr>
 </tbody>
 </table></div>
 </section>
-<p>이 문서는 기존 README와 테스트가 명시한 계약을 보존한다. 코드에 맞추어 기존 약속을 바꾸지 않는다. 차이가 발견되면 SPEC / CODE MISMATCH로 기록한다. 제품 전체 요구사항을 빠짐없이 문서화했다고 주장하지 않는다.</p>
+<p>이 문서는 <code>cafeteria-menu-kakao-bot</code>가 <strong>어떻게 동작해야 하는가</strong>를 정한 기준이다.
+코드가 지금 그렇게 동작한다고 해서 그것이 사양이 되지는 않는다.</p>
+<p>사양과 구현이 다르면 코드에 맞춰 이 문서를 고치지 않는다. <code>SPEC / CODE MISMATCH</code>로 알린다.
+그 절차는 <code>AGENTS.md</code>에 있다.</p>
+<p>프로젝트 규모에 따라 아래 절은 줄일 수 있다. 다만 유지보수형 자동화라면
+<strong>1 목적 · 2 범위 · 5 기능 요구사항 · 9 오류 처리 · 11 테스트 사양 · 12 추적성</strong>은 반드시 채운다.</p>
 <section class="chapter" id="sec-1">
 <h2>1. 목적</h2>
-<p>게시된 식단을 수집해 카카오톡 질문에 날짜와 끼니에 맞는 메뉴로 답한다.</p>
+<p>사내 구성원이 카카오톡에서 &quot;금요일 점심&quot;처럼 평소 말투로 물으면, 그날 그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>의 메뉴를 알려준다.
+주간 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>는 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 자유게시판에 이미지로만 올라온다. 이 봇이 그 이미지를 대신 읽는다.</p>
+<p>목적은 사람이 게시판을 찾아 들어가 이미지를 확대해 읽는 수고를 없애는 것이다.</p>
+<p>성공 조건:</p>
+<ul>
+<li>근무일(월~금) 업무 시작 시각에 그 주 식단이 DB에 들어와 있다.</li>
+<li>카카오 질문에는 <strong>실제 날짜가 적힌</strong> 메뉴 응답이 돌아간다. 답할 수 없으면 까닭이 분명한 안내가 돌아간다.</li>
+</ul>
+<h3>한눈에 보기</h3>
+<p>예약 실행이 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>의 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 이미지를 읽어 DB에 넣고, 카카오 질문이 오면 그 DB에서 답한다.
+수집이 실패하면 시간마다 다시 시도하고, 답할 수 없는 질문에는 되묻는다.
+읽은 결과가 이상해 보이면 서버의 Claude에게 그림을 보여 주고 묻는다. 묻지 못하면 알림 메일을 보낸다.</p>
+<figure class="flow">
+<svg viewBox="0 0 374 532" width="374" height="532" role="img" aria-label="정기 수집·주말 확인 → 그룹웨어 식단 게시물 찾기, 그룹웨어 식단 게시물 찾기 → 이미지 OCR, 이미지 OCR → 날짜·끼니·코너 칸 나누기, 날짜·끼니·코너 칸 나누기 → 식단 DB(SQLite), 날짜·끼니·코너 칸 나누기 → Claude 자문, Claude 자문 → 식단 DB(SQLite), Claude 자문 → 알림 메일, 그룹웨어 식단 게시물 찾기 → 시간마다 재시도, 시간마다 재시도 → 그룹웨어 식단 게시물 찾기, 카카오 질문 → 날짜·끼니 해석, 날짜·끼니 해석 → 식단 DB(SQLite), 식단 DB(SQLite) → 끼니별 말풍선 응답, 날짜·끼니 해석 → 되묻기">
+<defs><marker id="flow-arrow-1" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z"/></marker></defs>
+<path class="edge" d="M115.5 44 L105.5 88" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M105.5 124 L54.5 168" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M54.5 204 L176 248" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M176 284 L122 408" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M176 284 L176 328" marker-end="url(#flow-arrow-1)"/><text class="elabel" x="176" y="306">이상 신호</text>
+<path class="edge" d="M176 364 L122 408" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M176 364 L254.5 408" marker-end="url(#flow-arrow-1)"/><text class="elabel" x="215.3" y="386">실패</text>
+<path class="edge" d="M105.5 124 L186.5 168" marker-end="url(#flow-arrow-1)"/><text class="elabel" x="146" y="146">실패·미게시</text>
+<path class="edge back" d="M248 186 H356 V106 H200.5" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M263.5 44 L283 88" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M283 124 L122 408" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M122 444 L176 488" marker-end="url(#flow-arrow-1)"/>
+<path class="edge" d="M283 124 L308 168" marker-end="url(#flow-arrow-1)"/><text class="elabel" x="295.5" y="146">애매·미지원</text>
+<g class="node"><rect x="40" y="8" width="151" height="36" rx="8"/><text x="115.5" y="26">정기 수집·주말 확인</text></g>
+<g class="node"><rect x="10.5" y="88" width="190" height="36" rx="8"/><text x="105.5" y="106">그룹웨어 식단 게시물 찾기</text></g>
+<g class="node"><rect x="8" y="168" width="93" height="36" rx="8"/><text x="54.5" y="186">이미지 OCR</text></g>
+<g class="node"><rect x="84" y="248" width="184" height="36" rx="8"/><text x="176" y="266">날짜·끼니·코너 칸 나누기</text></g>
+<g class="node"><rect x="55.5" y="408" width="133" height="36" rx="8"/><text x="122" y="426">식단 DB(SQLite)</text></g>
+<g class="node"><rect x="124.5" y="328" width="103" height="36" rx="8"/><text x="176" y="346">Claude 자문</text></g>
+<g class="node"><rect x="212.5" y="408" width="84" height="36" rx="8"/><text x="254.5" y="426">알림 메일</text></g>
+<g class="node"><rect x="125" y="168" width="123" height="36" rx="8"/><text x="186.5" y="186">시간마다 재시도</text></g>
+<g class="node"><rect x="215" y="8" width="97" height="36" rx="8"/><text x="263.5" y="26">카카오 질문</text></g>
+<g class="node"><rect x="224.5" y="88" width="117" height="36" rx="8"/><text x="283" y="106">날짜·끼니 해석</text></g>
+<g class="node"><rect x="104.5" y="488" width="143" height="36" rx="8"/><text x="176" y="506">끼니별 말풍선 응답</text></g>
+<g class="node"><rect x="272" y="168" width="72" height="36" rx="8"/><text x="308" y="186">되묻기</text></g>
+</svg>
+</figure>
+<h3>이 문서에서 쓰는 말</h3>
+<p>아래 말에는 <code>docs/SPEC.html</code>에서 마우스를 올리면 뜻이 보인다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>용어</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td>그룹웨어</td><td>식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다</td></tr>
+<tr><td>식단표</td><td>한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다</td></tr>
+<tr><td>끼니</td><td>조식·중식·석식 가운데 하나</td></tr>
+<tr><td>코너</td><td>한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다</td></tr>
+<tr><td>현재 주(이번 주)</td><td>오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다</td></tr>
+<tr><td>대상 주차</td><td>수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다</td></tr>
+<tr><td>OCR</td><td>이미지 속 글자를 읽어 문자열로 바꾸는 일</td></tr>
+<tr><td>OCR provider</td><td>글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다</td></tr>
+<tr><td>OCR 라인</td><td>OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다</td></tr>
+<tr><td>OCR 캐시</td><td>이미지 옆에 저장해 둔 OCR 결과 JSON 파일. 있으면 다시 인식하지 않는다</td></tr>
+<tr><td>파서</td><td>OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분</td></tr>
+<tr><td>어휘집(<code>MENU_VOCAB_PATH</code>)</td><td>메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다</td></tr>
+<tr><td>운영 DB(<code>DATABASE_PATH</code>)</td><td>사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다</td></tr>
+<tr><td>학습용 DB(<code>--learning</code>)</td><td>OCR·파서 검증용 1년치 과거 데이터를 담는 별도 파일. 운영 응답에 쓰지 않는다</td></tr>
+<tr><td>게시물 번호(<code>source_post_id</code>)</td><td>식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다</td></tr>
+<tr><td>확보</td><td>대상 주차의 메뉴 항목이 1건 이상 저장된 상태</td></tr>
+<tr><td>주말 확인(주말 폴링)</td><td>주말에 정해진 간격으로 게시물 제목을 읽어 다음 주 식단표가 올라왔는지 보는 일</td></tr>
+<tr><td>상태 파일(<code>NEXT_WEEK_STATE_PATH</code>)</td><td>주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일</td></tr>
+<tr><td>미운영(<code>no_service</code>)</td><td>휴무 등으로 식당이 그 끼니를 운영하지 않는 상태</td></tr>
+<tr><td>특식(<code>special</code>)</td><td>특식·DAY·영양사 픽 같은 문구가 든 칸의 상태</td></tr>
+<tr><td>되묻기</td><td>답할 수 없는 질문에 메뉴 대신 무엇이 문제인지 알려 주는 응답</td></tr>
+<tr><td>발화</td><td>사용자가 카카오톡으로 보낸 말</td></tr>
+<tr><td>카카오 Skill</td><td>카카오 챗봇이 발화를 보내고 답을 받아 가는 서버 연결 방식. 답은 SkillResponse 2.0 형식이다</td></tr>
+<tr><td>말풍선</td><td>카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다</td></tr>
+<tr><td>웹훅 토큰(<code>KAKAO_WEBHOOK_TOKEN</code>)</td><td>챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다</td></tr>
+<tr><td>루프백</td><td>같은 컴퓨터 안에서만 닿는 주소</td></tr>
+<tr><td>터널</td><td>루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 <code>NGROK_DOMAIN</code>으로 정한다</td></tr>
+<tr><td>Claude 자문(<code>MENU_ADVISOR</code>)</td><td>읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일</td></tr>
+<tr><td>상시 유닛·타이머</td><td>서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약</td></tr>
+</tbody>
+</table></div>
 </section>
 <section class="chapter" id="sec-2">
 <h2>2. 프로젝트 범위</h2>
-<p>이번 기준선에 포함: 조회 입력의 날짜 해석, 다음 주 제한, 식단표의 휴무·연휴·행사 안내 구분, 식단표 날짜 줄 해석.</p>
-<p>이번 기준선의 확정 범위 밖: 실제 그룹웨어 접근, OCR 정확도 전체, 운영 채널 전송. 기존 기능을 제거하거나 변경한다는 뜻이 아니다.</p>
+<h3>포함</h3>
+<ul>
+<li><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 자유게시판에서 주간 식단 게시물과 본문 이미지를 모은다 (Playwright).</li>
+<li>플랫폼에 맞는 <span class="term" title="글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다" tabindex="0">OCR provider</span>로 이미지 글자를 읽는다. macOS는 Apple Vision, Windows·Linux는 PaddleOCR이다.</li>
+<li>표 안 글자의 위치로 날짜 · <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>(조식·중식·석식) · <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>(일반식·PLUS <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>·간편식·건강식)를 나눈다.</li>
+<li><span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>이 잘못 읽은 글자와 잡음 조각을 바로잡는다.</li>
+<li>SQLite에 <strong><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span></strong> 식단을 저장한다.</li>
+<li>FastAPI로 만든 <span class="term" title="카카오 챗봇이 발화를 보내고 답을 받아 가는 서버 연결 방식. 답은 SkillResponse 2.0 형식이다" tabindex="0">카카오 Skill</span> API가 평소 말투의 질문을 해석해 답한다.</li>
+<li>읽은 결과에 이상 신호가 있으면 Claude CLI에게 묻고, 음식이 아닌 항목과 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>만 반영한다.</li>
+<li><span class="term" title="주말에 정해진 간격으로 게시물 제목을 읽어 다음 주 식단표가 올라왔는지 보는 일" tabindex="0">주말 확인</span>으로 다음 주 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>를 미리 받아 둔다. 받지 못하면 알림 메일을 보내고 시간마다 다시 시도한다.</li>
+</ul>
+<h3>제외</h3>
+<ul>
+<li><strong>과거 주·다음 주 식단 조회.</strong> 사용자에게는 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span>만 보여준다. 1년치 과거 데이터는
+<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>·<span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 검증(<code class="term" title="OCR·파서 검증용 1년치 과거 데이터를 담는 별도 파일. 운영 응답에 쓰지 않는다" tabindex="0">--learning</code> 모드)에만 쓰고, <span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>와 같은 파일을 쓰지 않는다.</li>
+<li><strong>주말 식단.</strong> 주말에는 식당을 운영하지 않으므로 안내 문구만 돌려준다.</li>
+<li><strong>사업장마다 다른 식단 응답.</strong> 공통 식단만 보여주고, 응답에 지점 이름을 드러내지 않는다.</li>
+<li><strong>없는 정보를 추측하거나 지어내기.</strong> <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 아직 없으면 지어내지 않고 사정을 그대로 알린다.</li>
+<li>카카오 유료 Event API(먼저 보내는 푸시 알림), 사용자 인증·개인화, 식단 예약·주문 기능.</li>
+</ul>
+</section>
+<section class="chapter" id="sec-3">
+<h2>3. 시스템 구성</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>구성 요소</th><th>파일</th><th>책임</th></tr></thead>
+<tbody>
+<tr><td>수집기</td><td><code>src/menu_bot/scraper.py</code></td><td><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 로그인, 게시물 제목·본문 이미지 URL 수집</td></tr>
+<tr><td><span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span></td><td><code>src/menu_bot/ocr.py</code>, <code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/vision_ocr.swift</code></td><td>플랫폼에 맞는 provider 선택, 같은 좌표 규칙으로 맞추기, 결과 캐시</td></tr>
+<tr><td><span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span></td><td><code>src/menu_bot/parser.py</code></td><td><span class="term" title="OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다" tabindex="0">OCR 라인</span>을 날짜·<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>·<span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 칸에 넣기, 휴무·<span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 판정</td></tr>
+<tr><td>교정</td><td><code>src/menu_bot/corrections.py</code></td><td>잡음 제거, 고정 표기 교정, <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 교정</td></tr>
+<tr><td><span class="term" title="읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일" tabindex="0">Claude 자문</span></td><td><code>src/menu_bot/advisor.py</code></td><td>이상 신호 찾기, Claude CLI 호출, 반영 범위 제한, 실패 알림</td></tr>
+<tr><td>파이프라인</td><td><code>src/menu_bot/pipeline.py</code></td><td>이미지 내려받기, 중복 제거, 주차 거르기, 저장</td></tr>
+<tr><td>저장소</td><td><code>src/menu_bot/db.py</code>, <code>src/menu_bot/models.py</code></td><td>SQLite 열 구성과 조회</td></tr>
+<tr><td>질의</td><td><code>src/menu_bot/query.py</code></td><td>질문을 표준 표현으로 바꾸기·해석·<span class="term" title="답할 수 없는 질문에 메뉴 대신 무엇이 문제인지 알려 주는 응답" tabindex="0">되묻기</span>, 응답 문구 만들기</td></tr>
+<tr><td>API</td><td><code>src/menu_bot/web.py</code></td><td><span class="term" title="카카오 챗봇이 발화를 보내고 답을 받아 가는 서버 연결 방식. 답은 SkillResponse 2.0 형식이다" tabindex="0">카카오 Skill</span> 주소, 토큰 검사, <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span> 구성</td></tr>
+<tr><td>CLI</td><td><code>src/menu_bot/cli.py</code></td><td><code>scrape</code> · <code>ingest</code> · <code>ask</code> · <code>check-next-week</code> · <code>next-week-deadline</code> · <code>ensure-menu</code> · <code>notify-test</code> · <code>advisor-check</code> · <code>build-vocab</code> · <code>correct</code></td></tr>
+<tr><td>주말 감시</td><td><code>src/menu_bot/next_week_watch.py</code>, <code>src/menu_bot/notify.py</code></td><td>다음 주 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 판정, <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>, 알림 메일</td></tr>
+<tr><td>설정</td><td><code>src/menu_bot/config.py</code>, <code>.env.example</code></td><td>환경변수 읽기</td></tr>
+<tr><td>운영</td><td><code>scripts/systemd/</code>, <code>scripts/register-linux-services.sh</code></td><td>서비스·<span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span> 등록</td></tr>
+</tbody>
+</table></div>
+<p>바깥 시스템과 닿는 곳은 네 군데다.</p>
+<ul>
+<li><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>: 읽기만 한다. 로그인이 필요하다.</li>
+<li>카카오 챗봇 Skill 서버: 요청을 받는다.</li>
+<li>SMTP 서버: 알림 메일을 보낸다.</li>
+<li>Claude CLI: 이상 신호가 있을 때만 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 그림 한 장과 읽은 메뉴를 보낸다.</li>
+</ul>
+<p>이 곳들 말고는 이미지나 인식 결과를 밖으로 내보내지 않는다.</p>
+</section>
+<section class="chapter" id="sec-4">
+<h2>4. 전체 동작 흐름</h2>
+<p>수집은 세 가지 때에 돈다. 월요일 08:00 정기 수집, <span class="term" title="주말에 정해진 간격으로 게시물 제목을 읽어 다음 주 식단표가 올라왔는지 보는 일" tabindex="0">주말 확인</span>(폴링), 시간마다 하는 재시도다.</p>
+<ol>
+<li><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 로그인하고 자유게시판 목록을 연다.</li>
+<li>제목이 <code>POST_PREFIXES</code>로 시작하는 게시물만 고른다.</li>
+<li>게시물 본문에서 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>로 볼 수 있는 큰 이미지의 URL을 모은다.</li>
+<li>이미지를 내려받아 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>한다. 결과는 이미지 옆 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과 JSON 파일에 저장해 두고 다시 쓴다(캐시).</li>
+<li><span class="term" title="OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다" tabindex="0">OCR 라인</span>의 위치(좌표)로 날짜 열 · <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 행 · <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 행을 찾고, 칸마다 메뉴 항목을 넣는다.</li>
+<li>항목을 바로잡고 중복을 없앤다. 운영 수집이면 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>(월~일) 밖의 항목을 버린다.</li>
+<li>게시물 단위로 SQLite에 덮어쓴다. 같은 <code class="term" title="식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다" tabindex="0">source_post_id</code>는 항상 새것으로 바꾼다.</li>
+</ol>
+<p>응답:</p>
+<ol>
+<li>카카오가 <span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>를 담은 Skill 요청을 보낸다.</li>
+<li>토큰을 검사한다. 도움말 요청과 식단 질문이 아닌 <span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>를 먼저 걸러낸다.</li>
+<li><span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>를 표준 표현으로 바꾼 뒤 날짜·요일·<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>·<span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>를 읽는다. 애매하거나 지원하지 않는 요청이면 되묻는다.</li>
+<li><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 평일이면 DB를 조회해 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> → <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> → 항목 순의 세로 목록을 만든다.</li>
+<li><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span>으로 나눠 SkillResponse 2.0 형식으로 돌려준다.</li>
+</ol>
 </section>
 <section class="chapter" id="sec-5">
 <h2>5. 기능 요구사항</h2>
+<p>ID 규칙: <code>REQ-&lt;CATEGORY&gt;-NNN</code>. CATEGORY는 대문자·숫자, NNN은 세 자리다.
+한 번 붙인 ID는 다시 쓰거나 뜻을 바꾸지 않는다. 지운 ID를 다른 기능에 돌려쓰지 않는다.</p>
+<p>기능 그룹: CATEGORY마다 사람이 읽는 이름이다. <code>docs/SPEC.html</code>의 기능 목록이 이 이름으로 묶인다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>카테고리</th><th>이름</th></tr></thead>
 <tbody>
-<tr><td>CORE</td><td>식단 질문 해석</td></tr>
-<tr><td>OCR</td><td>식단표의 운영 안내 구분</td></tr>
-<tr><td>ADV</td><td>이상한 식단표의 Claude 자문</td></tr>
+<tr><td>SCRAPE</td><td>게시판 수집</td></tr>
+<tr><td><span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span></td><td>이미지 인식</td></tr>
+<tr><td>PARSE</td><td><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 해석</td></tr>
+<tr><td>CORRECT</td><td>메뉴 보정</td></tr>
+<tr><td>STORE</td><td>저장</td></tr>
+<tr><td>QUERY</td><td>질문 해석·응답</td></tr>
+<tr><td>API</td><td>챗봇 서버</td></tr>
+<tr><td>WATCH</td><td>다음 주 식단 감시</td></tr>
+<tr><td>ADV</td><td>이상한 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>의 <span class="term" title="읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일" tabindex="0">Claude 자문</span></td></tr>
+<tr><td>SEC</td><td>보안</td></tr>
+<tr><td>OPS</td><td>운영</td></tr>
+<tr><td>PORT</td><td>이식성</td></tr>
 </tbody>
 </table></div>
-<section class="card kind-req" id="REQ-CORE-001">
-<h3><span class="idtag">REQ-CORE-001</span> 끼니만 입력</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a>: <code>tests/test_query.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
-<p>기준시각과 아침/점심/저녁 입력을 받아 기준시각 당일의 해당 끼니로 해석한다. 2026-08-19 기준 아침은 2026-08-19 조식이다.</p>
-<p>관련 구현: <code>src/menu_bot/query.py</code>. 관련 테스트: <code>tests/test_query.py</code>의 <code>test_plain_breakfast_means_today</code>.</p>
-</section>
-<section class="card kind-req" id="REQ-CORE-002">
-<h3><span class="idtag">REQ-CORE-002</span> 주말 요일 해석</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a>: <code>tests/test_query.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
-<p>토요일이나 일요일에 요일만 지정해도 현재 주의 해당 날짜로 해석한다. 2026-08-22에 월요일 아침은 2026-08-17 조식이고 scope는 current_week다.</p>
-<p>관련 구현: <code>src/menu_bot/query.py</code>. 관련 테스트: <code>tests/test_query.py</code>의 <code>test_weekend_weekday_still_means_current_week</code>.</p>
-</section>
-<section class="card kind-req" id="REQ-CORE-003">
-<h3><span class="idtag">REQ-CORE-003</span> 다음 주 거부</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
-<p>다음 주를 명시한 질문은 현재 주나 오늘로 바꿔 식단을 제공하지 않는다. 조회 범위 안내를 반환하고 다음 주 데이터를 제공하지 않는다.</p>
-<p>관련 구현: <code>src/menu_bot/query.py</code>. 관련 테스트: <code>tests/test_query.py</code>의 <code>test_next_week_is_never_served_or_falls_back_to_today</code>.</p>
+<section class="card kind-req" id="REQ-SCRAPE-001">
+<h3><span class="idtag">REQ-SCRAPE-001</span> 게시판에서 식단표 이미지 모으기</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/scraper.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a></span></div>
+<details class="history"><summary>변경 이력 2</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 자유게시판에서 식단 게시물과, 그 본문에 든 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 이미지의 URL을 얻는다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p><code>GROUPWARE_URL</code>, <code>GROUPWARE_USER</code>, <code>GROUPWARE_PASSWORD</code>, <code>POST_PREFIXES</code>, <code>BROWSER_CHANNEL</code>,
+조회할 목록 페이지 수.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>계정 정보가 설정돼 있고, 네트워크로 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속할 수 있다.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ol>
+<li>화면 없이 도는 브라우저(headless)로 로그인한 뒤 자유게시판 목록을 연다.</li>
+<li>제목이 <code>[&lt;사업장&gt;]</code> 형태이고 <code>POST_PREFIXES</code> 중 하나로 시작하는 게시물만 고른다.</li>
+<li>고른 게시물을 열어 본문의 큰 이미지만 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 후보로 모은다.
+큰 이미지는 가로·세로가 500px보다 크고, 게시판 첨부 이미지 URL 형식을 따르는 이미지다.</li>
+</ol>
+<p>제목만 있으면 되는 경우(<span class="term" title="주말에 정해진 간격으로 게시물 제목을 읽어 다음 주 식단표가 올라왔는지 보는 일" tabindex="0">주말 확인</span>)에는 게시물 본문을 열지 않는 가벼운 목록 조회를 쓴다.</p>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p><span class="term" title="식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다" tabindex="0">게시물 번호</span> · 제목 · 이미지 URL 목록을 담은 항목들의 목록.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<ul>
+<li>계정 정보가 비어 있으면 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하지 않고 바로 멈춘다.</li>
+<li>로그인 화면은 여러 번 다른 화면으로 넘어가며(리다이렉트) 페이지 이동 중단 오류(navigation)를 낸다.
+결국 마지막 화면에 도착하므로 이 오류는 무시하고, 화면이 자리 잡을 시간을 더 준다.
+그 밖의 브라우저 오류는 그대로 올린다.</li>
+<li>브라우저는 플랫폼에 맞게 고른다. Chrome이 없는 Linux 서버에서는 함께 설치된 Chromium을 쓰고 샌드박스를 끈다.
+이유: 권한 없는 사용자용 격리 공간(비특권 user namespace)이 막힌 환경이 있다.
+</li>
+</ul>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/scraper.py</code>, <code>src/menu_bot/config.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</p>
+</div></section>
 </section>
 <section class="card kind-req" id="REQ-OCR-001">
-<h3><span class="idtag">REQ-OCR-001</span> 공휴일 이름으로 표시한 휴무</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span></div>
+<h3><span class="idtag">REQ-OCR-001</span> OCR 결과의 공통 좌표 규칙</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/ocr_provider.py</code></span><span class="meta"><b>테스트</b> TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</span></div>
 <details class="history"><summary>변경 이력 3</summary>
 <ul>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 식단표에 공휴일 이름만 있는 날짜를 세 끼 모두 식당 미운영으로 안내한다. 한글날을 중식 일반식 메뉴로 표시하던 문제를 고쳤다.</li>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 공휴일 이름의 띄어쓰기·괄호를 처리한다. 음식이 함께 있는 날짜, 공휴일 특식과 끼니별 미운영 안내는 유지한다.</li>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a>: 휴무 이름 20종·표기, 특식 4종, 음식이 있는 날짜와 끼니별 휴무를 확인하는 회귀 테스트를 추가했다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
 </ul>
 </details>
-<p>식단표의 날짜 칸에 <code>한글날</code>이나 <code>개천절</code>만 있고 음식 메뉴가 없으면, 조식·중식·석식 모두 식당 미운영으로 안내한다. 공휴일 이름을 일반식 메뉴로 표시하지 않는다.</p>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>어느 플랫폼에서든 <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>가 같은 좌표 규칙으로 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과를 받는다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>이미지 파일 경로, <code>OCR_PROVIDER</code>(<code>auto</code> | <code>apple_vision</code> | <code>paddleocr</code>).</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>고른 provider를 돌릴 환경이 갖춰져 있다. macOS는 Swift 툴체인, Windows·Linux는 PaddleOCR이 필요하다.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ol>
+<li><code>auto</code>는 macOS에서 Apple Vision을, 그 밖에서는 PaddleOCR을 고른다.</li>
+<li>두 provider 모두 <code>{&quot;text&quot;, &quot;confidence&quot;, &quot;x&quot;, &quot;y&quot;, &quot;width&quot;, &quot;height&quot;}</code> 형태의 라인 목록을 돌려준다.</li>
+<li>좌표는 0~1 사이의 비율로 바꿔 적는다. 기준점은 <strong>이미지 왼쪽 아래</strong>이고, y는 위로 갈수록 커진다.</li>
+<li>왼쪽 위 기준의 픽셀 좌표를 쓰는 provider는 이 규칙으로 바꿔서 내보낸다.</li>
+<li>인식 결과는 이미지 옆 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과 JSON 파일에 저장해 둔다(캐시). 캐시가 있으면 다시 인식하지 않는다.</li>
+</ol>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p>같은 이미지라면 provider가 달라도 <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>가 같은 칸 구성과 같은 휴무/<span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 판정을 얻는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
 <ul>
-<li>이름 안의 띄어쓰기와 이름을 감싼 괄호는 같은 안내로 읽는다.</li>
-<li>다른 공휴일도 식단표에 이름만 적혀 있으면 같은 기준을 적용한다.</li>
-<li>같은 날짜에 음식 메뉴가 있으면 공휴일 이름만으로 전일 휴무를 결정하지 않는다.</li>
-<li><code>한글날 특식</code>, <code>추석 송편</code> 같은 음식·행사 문구를 휴무로 바꾸지 않는다.</li>
-<li><code>중식 미운영</code>처럼 끼니를 지정한 안내는 그 끼니에만 적용한다.</li>
+<li>알 수 없는 <code>OCR_PROVIDER</code> 값이면 오류로 멈춘다.</li>
+<li>PaddleOCR 모델 이름과 가속 옵션은 코드를 고치지 않고 환경변수로 바꿀 수 있어야 한다.
+이유: 장비마다 되는 조합이 다르다.
+</li>
+<li>값만 비운 환경변수는 &quot;지정하지 않음&quot;으로 보고 기본값을 쓴다.</li>
+<li>글자 위치를 찾는 감지 모델과 글자를 읽는 인식 모델의 이름을 둘 다 적는다.
+이유: 하나만 지정하면 한국어 인식 모델이 모르는 사이에 바뀐다.
+</li>
 </ul>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/ocr.py</code>, <code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/vision_ocr.swift</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p>TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</p>
+</div></section>
 </section>
-<section class="card kind-req" id="REQ-OCR-002">
-<h3><span class="idtag">REQ-OCR-002</span> 연휴 안내의 범위와 문구 구분</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></span></div>
+<section class="card kind-req" id="REQ-PARSE-001">
+<h3><span class="idtag">REQ-PARSE-001</span> 식단표를 날짜·끼니·코너로 나누기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a>: 날짜 줄로 받는 범위를 주 시작일에서 10일에서 14일로 넓혔다(<a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>).</li>
+</ul>
+</details>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 이미지의 <span class="term" title="OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다" tabindex="0">OCR 라인</span>을 날짜 · <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> · <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>별로 나눈다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>게시물 정보(사업장, 주 시작일), 이미지 URL, <span class="term" title="OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다" tabindex="0">OCR 라인</span> 목록.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p><span class="term" title="OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다" tabindex="0">OCR 라인</span>이 REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001의 좌표 규칙을 따른다.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ol>
+<li>표 위쪽의 날짜 머리글로 날짜 열을 찾는다.</li>
+<li>표 왼쪽의 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>·<span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 이름표로 행을 찾는다.</li>
+<li>메뉴 라인마다 가장 가까운 날짜 열과, 자신이 속한 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>·<span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 행에 넣는다.</li>
+<li>게시물 제목에서 사업장과 주 시작일을 읽는다. 두 자리 날짜 표기는 주 시작일에 가장 가까운 해로 본다.</li>
+</ol>
+<p><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 행의 경계는 각 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>가 <code>일반식</code>으로 시작한다는 표 구조로 정한다. <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 행을 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>에 묶고, 그 경계로 나눈다.</p>
+<p class="why"><span class="why-label">이유</span> <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 이름표는 세로로 합친 칸의 가운데에 있다. 가장 가까운 이름표에 넣으면 틀린다.</p>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p><code>(날짜, 사업장, 끼니, 코너)</code>마다 메뉴 항목 문자열 하나.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<ul>
+<li>제목에서 사업장이나 날짜를 읽지 못하면 그 게시물은 오류로 기록하고 건너뛴다.</li>
+<li>날짜 머리글이나 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 이름표가 없는 이미지(안내 포스터 등)는 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 아니다.
+0건을 돌려주고, 파이프라인이 &quot;제외한 이미지&quot;로 센다.</li>
+<li>주 시작일에서 14일 넘게 떨어진 날짜(<a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>), 표 바깥 위치의 라인, 로고·장식 문구는 버린다.</li>
+<li>같은 칸이 여러 이미지에서 겹치면 더 긴 결과를 쓴다. 없는 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>를 만들지 않는다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code>, <code>src/menu_bot/models.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-PARSE-002">
+<h3><span class="idtag">REQ-PARSE-002</span> 미운영·특식 상태 구분</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></span></div>
+<details class="history"><summary>변경 이력 2</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 셀 상태 분류 자동 테스트(<a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a>, <code>tests/test_parse_status.py</code>).
+전일 휴무는 세 끼 모두, <code>조식 미제공</code>은 그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만, <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>은 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>이 아닌 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>으로
+분류되는지 본다. 14절이 적어 둔 &quot;<span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 쪽부터 고정&quot;을 실행한 것이다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
+</ul>
+</details>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p><span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>과 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>은 메뉴 항목으로 넣지 않고, 항목의 상태로 구분한다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a>이 칸에 넣은 글자.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ul>
+<li>대체휴무 · 공휴일 · 전사휴무처럼 <strong>하루 전체</strong>를 뜻하는 문구는 그날 조식·중식·석식
+세 끼 모두에 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span> 항목으로 넣는다. <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>는 <code>안내</code>다.</li>
+<li><code>조식 미제공</code>, <code>석식 운영 없음</code>처럼 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 밝힌 문구는 <strong>그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>에만</strong> 넣는다.</li>
+<li><span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> · DAY · 영양사 픽 같은 문구가 든 칸은 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 상태로 표시한다.</li>
+<li>그 밖은 일반 상태다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p>항목마다 상태가 <code>normal</code>(일반) · <code class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">no_service</code>(<span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>) · <code class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">special</code>(<span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>) 중 하나다.
+응답에서 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>은 안내 문구로, <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>은 따로 표시해 구분한다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<ul>
+<li>휴무 안내 그림 안의 큰 숫자를 날짜 머리글로 잘못 읽지 않는다.</li>
+<li><span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 때문에 비어 있는 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>를 추측으로 채우지 않는다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/parser.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-PARSE-003">
+<h3><span class="idtag">REQ-PARSE-003</span> 공휴일 이름으로 표시한 휴무</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span></div>
 <details class="history"><summary>변경 이력 4</summary>
 <ul>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 설 명절·한가위 연휴·임시 공휴일·대체 휴일과 식당 휴무 문구를 처리한다. 장식 기호·요일·휴무 안내 어미도 구분한다.</li>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 같은 날짜에서 가까이 붙은 OCR 조각을 안내 문구로 합친다. 날짜·기간이 붙거나 여러 날짜에 걸친 안내를 해당 날짜별로 처리한다. 잘못된 날짜는 다른 메뉴 수집을 중단하지 않는다.</li>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 공휴일 특식을 휴무로 오인하거나 끼니별 미운영을 전일 휴무로 확대하는 문제를 고쳤다. 한 게시물의 다른 이미지에 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다.</li>
-<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>: 회귀 테스트를 71개로 확장했다. 운영 서버의 과거 OCR 캐시 57장에서 정상 메뉴 변경이 없고 현재 운영 항목 154개도 동일함을 확인했다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>: <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>에 공휴일 이름만 있는 날짜를 세 끼 모두 식당 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 안내한다. 한글날을 중식 일반식 메뉴로 표시하던 문제를 고쳤다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>: 공휴일 이름의 띄어쓰기·괄호를 처리한다. 음식이 함께 있는 날짜, 공휴일 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>과 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span> 안내는 유지한다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>: 휴무 이름 20종·표기, <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 4종, 음식이 있는 날짜와 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별 휴무를 확인하는 회귀 테스트를 추가했다.</li>
 </ul>
 </details>
-<p><code>설 명절</code>, <code>한가위 연휴</code>, <code>대체 휴일</code>, <code>임시 공휴일</code>도 음식이 없는 날짜의 전일 미운영 안내로 읽는다. 별표나 장식 괄호가 있어도 같은 안내로 처리한다.</p>
+<p><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>의 날짜 칸에 <code>한글날</code>이나 <code>개천절</code>만 있고 음식 메뉴가 없으면, 조식·중식·석식 모두 식당 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 안내한다. 공휴일 이름을 일반식 메뉴로 표시하지 않는다.</p>
+<ul>
+<li>이름 안의 띄어쓰기와 이름을 감싼 괄호는 같은 안내로 읽는다.</li>
+<li>다른 공휴일도 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>에 이름만 적혀 있으면 같은 기준을 적용한다.</li>
+<li>같은 날짜에 음식 메뉴가 있으면 공휴일 이름만으로 전일 휴무를 결정하지 않는다.</li>
+<li><code>한글날 특식</code>, <code>추석 송편</code> 같은 음식·행사 문구를 휴무로 바꾸지 않는다.</li>
+<li><code>중식 미운영</code>처럼 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 지정한 안내는 그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>에만 적용한다.</li>
+</ul>
+</section>
+<section class="card kind-req" id="REQ-PARSE-004">
+<h3><span class="idtag">REQ-PARSE-004</span> 연휴 안내의 범위와 문구 구분</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_holiday_notices.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></span></div>
+<details class="history"><summary>변경 이력 5</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>: 설 명절·한가위 연휴·임시 공휴일·대체 휴일과 식당 휴무 문구를 처리한다. 장식 기호·요일·휴무 안내 어미도 구분한다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>: 같은 날짜에서 가까이 붙은 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 조각을 안내 문구로 합친다. 날짜·기간이 붙거나 여러 날짜에 걸친 안내를 해당 날짜별로 처리한다. 잘못된 날짜는 다른 메뉴 수집을 중단하지 않는다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>: 공휴일 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>을 휴무로 오인하거나 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>을 전일 휴무로 확대하는 문제를 고쳤다. 한 게시물의 다른 이미지에 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다.</li>
+<li><span class="hist">2026-10-06</span> <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>: 회귀 테스트를 71개로 확장했다. 운영 서버의 과거 <span class="term" title="이미지 옆에 저장해 둔 OCR 결과 JSON 파일. 있으면 다시 인식하지 않는다" tabindex="0">OCR 캐시</span> 57장에서 정상 메뉴 변경이 없고 현재 운영 항목 154개도 동일함을 확인했다.</li>
+</ul>
+</details>
+<p><code>설 명절</code>, <code>한가위 연휴</code>, <code>대체 휴일</code>, <code>임시 공휴일</code>도 음식이 없는 날짜의 전일 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span> 안내로 읽는다. 별표나 장식 괄호가 있어도 같은 안내로 처리한다.</p>
 <ol>
 <li><code>식당 휴무</code>, <code>전사 휴무</code>처럼 식당 전체를 지정한 안내는 세 끼에 적용한다.</li>
-<li><code>석식 공휴일 미운영</code>은 석식만, <code>조식·석식 미운영</code>은 지정한 두 끼니만 처리한다.</li>
-<li><code>건강식 미운영</code> 같은 코너 안내를 다른 코너나 끼니의 휴무로 확대하지 않는다.</li>
+<li><code>석식 공휴일 미운영</code>은 석식만, <code>조식·석식 미운영</code>은 지정한 두 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 처리한다.</li>
+<li><code>건강식 미운영</code> 같은 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 안내를 다른 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>나 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>의 휴무로 확대하지 않는다.</li>
 <li><code>공휴일 특식</code>, <code>노동절 특식</code>과 정상 운영 문구는 휴무를 뜻하지 않는다.</li>
 </ol>
-<p>같은 날짜 칸에서 가까이 붙어 있는 OCR 조각이 알려진 안내 문구를 이루면 합쳐 읽는다. 다른 날짜의 글자를 이어 붙이거나 잘못 읽은 글자를 추측해 휴일 이름으로 바꾸지 않는다.</p>
+<p>같은 날짜 칸에서 가까이 붙어 있는 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 조각이 알려진 안내 문구를 이루면 합쳐 읽는다. 다른 날짜의 글자를 이어 붙이거나 잘못 읽은 글자를 추측해 휴일 이름으로 바꾸지 않는다.</p>
 <p>날짜가 붙은 안내는 표 안의 해당 날짜에 적용한다. 날짜 범위가 적혀 있거나 안내 글자가 여러 날짜 열에 걸쳐 있으면 해당 열을 각각 판단한다. 이름만 있는 연휴 안내는 음식이 있는 날짜를 휴무로 바꾸지 않는다.</p>
 <p><code>10/08~09</code>는 같은 달의 8일부터 9일까지로 읽는다. 날짜가 틀렸거나 끝 날짜가 시작 날짜보다 이르면 휴무 날짜를 추정하지 않는다. 해당 문구만 건너뛰고 다른 날짜 메뉴는 처리한다.</p>
-<p>한 게시물의 여러 이미지를 합칠 때도 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다. <code>식당 휴무</code>처럼 미운영이 적힌 안내는 유지한다.</p>
+<p>한 게시물의 여러 이미지를 합칠 때도 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다. <code>식당 휴무</code>처럼 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>이 적힌 안내는 유지한다.</p>
 <blockquote>
-<p><strong>한계</strong> 휴일 이름이 OCR에서 사라졌거나 글자가 알아볼 수 없게 틀리면 휴무를 확정할 수 없다. 기존 메뉴 없음 안내를 유지하며 달력만 보고 추정하지 않는다.</p>
+<p><strong>한계</strong> 휴일 이름이 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>에서 사라졌거나 글자가 알아볼 수 없게 틀리면 휴무를 확정할 수 없다. 기존 메뉴 없음 안내를 유지하며 달력만 보고 추정하지 않는다.</p>
 </blockquote>
 <aside class="callout callout-info"><span class="callout-label">참고</span>
 <p>달력만 보고 휴무를 추정하지 않는다. 이름도 메뉴도 없는 빈 칸은 기존의 메뉴 없음 안내를 유지한다.</p>
 </aside>
 </section>
-<section class="card kind-req" id="REQ-OCR-003">
-<h3><span class="idtag">REQ-OCR-003</span> 행사 그림만 있는 날짜</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_event_banners.py</code></span></div>
-<details class="history"><summary>변경 이력 2</summary>
+<section class="card kind-req" id="REQ-PARSE-005">
+<h3><span class="idtag">REQ-PARSE-005</span> 행사 그림만 있는 날짜</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_event_banners.py</code></span></div>
+<details class="history"><summary>변경 이력 3</summary>
 <ul>
-<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-OCR-003">REQ-OCR-003</a>: 날짜 칸에 메뉴 대신 행사 그림만 있으면 세 끼 모두 식당 미운영으로 안내한다. 10/22 체육대회 그림의 글자가 <code>뷰웍스</code>(조식 PLUS), <code>체육대황</code>(중식 일반식) 메뉴로 표시되던 문제를 고쳤다.</li>
-<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-OCR-003">REQ-OCR-003</a>: 그림 글자 <code>체육대황</code>을 <code>체육대회</code>로 고치는 표기 교정을 추가했다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>: 날짜 칸에 메뉴 대신 행사 그림만 있으면 세 끼 모두 식당 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 안내한다. 10/22 체육대회 그림의 글자가 <code>뷰웍스</code>(조식 PLUS), <code>체육대황</code>(중식 일반식) 메뉴로 표시되던 문제를 고쳤다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>: 그림 글자 <code>체육대황</code>을 <code>체육대회</code>로 고치는 표기 교정을 추가했다.</li>
 </ul>
 </details>
-<p>식단표의 날짜 칸에 메뉴 대신 <code>뷰웍스 체육대회</code> 같은 행사 그림만 있으면, 조식·중식·석식 모두 식당 미운영으로 안내한다. 그림 속 글자를 메뉴로 표시하지 않는다.</p>
+<p><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>의 날짜 칸에 메뉴 대신 <code>뷰웍스 체육대회</code> 같은 행사 그림만 있으면, 조식·중식·석식 모두 식당 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 안내한다. 그림 속 글자를 메뉴로 표시하지 않는다.</p>
 <ol>
 <li>그 날짜 칸에서 읽힌 글자가 모두 일반 메뉴 글자보다 훨씬 큰 그림 글씨이면 행사 그림으로 본다.</li>
 <li>안내 문구는 그림에서 읽은 글자에 <code>(식당 미운영)</code>을 붙인다. 예: <code>뷰웍스 체육대회 (식당 미운영)</code>.</li>
 <li>그림 글씨를 잘못 읽은 표기는 기존 표기 교정 목록으로 고친다. 예: <code>체육대황</code> → <code>체육대회</code>.</li>
 </ol>
 <aside class="callout callout-warn"><span class="callout-label">주의</span>
-<p>같은 날짜 칸에 보통 크기의 음식 글자가 하나라도 있으면 행사 그림으로 보지 않는다. 메뉴 옆의 작은 홍보 그림이나 특식 제목 때문에 운영하는 날을 휴무로 바꾸지 않는다.</p>
+<p>같은 날짜 칸에 보통 크기의 음식 글자가 하나라도 있으면 행사 그림으로 보지 않는다. 메뉴 옆의 작은 홍보 그림이나 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 제목 때문에 운영하는 날을 휴무로 바꾸지 않는다.</p>
 </aside>
 </section>
-<section class="card kind-req" id="REQ-OCR-004">
-<h3><span class="idtag">REQ-OCR-004</span> 다른 주 게시글에 붙은 식단표</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_event_banners.py</code></span></div>
-<details class="history"><summary>변경 이력 1</summary>
+<section class="card kind-req" id="REQ-PARSE-006">
+<h3><span class="idtag">REQ-PARSE-006</span> 다른 주 게시글에 붙은 식단표</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/parser.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_event_banners.py</code></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></span></div>
+<details class="history"><summary>변경 이력 3</summary>
 <ul>
-<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-OCR-004">REQ-OCR-004</a>: 이번 주 식단표가 지난주 게시글에 붙어 올라온 경우 10/23(금) 메뉴가 통째로 빠지던 문제를 고쳤다. 게시글 시작일에서 14일 안의 날짜 줄을 받는다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a>: 날짜 줄로 받는 범위를 주 시작일에서 10일에서 14일로 넓혔다(<a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>).</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span> <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 지난주 게시글에 붙어 올라온 경우 10/23(금) 메뉴가 통째로 빠지던 문제를 고쳤다. 게시글 시작일에서 14일 안의 날짜 줄을 받는다.</li>
 </ul>
 </details>
-<p>식단표 그림의 날짜 줄이 게시글 제목의 주와 다르면 그림에 적힌 날짜를 따른다. 예를 들어 <code>2026-10-12 ~ 10-16</code> 게시글에 10/19~10/23 식단표가 붙어 있으면 10/23(금)까지 다섯 날짜를 모두 저장한다.</p>
+<p><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 그림의 날짜 줄이 게시글 제목의 주와 다르면 그림에 적힌 날짜를 따른다. 예를 들어 <code>2026-10-12 ~ 10-16</code> 게시글에 10/19~10/23 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 붙어 있으면 10/23(금)까지 다섯 날짜를 모두 저장한다.</p>
 <ul>
 <li>게시글 시작일에서 14일 안의 날짜 줄만 받는다. 그보다 먼 숫자는 날짜로 쓰지 않는다.</li>
-<li>이번 주 수집에서는 지금처럼 이번 주 날짜만 남긴다.</li>
+<li><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span> 수집에서는 지금처럼 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span> 날짜만 남긴다.</li>
 </ul>
-<p class="why"><span class="why-label">이유</span> 그룹웨어에서 다음 주 식단표가 지난주 게시글에 추가로 올라오고 이번 주 게시글에는 그림이 없는 경우가 있었다. 10일 제한 때문에 금요일 메뉴가 통째로 빠졌다.</p>
+<p class="why"><span class="why-label">이유</span> <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에서 다음 주 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 지난주 게시글에 추가로 올라오고 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span> 게시글에는 그림이 없는 경우가 있었다. 10일 제한 때문에 금요일 메뉴가 통째로 빠졌다.</p>
+</section>
+<section class="card kind-req" id="REQ-CORRECT-001">
+<h3><span class="idtag">REQ-CORRECT-001</span> 메뉴 이름 오인식 바로잡기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/corrections.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>사용자에게 그대로 보여줄 메뉴 이름에서, <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>이 잘못 읽은 글자와 잡음 조각을 걷어낸다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>칸에서 모은 항목 문자열 목록, 있으면 쓰는 <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>(<code class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">MENU_VOCAB_PATH</code>).</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음. <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>이 없어도 동작해야 한다.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<p>세 단계로 처리한다.</p>
+<ol>
+<li><strong>잡음 제거</strong>: 한글이 한 글자도 없는 항목은 버린다.</li>
+<li><strong>고정 표기 교정</strong>: 한국어에 없는 표기를 고정 대응표로 바꾼다.
+<ul>
+<li>대응표에는 실제 이미지로 두 provider 결과를 맞대어 확인한 것만 넣는다.</li>
+<li>빈도가 비슷해서 원래 표기일 수도 있는 차이는 손대지 않는다.</li>
+</ul>
+</li>
+<li><strong><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 교정</strong>: <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>에 없는 항목을 <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 항목으로 바꾼다. 아래 조건을 모두 채울 때만 바꾼다.
+<ul>
+<li>길이가 같고 한 글자만 다르다.</li>
+<li>그런 후보가 <strong>딱 하나</strong>다.</li>
+<li>후보는 일정 횟수 이상 나온 <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 항목이다. 이유: <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 자체에도 오인식이 섞여 있다.</li>
+</ul>
+</li>
+</ol>
+<p>교정한 뒤 중복은 순서를 그대로 둔 채 없앤다. <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>을 새로 만들 때는 <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 교정을 끈다.</p>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p>교정 규칙이 노린 항목만 바꾼다. 규칙과 글자가 겹치는 진짜 메뉴 이름은 망가뜨리지 않는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<ul>
+<li><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 파일이 없거나, 깨졌거나, 예전 형식(목록)이어도 오류로 보지 않는다.</li>
+<li><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>은 실제 메뉴 데이터이므로 저장소에 넣지 않는다.</li>
+<li>원본 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과는 캐시에 남아 있다. 그래서 규칙을 고친 뒤 다시 만들 수 있다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/corrections.py</code>, <code>src/menu_bot/cli.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-STORE-001">
+<h3><span class="idtag">REQ-STORE-001</span> 현재 주 식단 저장</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a>, <a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p><span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>에는 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 식단만 둔다. 검증용 과거 데이터는 다른 파일에 둔다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p><span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 결과, <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>의 월요일, <code class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">DATABASE_PATH</code>, <code class="term" title="OCR·파서 검증용 1년치 과거 데이터를 담는 별도 파일. 운영 응답에 쓰지 않는다" tabindex="0">--learning</code> 여부.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ol>
+<li>운영 수집은 저장하기 전에 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span> 월~일 밖의 항목을 버리고, 버린 개수를 통계로 낸다.</li>
+<li>저장은 게시물 단위로 바꿔 넣는다. 같은 <code class="term" title="식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다" tabindex="0">source_post_id</code>의 기존 항목을 지우고 새로 넣는다.
+그래서 같은 게시물을 여러 번 처리해도 결과가 같다.</li>
+<li><code class="term" title="OCR·파서 검증용 1년치 과거 데이터를 담는 별도 파일. 운영 응답에 쓰지 않는다" tabindex="0">--learning</code>은 모든 날짜를 저장한다. 다만 <strong>항상</strong> <span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>와 다른 파일(<code>&lt;DB이름&gt;.learning.&lt;확장자&gt;</code>)에 쓴다.</li>
+</ol>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p><span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>에서 사용자 질문에 쓰는 데이터는 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span>뿐이다. 학습용 1년치 데이터는 <span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>에 섞이지 않는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<p>게시물 하나가 실패해도 나머지 게시물은 계속 처리한다. 실패 사유는 통계의 오류 목록에 남긴다.</p>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/pipeline.py</code>, <code>src/menu_bot/db.py</code>, <code>src/menu_bot/cli.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-QUERY-001">
+<h3><span class="idtag">REQ-QUERY-001</span> 질문에서 날짜·끼니 읽기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
+</ul>
+</details>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>평소 말투의 질문에서 날짜와 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 읽는다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>사용자 <span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>, 기준 시각(<code>TIMEZONE</code> 기준).</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ul>
+<li><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>: <code>아침/조식</code> → 조식, <code>점심/중식</code> → 중식, <code>저녁/석식</code> → 석식.</li>
+<li><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 말하지 않아도 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 이름으로 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 알 수 있으면 그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>로 본다. <code>간편식</code>은 조식, <code>건강식</code>은 중식이다.
+이유: 1년치 데이터를 모두 살펴보니 이 두 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>가 다른 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>에 나온 적이 0회였다.
+</li>
+<li>날짜: <code>오늘/내일/모레/어제</code>, <code>M월 D일</code>, <code>M/D</code>, <code>요일</code>. 요일은 월~일 어느 날에 물어도
+<strong><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span></strong>의 그 요일로 본다.</li>
+<li><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 없이 요일만 말하면 그날 조식·중식·석식 전부로 본다.</li>
+<li><code>금욜</code>, <code>낼</code>, <code>담주</code>, <code>차주</code>, <code>금주</code> 같은 줄임말은 표준 표현으로 바꾼 뒤 해석한다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p><span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span> 하나가 <code>(날짜, 끼니 또는 전체)</code> 한 쌍으로 정해진다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<p>해석하지 못한 요청은 아무거나 고르지 않고 <a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>로 넘긴다.</p>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/query.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-QUERY-002">
+<h3><span class="idtag">REQ-QUERY-002</span> 답할 수 없는 질문 되묻기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>, <a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a>, <a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a>, <a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>, <a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a>, <a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a>: <code>main</code>과 합치면서 브랜치에서 <code>REQ-OCR-001</code>~<code>004</code>로 부르던 요구사항의 ID를 바꿨다. <code>REQ-OCR-001</code>은 <code>main</code>에서 먼저 정한 '<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과의 공통 좌표 규칙'이다. 브랜치의 <code>REQ-CORE-001</code>~<code>003</code>(<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 입력, 주말 요일, 다음 주 거부)은 <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a>·<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>에 이미 있어 따로 두지 않는다.</li>
+</ul>
+</details>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>답할 수 없는 질문에는 엉뚱한 답을 주지 않고, 무엇이 문제인지 되묻는다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>사용자 <span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>, 기준 날짜, 알고 있는 사업장 이름 목록.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<p>다음 질문에는 메뉴를 보여주지 않고 안내로 답한다.</p>
+<ul>
+<li>지난 주 · 다음 주 · 다다음 주 요청 → <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span>만 조회할 수 있다고 알린다.</li>
+<li>모르는 낱말이 섞인 질문 → 못 알아들은 낱말을 따옴표로 되짚어 주고 사용방법을 보여준다.
+날짜만 알아들었다고 그날 전체 식단으로 넘기지 않는다.</li>
+<li>세 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>에 모두 나오는 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>(<code>일반식</code>, <code>PLUS</code>)만 말한 질문 → <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 되묻는다.</li>
+<li><span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>와 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>가 서로 맞지 않는 질문 → 그 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>가 나오는 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>를 알려준다.</li>
+<li>날짜 · 요일 · <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> · <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>가 둘 이상 섞였거나, 주차 표현과 날짜 표현이 함께 온 질문 →
+하나만 말해 달라고 되묻는다.</li>
+<li>존재하지 않는 날짜 → 날짜를 확인해 달라고 되묻는다.</li>
+<li>요일이 빠진 <code>이번주 …</code> 질문 → 요일을 함께 말해 달라고 안내한다.</li>
+</ul>
+<p>낱말은 두 갈래로 나눠 판단한다.</p>
+<ul>
+<li>날짜·요일·<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>·<span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>·사업장은 질문의 뼈대다. 읽어 낸 뒤 지우고, 되살리지 않는다.</li>
+<li>말투·조사는 모르는 낱말에 붙어 있을 수 있다. 그래서 되살려서 모르는 낱말을 온전히 보여준다.</li>
+</ul>
+<aside class="callout callout-example"><span class="callout-label">예시</span>
+<p><code>삼각김밥</code>을 <code>삼각김</code>으로 되묻지 않는다.</p>
+</aside>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p>답할 수 없는 질문에는 사유와 사용법이 돌아간다. 지원하는 표현에는 되묻지 않는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<p>사업장 이름 목록은 설정(<code>POST_PREFIXES</code>)에서 받아 &quot;아는 말&quot;로 다룬다.</p>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/query.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-QUERY-003">
+<h3><span class="idtag">REQ-QUERY-003</span> 식단 응답 본문 만들기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/query.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>확정된 질문에 대해 응답 본문을 만든다. <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 밖의 식단은 보여주지 않는다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>확정된 날짜·<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>, <span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>, 기준 시각.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>를 통과한 질문.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ul>
+<li>대상 날짜가 <strong><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span>가 아니면</strong> 조회하지 않고, <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">이번 주</span>만 조회할 수 있다고 답한다.</li>
+<li>대상 날짜가 토·일이면 실제 날짜와 함께 식당을 운영하지 않는다고 알린다.</li>
+<li>데이터가 없으면 지어내지 않는다. &quot;아직 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 올라오지 않았다, 올라오면 자동 반영된다&quot;고 답한다.</li>
+<li>응답 본문은 맨 위에 <code>MM월 DD일(요일)</code> 제목을 두고, 그 아래 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별 구획을 둔다.
+각 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 안에서는 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>별로 항목을 세로로 나열한다.</li>
+<li>PLUS <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>는 <code>공통 PLUS</code>로 묶어 맨 뒤에 둔다.</li>
+<li><span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span> 안내가 있는 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>는 메뉴 대신 안내 문구만 보여준다. <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>에는 표시를 붙인다.</li>
+<li>사업장은 응답에 드러내지 않는다. 공통 식단을 고른다.
+공통 식단을 가려낼 수 없으면 담당자 확인이 필요하다고 답한다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p>모든 답변에 실제 날짜가 들어간다. <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 밖의 데이터는 어떤 경로로도 보이지 않는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<p><code>주말</code>이라고만 물으면 날짜를 해석하지 않고 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>을 알린다.</p>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/query.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-API-001">
+<h3><span class="idtag">REQ-API-001</span> 카카오 챗봇 Skill 응답</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/web.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>카카오 챗봇 Skill 서버로서 요청을 받고, 카카오 규격에 맞는 응답을 돌려준다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>카카오 SkillPayload(POST), URL 경로의 <span class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">웹훅 토큰</span>, <code class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">KAKAO_WEBHOOK_TOKEN</code>.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>서버가 로컬 주소에 열려 있고, <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span>을 거쳐 바깥에 공개된다.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ul>
+<li>토큰이 설정돼 있으면 경로의 토큰이 맞을 때만 처리한다. 맞지 않으면 404로 답한다.</li>
+<li><span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>가 비었거나 도움말 요청(<code>도움</code>, <code>사용방법</code>, 인사말 등)이면 사용방법을 돌려준다.</li>
+<li>식단 질문으로 보이지 않는 <span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>는 DB를 열지 않고 사용방법을 돌려준다.</li>
+<li>하루 전체 응답은 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span>으로 나눈다. 카카오가 정한 출력 개수 상한(3개)을 넘기지 않는다.</li>
+<li><span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span> 하나가 길이 상한을 넘으면 잘라내고, 잘렸다는 것을 알린다.</li>
+<li>모든 응답에 <code>사용방법</code> 퀵 리플라이(<span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span> 아래 버튼)를 붙인다.</li>
+<li>상태 확인용 주소는 저장된 항목 수도 함께 돌려준다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p>SkillResponse 2.0 형식의 JSON. 카카오 요청을 처리하는 동안에는 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하지 않는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<p>DB 연결은 요청마다 열고, 반드시 닫는다.</p>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/web.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-API-001">TEST-API-001</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-WATCH-001">
+<h3><span class="idtag">REQ-WATCH-001</span> 다음 주 식단표를 주말에 미리 받기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/next_week_watch.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p>다음 주 <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 주말에 올라오면 바로 받아 둔다. 그래야 월요일 0시부터 바로 답할 수 있다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>기준 시각, <code class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">NEXT_WEEK_STATE_PATH</code>의 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<ol>
+<li><span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>는 <strong>다음 주 월요일</strong>이다.</li>
+<li>이미 그 주차를 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>했으면 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하지 않고 바로 끝낸다.</li>
+<li>아직이면 게시물 제목만 가볍게 읽어, <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span> 게시물이 있는지 본다.</li>
+<li>없으면 시도 기록만 남기고 끝낸다.</li>
+<li>있으면 그 자리에서 이미지 내려받기·<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>·파싱·저장까지 마치고, <code>week_start</code>를 다음 주 월요일로 둔다.</li>
+</ol>
+<p>주말에 미리 저장돼 있어도 월요일 전에는 사용자에게 보이지 않는다.</p>
+<p class="why"><span class="why-label">이유</span> 응답은 실제 달력 날짜로 거른다.</p>
+<p><strong>저장된 메뉴 항목이 1건 이상일 때만 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>로 본다.</strong></p>
+<p class="why"><span class="why-label">이유</span> 제목만 올라오고 이미지가 없거나 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>이 아무것도 읽지 못한 경우까지 성공으로 치면, <span class="term" title="주말에 정해진 간격으로 게시물 제목을 읽어 다음 주 식단표가 올라왔는지 보는 일" tabindex="0">주말 확인</span>이 멈춰 그 주 식단을 통째로 놓친다.</p>
+<p><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>되면 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>마다 성공 알림을 한 번만 보낸다. 상태는 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span> 단위로 저장한다.
+그래서 주차가 바뀌면 손으로 초기화하지 않아도 저절로 다시 확인한다.</p>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p><span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>에 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span> · <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 여부 · 시도 기록(결과 구분과 사유)이 남는다.
+같은 주말의 남은 확인은 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 다시 접속하지 않는다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<ul>
+<li>접속·수집 실패와 항목 0건은 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>로 보지 않는다. 사유와 함께 시도 기록에 남긴다.</li>
+<li><span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>이 깨져 있어도 수집을 막지 않는다. 새 상태로 시작한다.</li>
+<li>시도 기록에는 상한을 두어 끝없이 커지지 않게 한다.</li>
+<li>성공 알림을 보내지 못해도 수집 자체는 성공으로 처리한다.</li>
+<li>정기 수집이 같은 게시물을 다시 처리해도 괜찮다.
+이유: <a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a>이 게시물 단위로 바꿔 넣는다.
+</li>
+</ul>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/next_week_watch.py</code>, <code>src/menu_bot/scraper.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></p>
+</div></section>
+</section>
+<section class="card kind-req" id="REQ-WATCH-002">
+<h3><span class="idtag">REQ-WATCH-002</span> 식단을 못 받았을 때 마감 점검</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/next_week_watch.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<section class="field"><h4>목적</h4><div class="field-body">
+<p><span class="term" title="주말에 정해진 간격으로 게시물 제목을 읽어 다음 주 식단표가 올라왔는지 보는 일" tabindex="0">주말 확인</span>이 끝난 뒤에도 식단을 받지 못한 상태를 그대로 두지 않는다.</p>
+</div></section>
+<section class="field"><h4>입력</h4><div class="field-body">
+<p>기준 시각, <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>, <span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>.</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>동작</h4><div class="field-body">
+<p>마감 판정:</p>
+<ol>
+<li>실행된 시점에 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>가 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>됐는지만 본다. 언제가 마감인지는 코드가 정하지 않고 <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>가 정한다.</li>
+<li><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>되지 않았으면 무엇이 몇 번 실패했는지 정리해 알림 메일을 보낸다.</li>
+<li>같은 주차에는 두 번 보내지 않는다.</li>
+<li><strong>발송에 실패하면 보냈다고 기록하지 않는다.</strong> 그래서 다음 실행에서 다시 보낸다.</li>
+</ol>
+<p>시간별 재시도:</p>
+<ol>
+<li>지금 채워져 있어야 할 주차를 정한다. 토·일에는 다가오는 월요일의 주, 월~금에는 그 주 월요일의 주다.</li>
+<li>그 주차 식단이 <strong>DB에</strong> 없으면 다시 수집한다.</li>
+<li>이미 있으면 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하지 않고 바로 끝낸다.</li>
+</ol>
+<p><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 여부는 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>로 보지 않고 DB로 본다.</p>
+<p class="why"><span class="why-label">이유</span> 정기 수집은 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>을 건드리지 않고 DB만 채우는 경우가 있다.</p>
+<p>알림 메일:</p>
+<ul>
+<li>SMTP 설정(<code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURITY</code>, <code>SMTP_USER</code>,
+<code>SMTP_PASSWORD</code>, <code>NOTIFY_EMAIL_FROM</code>, <code>NOTIFY_EMAIL_TO</code>)이 갖춰졌을 때만 보낸다.</li>
+<li>설정이 비어 있으면 보내지 않고 기록만 남긴다.</li>
+<li>비밀번호는 어디에도 출력하지 않는다.</li>
+</ul>
+</div></section>
+<section class="field"><h4>기대 결과</h4><div class="field-body">
+<p><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>돼 있으면 아무 일도 하지 않고 끝난다. <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>되지 않은 상태는 사람이 볼 수 있는 알림으로 드러난다.</p>
+</div></section>
+<section class="field"><h4>예외 처리</h4><div class="field-body">
+<p>종료 코드는 사람이 봐야 하는 일만 실패로 표시한다. 그래야 서비스 관리자가 로그로 잡을 수 있다.</p>
+<ul>
+<li>게시글이 아직 없는 것은 정상이다. 성공으로 끝낸다.</li>
+<li>접속 실패, 항목 0건, 마감까지 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>하지 못함은 실패로 끝낸다.</li>
+</ul>
+<p>기준 시각은 시스템 시계를 바꾸지 않고 인자로 넣어 검증할 수 있어야 한다.</p>
+</div></section>
+<section class="field"><h4>관련 구현</h4><div class="field-body">
+<p><code>src/menu_bot/next_week_watch.py</code>, <code>src/menu_bot/notify.py</code>, <code>src/menu_bot/cli.py</code></p>
+</div></section>
+<section class="field"><h4>관련 테스트</h4><div class="field-body">
+<p><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></p>
+</div></section>
 </section>
 <section class="card kind-req" id="REQ-ADV-001">
 <h3><span class="idtag">REQ-ADV-001</span> 이상 신호가 있을 때 Claude에게 묻기</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
 <details class="history"><summary>변경 이력 1</summary>
 <ul>
-<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a>: 식단표 읽은 결과에 이상 신호(메뉴 0건인 날짜, 일반식 1~2개, 메뉴로 남은 큰 글씨)가 있으면 운영 서버의 Claude CLI에게 그림을 보여 주고 판정을 묻는다. 같은 그림의 답은 저장해 두고 다시 묻지 않는다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a>: <span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 읽은 결과에 이상 신호(메뉴 0건인 날짜, 일반식 1~2개, 메뉴로 남은 큰 글씨)가 있으면 운영 서버의 Claude CLI에게 그림을 보여 주고 판정을 묻는다. 같은 그림의 답은 저장해 두고 다시 묻지 않는다.</li>
 </ul>
 </details>
-<p>식단표 그림을 읽은 결과가 이상해 보이면, 운영 서버에 로그인된 Claude CLI(<code>claude</code>)에게 그 그림을 보여 주고 판정을 묻는다. 이상 신호가 없으면 묻지 않는다.</p>
+<p><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span> 그림을 읽은 결과가 이상해 보이면, 운영 서버에 로그인된 Claude CLI(<code>claude</code>)에게 그 그림을 보여 주고 판정을 묻는다. 이상 신호가 없으면 묻지 않는다.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>이상 신호</th><th>예</th></tr></thead>
 <tbody>
 <tr><td>날짜 줄에는 있는데 그날 메뉴가 하나도 없음</td><td>그림만 있는 휴일 칸</td></tr>
-<tr><td>일반식 칸의 항목이 1~2개뿐임(미운영 안내 제외)</td><td><code>체육대황</code> 한 줄만 있는 중식 일반식</td></tr>
+<tr><td>일반식 칸의 항목이 1~2개뿐임(<span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span> 안내 제외)</td><td><code>체육대황</code> 한 줄만 있는 중식 일반식</td></tr>
 <tr><td>메뉴로 남은 글자가 일반 메뉴보다 훨씬 큼</td><td>메뉴 옆 홍보 그림 글씨</td></tr>
 </tbody>
 </table></div>
@@ -291,19 +1036,19 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 </section>
 <section class="card kind-req" id="REQ-ADV-002">
 <h3><span class="idtag">REQ-ADV-002</span> Claude 답을 반영하는 범위</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
 <details class="history"><summary>변경 이력 1</summary>
 <ul>
-<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a>: Claude 답 중 &quot;음식이 아닌 항목&quot;과 &quot;식당 미운영&quot;만 반영한다. 이미 읽은 글자와 맞을 때만 반영하고 메뉴를 새로 만들지 않는다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a>: Claude 답 중 &quot;음식이 아닌 항목&quot;과 &quot;식당 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>&quot;만 반영한다. 이미 읽은 글자와 맞을 때만 반영하고 메뉴를 새로 만들지 않는다.</li>
 </ul>
 </details>
 <p>Claude의 답 중 아래 두 가지만 반영한다. 메뉴 이름을 새로 만들거나 고치라는 답은 반영하지 않는다.</p>
 <ul>
 <li><strong>음식이 아닌 항목:</strong> 그날 읽은 메뉴에 글자가 똑같이 있는 항목만 지운다. 항목을 지워 칸이 비면 그 칸을 없앤다.</li>
-<li><strong>식당 미운영:</strong> 그날 남은 메뉴가 모두 이상 신호에 걸린 항목뿐일 때만 세 끼를 미운영 안내로 바꾼다. 안내 문구는 Claude가 준 이름에 <code>(식당 미운영)</code>을 붙인다. 이름이 휴일 이름도 아니고 그 칸의 글자에도 없으면 <code>식단표에 메뉴 없음 (식당 미운영)</code>으로 쓴다.</li>
+<li><strong>식당 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>:</strong> 그날 남은 메뉴가 모두 이상 신호에 걸린 항목뿐일 때만 세 끼를 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span> 안내로 바꾼다. 안내 문구는 Claude가 준 이름에 <code>(식당 미운영)</code>을 붙인다. 이름이 휴일 이름도 아니고 그 칸의 글자에도 없으면 <code>식단표에 메뉴 없음 (식당 미운영)</code>으로 쓴다.</li>
 </ul>
 <aside class="callout callout-warn"><span class="callout-label">예외</span>
-<p>메뉴가 하나도 없던 날짜는 Claude가 준 이름이 휴일 이름이거나 그 칸의 글자에 있을 때만 미운영으로 바꾼다. 이름을 확인할 수 없으면 기존의 메뉴 없음 안내를 유지한다(<a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a>의 빈 칸 기준).</p>
+<p>메뉴가 하나도 없던 날짜는 Claude가 준 이름이 휴일 이름이거나 그 칸의 글자에 있을 때만 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 바꾼다. 이름을 확인할 수 없으면 기존의 메뉴 없음 안내를 유지한다(<a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a>의 빈 칸 기준).</p>
 </aside>
 <p class="why"><span class="why-label">이유</span> Claude가 그림을 잘못 보거나 글자를 지어내도 사용자에게 없는 메뉴가 보이지 않게 한다. 자문은 잘못 읽은 것을 덜어내는 데만 쓴다.</p>
 <aside class="callout callout-info"><span class="callout-label">참고</span>
@@ -312,11 +1057,11 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 </section>
 <section class="card kind-req" id="REQ-ADV-003">
 <h3><span class="idtag">REQ-ADV-003</span> Claude 자문 실패 알림</h3>
-<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></span><span class="meta"><b>테스트</b> <code>tests/test_advisor.py</code></span></div>
 <details class="history"><summary>변경 이력 2</summary>
 <ul>
 <li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>: Claude CLI 출력의 HTTP 상태 코드(<code>api_error_status</code>)로 실패 종류를 먼저 가린다. 실제 미로그인 문구 <code>Not logged in · Please run /login</code>과 <code>hit your session limit</code> 같은 한도 문구를 확인해 반영했다. <code>Context limit reached</code>를 한도 초과로 잘못 분류하던 문제를 고쳤다.</li>
-<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>: Claude 자문이 사용 한도 초과, 로그인 만료, 시간 초과, 서비스 오류, 답 형식 오류, CLI 없음으로 실패하면 읽은 결과를 그대로 저장하고 알림 메일을 보낸다. 같은 종류는 12시간에 한 번 보낸다. <code>menu-bot advisor-check</code> 명령을 추가했다.</li>
+<li><span class="hist">2026-10-20</span> <a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>: <span class="term" title="읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일" tabindex="0">Claude 자문</span>이 사용 한도 초과, 로그인 만료, 시간 초과, 서비스 오류, 답 형식 오류, CLI 없음으로 실패하면 읽은 결과를 그대로 저장하고 알림 메일을 보낸다. 같은 종류는 12시간에 한 번 보낸다. <code>menu-bot advisor-check</code> 명령을 추가했다.</li>
 </ul>
 </details>
 <p>Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 저장하고 운영자에게 알림 메일을 보낸다. 메일에는 실패 종류, 오류 내용, 게시글, 확인이 필요한 날짜와 의심 항목, 조치 방법을 적는다.</p>
@@ -343,26 +1088,513 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 </aside>
 </section>
 </section>
+<section class="chapter" id="sec-6">
+<h2>6. 비기능 요구사항</h2>
+<section class="card kind-nfr" id="NFR-SEC-001">
+<h3><span class="idtag">NFR-SEC-001</span> 비밀값·실제 데이터를 밖에 내보내지 않기</h3>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/web.py</code>, <code>.gitignore</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a> / <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a> / <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>: 운영·보안·이식성 계약 검사(<a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>,
+<code>tests/test_operational_contracts.py</code>). 추적 파일 위생과 git 실제 무시 동작, 웹훅
+토큰 불일치 404, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span>의 Restart·분리·메모리 상한, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>-서비스 짝, 시간대
+설정 사용을 고정한다.</li>
+</ul>
+</details>
+<p><strong>비밀값과 실제 데이터는 저장소·로그·응답에 나가지 않는다.</strong></p>
+<ul>
+<li>계정·비밀번호·<span class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">웹훅 토큰</span>·SMTP 비밀번호는 <code>.env</code>에만 두고, Git이 추적하지 않게 한다.</li>
+<li>진단 출력은 값을 보여주지 않는다. <strong>비어 있는 환경변수의 키 이름만</strong> 알린다.</li>
+<li>내부 주소, 원본 이미지, <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과, SQLite DB, <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>, 게시물 목록은 공개 저장소에 넣지 않는다.</li>
+<li>웹훅 URL에는 긴 임의 토큰을 붙인다. 토큰이 설정돼 있으면 맞지 않는 요청은 404로 답한다.</li>
+<li><span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>은 모든 과정이 이 컴퓨터 안에서 돈다. 이미지나 인식 결과를 밖으로 보내지 않는다.</li>
+<li>서버에서 API는 <span class="term" title="같은 컴퓨터 안에서만 닿는 주소" tabindex="0">루프백</span> 주소에만 연다. 바깥 공개는 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span>로만 한다.</li>
+</ul>
+<p>측정: Git이 추적하는 파일에 실제 계정·토큰·내부 주소가 있는지 값을 맞대어 검사한다. 발견 0건이어야 한다.</p>
+</section>
+<section class="card kind-nfr" id="NFR-OPS-001">
+<h3><span class="idtag">NFR-OPS-001</span> 사람 없이 정해진 시각에 돌고 스스로 복구</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span></div>
+<details class="history"><summary>변경 이력 2</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a> / <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a> / <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>: 운영·보안·이식성 계약 검사(<a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>,
+<code>tests/test_operational_contracts.py</code>). 추적 파일 위생과 git 실제 무시 동작, 웹훅
+토큰 불일치 404, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span>의 Restart·분리·메모리 상한, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>-서비스 짝, 시간대
+설정 사용을 고정한다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a>: 추적성 표의 구현 열이 디렉터리(<code>scripts/systemd/</code>)를 가리켜 검사기가
+파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.</li>
+</ul>
+</details>
+<p><strong>정해진 시각에 사람 손 없이 돌고, 멈추면 스스로 다시 켜진다.</strong></p>
+<div class="table-wrap"><table>
+<thead><tr><th>작업</th><th>실행 시점</th></tr></thead>
+<tbody>
+<tr><td>정기 수집</td><td>주 1회, 월요일 아침</td></tr>
+<tr><td>다음 주 확인</td><td>금요일 밤 1회, 주말에는 2시간 간격</td></tr>
+<tr><td>마감 점검</td><td>일요일 밤 1회</td></tr>
+<tr><td>미<span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 재시도</td><td>평일 1시간 간격</td></tr>
+</tbody>
+</table></div>
+<ul>
+<li>웹 서버와 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span>은 항상 켜 두는 유닛으로 따로 두고, 각각 따로 자동 재시작한다.
+이유: 둘을 묶으면 한쪽이 재시작할 때 다른 쪽이 다시 살아날 근거가 사라진다.
+</li>
+<li><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>된 뒤의 재시도는 바깥에 접속하지 않고 바로 끝나야 한다.
+이유: <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>는 스스로를 끌 수 없다. 그래서 &quot;반복 끝내기&quot;를 아무 일도 하지 않는 것으로 만든다.
+</li>
+<li>수집·<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 작업에는 메모리 상한을 둔다.
+이유: 같은 장비의 다른 서비스를 밀어내지 않게 한다.
+</li>
+</ul>
+<p>측정: <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span>을 강제로 끄면 스스로 다시 켜진다. <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>된 주차의 재시도는 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하지 않고 끝난다.</p>
+</section>
+<section class="card kind-nfr" id="NFR-PORT-001">
+<h3><span class="idtag">NFR-PORT-001</span> macOS·Windows·Linux 동일 결과</h3>
+<div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-OCR-001">TEST-OCR-001</a>, <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a> / <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a> / <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>: 운영·보안·이식성 계약 검사(<a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>,
+<code>tests/test_operational_contracts.py</code>). 추적 파일 위생과 git 실제 무시 동작, 웹훅
+토큰 불일치 404, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span>의 Restart·분리·메모리 상한, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>-서비스 짝, 시간대
+설정 사용을 고정한다.</li>
+</ul>
+</details>
+<p><strong>macOS · Windows · Linux에서 같은 결과를 낸다.</strong></p>
+<ul>
+<li>플랫폼에 따라 달라지는 곳은 <span class="term" title="글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다" tabindex="0">OCR provider</span>와 브라우저 채널 선택뿐이다. <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>부터 뒤쪽은 플랫폼을 모른다.</li>
+<li>provider를 바꾸는 변경에는 그 플랫폼의 시험용 입력(fixture)과 실제 이미지 비교 근거가 있어야 한다.</li>
+<li>날짜·시각은 시스템 시간대와 관계없이 항상 <code>TIMEZONE</code> 설정값으로 해석한다.
+운영 서버의 시스템 시간대가 달라도 조회 결과가 바뀌면 안 된다.</li>
+<li>콘솔이 이모지를 처리하지 못하는 환경에서도 CLI 출력 때문에 프로그램이 멈추면 안 된다.</li>
+</ul>
+<p>측정: 두 provider로 같은 이미지를 처리했을 때 칸 구성과 휴무·<span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 판정이 같다.</p>
+</section>
+</section>
+<section class="chapter" id="sec-7">
+<h2>7. 데이터 사양</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>데이터</th><th>형태·위치</th><th>보존</th></tr></thead>
+<tbody>
+<tr><td>게시물</td><td>SQLite <code>source_posts</code>: <span class="term" title="식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다" tabindex="0">게시물 번호</span>(기본 키, PK), 제목, 사업장, 주 시작일, 이미지 URL 목록, 처리 시각</td><td><span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>에 계속 쌓인다</td></tr>
+<tr><td>메뉴 항목</td><td>SQLite <code>menu_entries</code>: 날짜, 사업장, <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>, <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>, 메뉴 글자, 상태, 출처(게시물·제목·이미지 URL), 신뢰도. <code>(날짜, 사업장, 끼니, 코너, 게시물)</code> 조합은 겹치지 않고, 빨리 찾기 위한 색인을 둔다</td><td>운영 수집은 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span>만 저장</td></tr>
+<tr><td>원본 이미지</td><td>로컬 파일. 파일 이름은 이미지 URL의 해시 값</td><td>다시 수집·다시 해석할 때 쓰려고 로컬에 둔다</td></tr>
+<tr><td><span class="term" title="이미지 옆에 저장해 둔 OCR 결과 JSON 파일. 있으면 다시 인식하지 않는다" tabindex="0">OCR 캐시</span></td><td>이미지 옆의 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과 JSON 파일</td><td>교정 규칙을 고친 뒤 다시 만들 수 있다</td></tr>
+<tr><td><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span></td><td>JSON(메뉴 이름 → 등장 횟수). 경로는 <code class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">MENU_VOCAB_PATH</code></td><td>실제 메뉴 데이터이므로 저장소에 넣지 않는다</td></tr>
+<tr><td>주말 감시 상태</td><td>JSON. 경로는 <code class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">NEXT_WEEK_STATE_PATH</code>. <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>, <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 여부·시각, 시도 기록, 알림 보낸 주차를 담는다</td><td><span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>가 바뀌면 시도 기록을 새로 시작</td></tr>
+<tr><td><span class="term" title="OCR·파서 검증용 1년치 과거 데이터를 담는 별도 파일. 운영 응답에 쓰지 않는다" tabindex="0">학습용 DB</span></td><td><span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>와 다른 파일</td><td>검증에만 쓰고, 운영 응답에 쓰지 않는다</td></tr>
+</tbody>
+</table></div>
+<p>개인정보는 다루지 않는다. 계정 정보는 데이터로 보지 않고 설정으로 보며, <code>.env</code>에만 둔다.</p>
+</section>
+<section class="chapter" id="sec-8">
+<h2>8. Configuration 사양</h2>
+<p>모든 설정은 환경변수이며 <code>.env</code>에서 읽는다. 값 예시는 <code>.env.example</code>에 있다.</p>
+<div class="table-wrap"><table class="responsive">
+<thead><tr><th>키</th><th>필수</th><th>기본값</th><th>용도</th></tr></thead>
+<tbody>
+<tr><td data-label="키"><code>GROUPWARE_USER</code> / <code>GROUPWARE_PASSWORD</code></td><td data-label="필수">수집 시 필수</td><td data-label="기본값">없음</td><td data-label="용도"><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 로그인</td></tr>
+<tr><td data-label="키"><code>GROUPWARE_URL</code></td><td data-label="필수">수집 시 필수</td><td data-label="기본값">없음</td><td data-label="용도">게시판 진입 주소</td></tr>
+<tr><td data-label="키"><code>POST_PREFIXES</code></td><td data-label="필수">선택</td><td data-label="기본값">사업장 4곳</td><td data-label="용도">대상 게시물 제목의 앞머리, 질문에서 &quot;아는 말&quot; 판정</td></tr>
+<tr><td data-label="키"><code>DEFAULT_LOCATION</code></td><td data-label="필수">선택</td><td data-label="기본값">빈 값</td><td data-label="용도">기본 사업장(13절 참조)</td></tr>
+<tr><td data-label="키"><code class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">DATABASE_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 SQLite 파일</td><td data-label="용도">운영 SQLite 경로</td></tr>
+<tr><td data-label="키"><code>TIMEZONE</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>Asia/Seoul</code></td><td data-label="용도">모든 날짜·시각 해석 기준</td></tr>
+<tr><td data-label="키"><code class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">KAKAO_WEBHOOK_TOKEN</code></td><td data-label="필수">운영 시 필수</td><td data-label="기본값">빈 값</td><td data-label="용도">웹훅 경로 토큰. 비면 토큰 검사를 하지 않음</td></tr>
+<tr><td data-label="키"><code>OCR_PROVIDER</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>auto</code></td><td data-label="용도"><code>auto</code> / <code>apple_vision</code> / <code>paddleocr</code></td></tr>
+<tr><td data-label="키"><code>PADDLE_DET_MODEL</code> / <code>PADDLE_REC_MODEL</code> / <code>PADDLE_ENABLE_MKLDNN</code></td><td data-label="필수">선택</td><td data-label="기본값">검증된 조합</td><td data-label="용도">PaddleOCR 모델·가속 선택</td></tr>
+<tr><td data-label="키"><code>BROWSER_CHANNEL</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>auto</code></td><td data-label="용도">Playwright 브라우저 채널</td></tr>
+<tr><td data-label="키"><code class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">NEXT_WEEK_STATE_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 JSON</td><td data-label="용도">주말 감시 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span></td></tr>
+<tr><td data-label="키"><code class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">MENU_VOCAB_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 JSON</td><td data-label="용도"><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 경로</td></tr>
+<tr><td data-label="키"><code>SMTP_HOST</code> / <code>SMTP_PORT</code> / <code>SMTP_SECURITY</code> / <code>SMTP_USER</code> / <code>SMTP_PASSWORD</code> / <code>SMTP_TIMEOUT</code></td><td data-label="필수">알림 시 필수</td><td data-label="기본값">보안 방식에 따른 포트 기본값</td><td data-label="용도">알림 메일 발송</td></tr>
+<tr><td data-label="키"><code>NOTIFY_EMAIL_FROM</code> / <code>NOTIFY_EMAIL_TO</code></td><td data-label="필수">알림 시 필수</td><td data-label="기본값">발신자는 계정으로 대신함</td><td data-label="용도">알림 수신자</td></tr>
+<tr><td data-label="키"><code class="term" title="읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일" tabindex="0">MENU_ADVISOR</code></td><td data-label="필수">선택</td><td data-label="기본값"><code>auto</code></td><td data-label="용도"><span class="term" title="읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일" tabindex="0">Claude 자문</span>. <code>on</code>(운영 서버) / <code>auto</code> / <code>off</code></td></tr>
+<tr><td data-label="키"><code>CLAUDE_BIN</code></td><td data-label="필수">선택</td><td data-label="기본값">PATH, 없으면 <code>~/.local/bin/claude</code></td><td data-label="용도">Claude CLI 위치</td></tr>
+<tr><td data-label="키"><code>ADVISOR_ALERT_STATE_PATH</code></td><td data-label="필수">선택</td><td data-label="기본값">data 디렉터리의 JSON</td><td data-label="용도">자문 실패 메일을 마지막으로 보낸 시각</td></tr>
+<tr><td data-label="키"><code>MENUBOT_PORT</code></td><td data-label="필수">선택</td><td data-label="기본값">운영 스크립트 기본값</td><td data-label="용도">서버 포트</td></tr>
+<tr><td data-label="키"><code>NGROK_DOMAIN</code></td><td data-label="필수">선택</td><td data-label="기본값">빈 값</td><td data-label="용도">고정 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span> 도메인</td></tr>
+</tbody>
+</table></div>
+<p>값만 비워 둔 환경변수는 &quot;지정하지 않음&quot;으로 보고 기본값을 쓴다.
+설정이 부족하면 <strong>키 이름만</strong> 알리고, 값은 출력하지 않는다.</p>
+</section>
 <section class="chapter" id="sec-9">
 <h2>9. 오류 처리 정책</h2>
-<p>모호하거나 지원하지 않는 질문은 날짜나 끼니를 임의 선택하지 않고 안내한다. parser가 날짜를 해석할 수 있어도 answer 단계의 조회 제한을 우회해서는 안 된다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>상황</th><th>처리</th></tr></thead>
+<tbody>
+<tr><td>계정 정보 미설정</td><td><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하기 전에 바로 멈춤</td></tr>
+<tr><td>로그인 중 화면 넘김(리다이렉트) 때문에 나는 오류</td><td>결국 마지막 화면에 도착하므로 무시하고 화면이 자리 잡기를 기다림</td></tr>
+<tr><td><span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 접속·수집 실패</td><td>사유를 <span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span> 시도 기록에 남기고 실패로 끝냄(재시도는 다음 예정 시각)</td></tr>
+<tr><td>게시물 1건 처리 실패</td><td>나머지 게시물은 계속 처리하고 통계의 오류 목록에 남김(일부만 성공해도 됨)</td></tr>
+<tr><td><span class="term" title="한 주의 날짜·끼니·코너별 메뉴를 담은 표 이미지. 자유게시판 게시물 본문에 올라온다" tabindex="0">식단표</span>가 아닌 이미지</td><td>오류로 보지 않고 &quot;제외한 이미지&quot;로 셈</td></tr>
+<tr><td>게시글은 있는데 항목 0건</td><td><strong><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>로 처리하지 않고</strong> 사유를 남긴 뒤 다음 예정 시각에 다시 시도</td></tr>
+<tr><td><span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span> 손상</td><td>오류로 보지 않고 새 상태로 시작</td></tr>
+<tr><td>알림 메일 미설정</td><td>발송을 건너뛰고 기록만 남김(실패로 보지 않음)</td></tr>
+<tr><td>성공 알림 발송 실패</td><td>수집은 성공으로 처리(데이터를 버리지 않음)</td></tr>
+<tr><td>마감 알림 발송 실패</td><td>발송 기록을 남기지 않아 다음 실행에서 다시 시도</td></tr>
+<tr><td><span class="term" title="읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일" tabindex="0">Claude 자문</span> 실패(한도·로그인·시간 초과·서비스 오류·답 형식·CLI 없음)</td><td>읽은 결과를 그대로 저장하고 알림 메일(같은 종류는 12시간에 한 번). 수집은 멈추지 않음(<a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a>)</td></tr>
+<tr><td>조회할 데이터 없음</td><td>지어내지 않고 아직 게시되지 않았다고 안내</td></tr>
+<tr><td>공통 식단을 가려낼 수 없음</td><td>아무거나 고르지 않고 담당자 확인이 필요하다고 안내</td></tr>
+<tr><td>해석할 수 없거나 애매한 질문</td><td>아무거나 고르지 않고 <span class="term" title="답할 수 없는 질문에 메뉴 대신 무엇이 문제인지 알려 주는 응답" tabindex="0">되묻기</span>(<a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a>)</td></tr>
+<tr><td>콘솔 인코딩 미지원</td><td>CLI 출력 인코딩을 UTF-8로 맞추고, 맞출 수 없으면 알리지 않고 건너뜀</td></tr>
+</tbody>
+</table></div>
+<p>다시 시도하는 일은 사람이 하지 않고 <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>가 한다. &quot;언제 다시 시도하는가&quot;를 코드에 넣지 않는다.
+종료 코드는 <strong>사람이 봐야 하는 일</strong>만 실패로 표시한다.</p>
+</section>
+<section class="chapter" id="sec-10">
+<h2>10. 보안 요구사항</h2>
+<ul>
+<li>인증 수단(<span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 계정, <span class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">웹훅 토큰</span>, SMTP 앱 비밀번호)은 <code>.env</code>에만 둔다. 그 파일은 소유자만 쓸 수 있게 권한을 제한한다.</li>
+<li>저장소에는 <code>.env.example</code>의 키 이름과 형식만 둔다.</li>
+<li>저장소에 넣으면 안 되는 것: <code>.env</code>, 내부 주소, 계정, 원본 이미지, <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 결과, SQLite DB,
+<span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>, 게시물 목록, <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span> 인증 설정, 로그.</li>
+<li>카카오 요청을 처리하는 동안에는 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 로그인하지 않는다. 수집 경로와 응답 경로를 나눈다.</li>
+<li>웹훅 경로 토큰이 설정돼 있으면, 맞지 않는 요청은 본문을 읽지 않고 404로 답한다.</li>
+<li>API는 <span class="term" title="같은 컴퓨터 안에서만 닿는 주소" tabindex="0">루프백</span>에만 연다. 바깥 공개는 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span>로만 한다.</li>
+<li>비밀번호·토큰을 로그·응답·문서·커밋 메시지에 출력하지 않는다.</li>
+<li>발견한 비밀값(Secret)은 마음대로 지우지 않는다. 드러내지 않고 위치만 알린다.</li>
+</ul>
 </section>
 <section class="chapter" id="sec-11">
 <h2>11. 테스트 사양</h2>
-<p>격리된 개발 환경에서 프로젝트 의존성을 준비하고 저장소 루트에서 아래 명령을 실행한다. 테스트 파일의 설정이 운영 자원을 가리키지 않는지 먼저 확인한다. 실행 결과와 운영 확인 기록은 <code>progress.md</code>에 적는다.</p>
-<pre><code class="language-text">python -m pytest -q
-</code></pre>
-<section class="card kind-test" id="TEST-CORE-001">
-<h3><span class="idtag">TEST-CORE-001</span></h3>
-<p><a class="idref" href="#REQ-CORE-001">REQ-CORE-001</a> 검증: <code>tests/test_query.py</code>의 <code>test_plain_breakfast_means_today</code> fixture와 assertion을 실행한다. 기대 결과는 해당 Requirement의 입력별 결과이며 assertion 실패는 통과로 처리하지 않는다.</p>
+<p>ID 규칙: <code>TEST-&lt;CATEGORY&gt;-NNN</code>.</p>
+<p>검증 명령은 <code>.venv/bin/python -m pytest -q</code>와 <code>.venv/bin/python -m compileall -q src tests</code> 두 가지다.</p>
+<section class="card kind-test" id="TEST-PARSE-001">
+<h3><span class="idtag">TEST-PARSE-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a>, <a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a>, <a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 교정을 끈 상태(빈 <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>).</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_corrections.py</code>의 <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 통합 테스트를 쓴다. 만들어 낸 <span class="term" title="OCR이 읽은 글자 한 줄. 글자, 신뢰도, 이미지 안의 위치(x·y·width·height)를 담는다" tabindex="0">OCR 라인</span> 목록을 <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>에 넣는다.
+목록에는 날짜 머리글 · <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 이름표 · <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 이름표 · 메뉴 라인 · 잡음 조각이 들어 있다.</p>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p><code>(끼니, 코너)</code>별 항목이 만들어진다. 그 안의 오인식은 바로잡히고, 잡음 조각은 사라진다.</p>
+</div></section>
 </section>
-<section class="card kind-test" id="TEST-CORE-002">
-<h3><span class="idtag">TEST-CORE-002</span></h3>
-<p><a class="idref" href="#REQ-CORE-002">REQ-CORE-002</a> 검증: <code>tests/test_query.py</code>의 <code>test_weekend_weekday_still_means_current_week</code> fixture와 assertion을 실행한다. 기대 결과는 해당 Requirement의 입력별 결과이며 assertion 실패는 통과로 처리하지 않는다.</p>
+<section class="card kind-test" id="TEST-CORRECT-001">
+<h3><span class="idtag">TEST-CORRECT-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음. <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>이 필요한 경우는 임시 파일로 만든다.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_corrections.py</code>. 아래 경우를 표로 나열해 결과를 고정한다.</p>
+<ul>
+<li>잡음 판정</li>
+<li>고정 표기 교정(늘 같은 식으로 틀리는 계통 오류 포함)</li>
+<li>규칙과 글자가 겹치는 실제 메뉴가 깨지지 않는지</li>
+<li>빈도가 비슷한 표기 차이를 건드리지 않는지</li>
+<li><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 교정의 길이·후보 수·최소 등장 횟수 조건</li>
+<li><span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span> 파일이 없을 때·깨졌을 때·예전 형식일 때</li>
+<li>교정 후 중복 제거와 순서 유지</li>
+</ul>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p>의도한 항목만 바뀌고 나머지는 그대로다. <span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>이 없거나 깨져도 오류가 나지 않는다.</p>
+</div></section>
 </section>
-<section class="card kind-test" id="TEST-CORE-003">
-<h3><span class="idtag">TEST-CORE-003</span></h3>
-<p><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a> 검증: <code>tests/test_query.py</code>의 <code>test_next_week_is_never_served_or_falls_back_to_today</code> fixture와 assertion을 실행한다. 기대 결과는 해당 Requirement의 입력별 결과이며 assertion 실패는 통과로 처리하지 않는다.</p>
+<section class="card kind-test" id="TEST-STORE-001">
+<h3><span class="idtag">TEST-STORE-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<ol>
+<li><code>tests/test_query.py</code>의 주차 거르기 테스트로 지난 주·다음 주 항목이 걸러지는지 확인한다.</li>
+<li><code>tests/test_cli.py</code>로, 어떤 <span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span> 경로를 주더라도 <span class="term" title="OCR·파서 검증용 1년치 과거 데이터를 담는 별도 파일. 운영 응답에 쓰지 않는다" tabindex="0">학습용 DB</span> 경로가 그것과 같은 파일이 되지 않는지 확인한다.</li>
+</ol>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p><span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span> 월~일 항목만 남고, 제외 개수가 맞는다. 학습용 경로는 운영 경로와 항상 다르다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-QUERY-001">
+<h3><span class="idtag">TEST-QUERY-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>기준 시각을 고정한다.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_query.py</code>, <code>tests/test_query_routing.py</code>. 아래 입력을 표로 나열해 해석 결과를 확인한다.</p>
+<ul>
+<li>요일+<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span></li>
+<li><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만</li>
+<li>요일만</li>
+<li>줄임말</li>
+<li><span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 이름만(간편식·건강식)</li>
+</ul>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p>각 <span class="term" title="사용자가 카카오톡으로 보낸 말" tabindex="0">발화</span>가 기대한 날짜와 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>로 해석된다. <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 이름만 말한 질문은 그 <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>가 나오는 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만 보여준다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-QUERY-002">
+<h3><span class="idtag">TEST-QUERY-002</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>메뉴 데이터가 들어 있는 임시 DB.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_query.py</code>, <code>tests/test_query_routing.py</code>. 아래 입력을 표로 나열한다.</p>
+<ul>
+<li>지난 주·다음 주 요청</li>
+<li>모르는 낱말이 섞인 질문</li>
+<li><span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> 중복, <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>와 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>가 맞지 않는 질문</li>
+<li>날짜·요일·<span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> 중복</li>
+<li>잘못된 날짜</li>
+<li>요일이 빠진 <code>이번주 …</code></li>
+<li>식단 질문이 아닌 잡담</li>
+</ul>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p>각 입력에 기대한 안내 문구가 돌아가고 메뉴는 보이지 않는다.
+모르는 낱말은 조사가 붙은 채로 잘리지 않고 온전히 인용된다. 지원하는 표현에는 되묻지 않는다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-QUERY-003">
+<h3><span class="idtag">TEST-QUERY-003</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>메뉴 데이터가 들어 있는 임시 DB와 고정된 기준 시각.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_query.py</code>, <code>tests/test_query_routing.py</code>. 아래를 확인한다.</p>
+<ul>
+<li><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 밖 날짜 요청</li>
+<li>주말 요청</li>
+<li>데이터가 없는 날짜 요청</li>
+<li><span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span>별 세로 목록 응답 형식</li>
+</ul>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<ul>
+<li><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 밖 데이터는 어떤 경로로도 보이지 않는다.</li>
+<li>주말과 아직 게시되지 않은 상태는 실제 날짜가 들어간 안내로 답한다.</li>
+<li>응답 본문이 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span> → <span class="term" title="한 끼니 안의 메뉴 묶음. 일반식·PLUS 코너·간편식·건강식이 있다" tabindex="0">코너</span> → 항목 구조를 유지한다.</li>
+</ul>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-API-001">
+<h3><span class="idtag">TEST-API-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-API-001">REQ-API-001</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-API-001">REQ-API-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_query.py</code>, <code>tests/test_query_routing.py</code>.</p>
+<ol>
+<li>하루 전체 응답을 카카오 응답으로 바꿔 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span>이 나뉘는지 확인한다.</li>
+<li>사용방법 문구가, 앞에 안내 문구가 붙은 경우까지 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span> 하나에 들어가는지 확인한다.</li>
+</ol>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p><span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>별로 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span>이 나뉘고 개수 상한을 넘지 않는다. 사용방법은 한 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span>에 들어간다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-WATCH-001">
+<h3><span class="idtag">TEST-WATCH-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>임시 DB·<span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>과 가짜 수집기·메일 발송기.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_next_week_watch.py</code>. 아래 경우를 하나씩 확인한다.</p>
+<ul>
+<li>게시글을 찾은 뒤 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>·알림</li>
+<li>같은 주차 알림 중복 방지</li>
+<li>게시글은 있으나 항목 0건</li>
+<li>게시글을 찾지 못함</li>
+<li>수집기 예외</li>
+<li>이미 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>된 주차의 접속 생략</li>
+<li>주차가 바뀐 뒤 다시 확인</li>
+<li><span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span> 손상</li>
+</ul>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 판정은 저장된 항목 수에 따라 갈린다. 시도 기록에 결과 구분과 사유가 남는다.
+이미 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>된 주차에서는 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>에 접속하지 않는다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-WATCH-002">
+<h3><span class="idtag">TEST-WATCH-002</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></span></div>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>임시 DB·<span class="term" title="주말 확인이 대상 주차·확보 여부·시도 기록을 적어 두는 JSON 파일" tabindex="0">상태 파일</span>과 가짜 메일 발송기.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_next_week_watch.py</code>. 아래를 확인한다.</p>
+<ul>
+<li>마감 시점에 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>하지 못했을 때의 알림</li>
+<li>알림에 실패 사유 요약이 들어가는지</li>
+<li><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>된 주차에는 알림이 없는지</li>
+<li>같은 주차에 1회만 보내는지</li>
+<li>발송에 실패하면 다시 시도하는지</li>
+<li>자정을 넘겨도 <span class="term" title="수집하거나 확인하려는 주. 그 주의 월요일로 가리킨다" tabindex="0">대상 주차</span>가 흔들리지 않는지</li>
+<li>DB 기준 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 판정</li>
+<li>항목 0건에서 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>로 넘어가지 않는지</li>
+<li>메일을 설정하지 않았을 때 발송을 건너뛰는지</li>
+</ul>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p><span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>된 상태에서는 아무 알림이 없다. <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span>하지 못한 상태는 사유가 담긴 알림으로 한 번만 드러난다.
+발송에 실패하면 다음 실행에서 다시 시도한다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-PARSE-002">
+<h3><span class="idtag">TEST-PARSE-002</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 셀 상태 분류 자동 테스트(<a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a>, <code>tests/test_parse_status.py</code>).
+전일 휴무는 세 끼 모두, <code>조식 미제공</code>은 그 <span class="term" title="조식·중식·석식 가운데 하나" tabindex="0">끼니</span>만, <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>은 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>이 아닌 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>으로
+분류되는지 본다. 14절이 적어 둔 &quot;<span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span> 쪽부터 고정&quot;을 실행한 것이다.</li>
+</ul>
+</details>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음. <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>도 <span class="term" title="글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다" tabindex="0">OCR provider</span>도 거치지 않는다. <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span> 줄을 직접 만들어 <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>만 검사한다.</p>
+<aside class="callout callout-info"><span class="callout-label">참고</span>
+<p>14절에서 자동 테스트를 붙이기로 한 <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>가 이 검사다.
+저장된 <span class="term" title="이미지 옆에 저장해 둔 OCR 결과 JSON 파일. 있으면 다시 인식하지 않는다" tabindex="0">OCR 캐시</span>는 쓰지 않는다. 캐시를 저장소에 둘지는 아직 정하지 않았다(14절).</p>
+</aside>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p><code>tests/test_parse_status.py</code>를 실행한다 (<code>.venv/bin/python -m pytest</code>).</p>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<ul>
+<li>대체휴무·공휴일·전사휴무는 그날 세 끼 모두에 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 들어간다.</li>
+<li><code>조식 미제공</code>은 조식에만 들어간다.</li>
+<li>영양사 픽 같은 문구는 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>으로 보지 않고 <span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span>으로 본다.</li>
+<li>평범한 식단은 <code>normal</code>이다.
+이유: 이 마지막 확인이 없으면, 분류기가 무엇이든 <span class="term" title="휴무 등으로 식당이 그 끼니를 운영하지 않는 상태" tabindex="0">미운영</span>이라고 답해도 앞의 검사들이 통과한다.
+</li>
+</ul>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-SCRAPE-001">
+<h3><span class="idtag">TEST-SCRAPE-001</span></h3>
+<div class="card-meta"><span class="meta"><b>참조됨</b> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></span></div>
+<details class="history"><summary>변경 이력 2</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 / <a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a>: 요구사항 카드의 관련 테스트와 11절 테스트 사양을 서로 맞췄다. <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a>은 실제 CLI인 <code>scrape</code> 다음 <code>ingest</code> 순서로 고쳤다.</li>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>사내망 접속과 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span> 계정이 필요하다. 자동화할 수 없다.</p>
+<p class="why"><span class="why-label">이유</span> 바깥 시스템의 로그인과 게시판 구조에 기대는데, 그 구조는 이쪽에서 고정할 수 없다.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p>운영 수집 스크립트(<code>scripts/run-linux-collect.sh</code>, <code>scripts/run-windows-collect.ps1</code>)와 같은 두 명령을 차례로 쓴다.</p>
+<ol>
+<li><code>.venv/bin/menu-bot scrape --pages 2 --output data/latest_manifest.json</code>을 실행한다.
+목록 2쪽에서 식단 게시물을 찾아 <span class="term" title="식단 게시물마다 붙은 번호. 저장은 이 번호 단위로 바꿔 넣는다" tabindex="0">게시물 번호</span>·제목·이미지 URL을 이 파일에 저장한다.</li>
+<li>출력의 게시물 수를 보고, 저장된 파일에서 게시물 제목과 이미지 URL을 확인한다.</li>
+<li><code>.venv/bin/menu-bot ingest data/latest_manifest.json</code>을 실행한다.
+이미지를 내려받아 <span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>하고 저장한 뒤, 게시물·이미지·항목 수와 오류 목록을 출력한다.</li>
+<li>3번을 한 번 더 실행해 게시물 단위로 바꿔 넣는지 본다.</li>
+</ol>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p><span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span> 게시물을 찾아 이미지를 모두 내려받는다. 다시 실행해도 항목 수가 같고 중복 항목이 생기지 않는다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-OCR-001">
+<h3><span class="idtag">TEST-OCR-001</span></h3>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a> / REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001: 자동화할 수 없는 이유(사내망·플랫폼별 provider)를
+적은 수동 절차 <a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> · TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001을 추가하고 추적성 표를 채웠다.</li>
+</ul>
+</details>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p>REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001, <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>(provider 비교 부분)</p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>플랫폼별 <span class="term" title="글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다" tabindex="0">OCR provider</span>가 설치돼 있어야 한다(macOS Apple Vision, Windows·Linux PaddleOCR).
+두 플랫폼이 모두 있어야 하므로 자동화하지 않는다.</p>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<p>같은 이미지를 두 provider로 처리하고 <code>&lt;이미지&gt;.ocr.json</code> 캐시를 비교한다.</p>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<p>좌표 규칙(비율로 바꾼 x·y·width·height)이 같고, 칸 구성과 휴무·<span class="term" title="특식·DAY·영양사 픽 같은 문구가 든 칸의 상태" tabindex="0">특식</span> 판정이 같다.</p>
+</div></section>
+</section>
+<section class="card kind-test" id="TEST-OPS-001">
+<h3><span class="idtag">TEST-OPS-001</span></h3>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a> / <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a> / <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>: 운영·보안·이식성 계약 검사(<a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>,
+<code>tests/test_operational_contracts.py</code>). 추적 파일 위생과 git 실제 무시 동작, 웹훅
+토큰 불일치 404, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span>의 Restart·분리·메모리 상한, <span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>-서비스 짝, 시간대
+설정 사용을 고정한다.</li>
+</ul>
+</details>
+<section class="field"><h4>검증 대상</h4><div class="field-body">
+<p><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a>, <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a>, <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></p>
+</div></section>
+<section class="field"><h4>선행 조건</h4><div class="field-body">
+<p>없음. 로그인 정보도 네트워크도 쓰지 않는다.</p>
+<p>이 검사는 세 요구사항의 '측정' 가운데 기계가 답할 수 있는 부분만 맡는다. 나머지는 이렇게 나눈다.</p>
+<ul>
+<li><span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span>을 강제로 끈 뒤 스스로 다시 켜지는지: 아래 수동 절차</li>
+<li>두 provider의 실제 이미지 비교: TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001</li>
+</ul>
+</div></section>
+<section class="field"><h4>절차</h4><div class="field-body">
+<ol>
+<li><code>tests/test_operational_contracts.py</code>를 실행한다 (<code>.venv/bin/python -m pytest</code>).</li>
+<li>운영 서버에서 <code>systemctl kill menubot-web</code>을 한 뒤, 유닛이 스스로 다시 올라오는지 본다(수동).</li>
+</ol>
+</div></section>
+<section class="field"><h4>Expected Result</h4><div class="field-body">
+<ul>
+<li><code>.env</code>·DB·원본 이미지·<span class="term" title="메뉴 이름과 등장 횟수를 담은 JSON 파일. 오인식 교정에 쓰고, 저장소에 넣지 않는다" tabindex="0">어휘집</span>이 Git에 추적되지 않고, git이 무시 대상으로 판정한다.</li>
+<li><span class="term" title="챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다" tabindex="0">웹훅 토큰</span>이 맞지 않으면 404다. 설정이 없는 환경에서는 소스 코드를 살피는 확인이 대신 고정한다. 건너뛰었다면 그 사실이 출력에 남는다.</li>
+<li><span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">상시 유닛</span> 둘은 서로 다른 파일이고, 각각 <code>Restart=always</code>다.</li>
+<li>수집·다음 주 확인 유닛에는 메모리 상한이 있다.</li>
+<li><span class="term" title="서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약" tabindex="0">타이머</span>마다 짝이 되는 서비스가 있다.</li>
+<li>시간대는 설정값에서 온다. <span class="term" title="OCR 라인을 날짜·끼니·코너 칸에 나눠 넣는 부분" tabindex="0">파서</span>·조회 코드에 시간대 없는 <code>datetime.now()</code>가 없다.</li>
+</ul>
+</div></section>
 </section>
 </section>
 <section class="chapter" id="sec-12">
@@ -370,25 +1602,62 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <div class="table-wrap"><table class="responsive">
 <thead><tr><th>Requirement</th><th>Implementation</th><th>Test</th><th>Status</th></tr></thead>
 <tbody>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-CORE-001">REQ-CORE-001</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-CORE-001">TEST-CORE-001</a>: <code>tests/test_query.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-CORE-002">REQ-CORE-002</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-CORE-002">TEST-CORE-002</a>: <code>tests/test_query.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-CORE-003">REQ-CORE-003</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-CORE-003">TEST-CORE-003</a>: <code>tests/test_query.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-001">REQ-OCR-001</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/query.py</code></td><td data-label="Test"><code>tests/test_holiday_notices.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-002">REQ-OCR-002</a></td><td data-label="Implementation"><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_holiday_notices.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-003">REQ-OCR-003</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></td><td data-label="Test"><code>tests/test_event_banners.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-OCR-004">REQ-OCR-004</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><code>tests/test_event_banners.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
-<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-SCRAPE-001">REQ-SCRAPE-001</a></td><td data-label="Implementation"><code>src/menu_bot/scraper.py</code></td><td data-label="Test"><a class="idref" href="#TEST-SCRAPE-001">TEST-SCRAPE-001</a> (수동)</td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement">REQ-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001</td><td data-label="Implementation"><code>src/menu_bot/ocr_provider.py</code></td><td data-label="Test">TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-001">REQ-PARSE-001</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-002">REQ-PARSE-002</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-003">REQ-PARSE-003</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/query.py</code></td><td data-label="Test"><code>tests/test_holiday_notices.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-004">REQ-PARSE-004</a></td><td data-label="Implementation"><code>src/menu_bot/service_notices.py</code>, <code>src/menu_bot/parser.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_holiday_notices.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-005">REQ-PARSE-005</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code>, <code>src/menu_bot/corrections.py</code></td><td data-label="Test"><code>tests/test_event_banners.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-PARSE-006">REQ-PARSE-006</a></td><td data-label="Implementation"><code>src/menu_bot/parser.py</code></td><td data-label="Test"><code>tests/test_event_banners.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-CORRECT-001">REQ-CORRECT-001</a></td><td data-label="Implementation"><code>src/menu_bot/corrections.py</code></td><td data-label="Test"><a class="idref" href="#TEST-CORRECT-001">TEST-CORRECT-001</a>, <a class="idref" href="#TEST-PARSE-001">TEST-PARSE-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-STORE-001">REQ-STORE-001</a></td><td data-label="Implementation"><code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><a class="idref" href="#TEST-STORE-001">TEST-STORE-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-QUERY-001">REQ-QUERY-001</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-QUERY-001">TEST-QUERY-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-QUERY-002">REQ-QUERY-002</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-QUERY-002">TEST-QUERY-002</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-QUERY-003">REQ-QUERY-003</a></td><td data-label="Implementation"><code>src/menu_bot/query.py</code></td><td data-label="Test"><a class="idref" href="#TEST-QUERY-003">TEST-QUERY-003</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-API-001">REQ-API-001</a></td><td data-label="Implementation"><code>src/menu_bot/web.py</code></td><td data-label="Test"><a class="idref" href="#TEST-API-001">TEST-API-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-WATCH-001">REQ-WATCH-001</a></td><td data-label="Implementation"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="Test"><a class="idref" href="#TEST-WATCH-001">TEST-WATCH-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-WATCH-002">REQ-WATCH-002</a></td><td data-label="Implementation"><code>src/menu_bot/next_week_watch.py</code></td><td data-label="Test"><a class="idref" href="#TEST-WATCH-002">TEST-WATCH-002</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-001">REQ-ADV-001</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-002">REQ-ADV-002</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#REQ-ADV-003">REQ-ADV-003</a></td><td data-label="Implementation"><code>src/menu_bot/advisor.py</code>, <code>src/menu_bot/cli.py</code>, <code>src/menu_bot/pipeline.py</code></td><td data-label="Test"><code>tests/test_advisor.py</code></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a></td><td data-label="Implementation"><code>src/menu_bot/web.py</code>, <code>.gitignore</code></td><td data-label="Test"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td><td data-label="Status"><span class="badge st-verified">verified</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a></td><td data-label="Implementation"><code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></td><td data-label="Test"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
+<tr><td data-label="Requirement"><a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a></td><td data-label="Implementation"><code>src/menu_bot/ocr_provider.py</code>, <code>src/menu_bot/config.py</code></td><td data-label="Test"><a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>, TEST-<span class="term" title="이미지 속 글자를 읽어 문자열로 바꾸는 일" tabindex="0">OCR</span>-001 (수동)</td><td data-label="Status"><span class="badge st-implemented">implemented</span></td></tr>
 </tbody>
 </table></div>
-<p>implemented는 연결된 구현·테스트 소스가 존재한다는 뜻이며 실제 실행 통과를 뜻하지 않는다.</p>
+<p>Status 값: <code>draft</code> (사양만 있음) / <code>implemented</code> / <code>verified</code> (실제 실행까지 확인) /
+<code>deprecated</code>.</p>
 </section>
 <section class="chapter" id="sec-13">
 <h2>13. 미확정 사항</h2>
 <ul>
-<li>수집·OCR·사업장 병합·알림 전체 요구사항과 운영 카카오 채널 검증은 확인 필요다. 현재 사양은 조회 핵심 계약에 한정한다.</li>
-<li>이 기준선과 기존 전체 문서·기능의 누락 여부를 검토하기 전까지 프로젝트 전체 readiness 완료로 선언하지 않는다.</li>
+<li><strong><code>DEFAULT_LOCATION</code>의 사양이 없다.</strong> 설정 항목이 있고 CLI·API가 이 값을 인자로 넘기는 경로도 있지만,
+응답을 만들 때는 쓰이지 않는다. 사업장별 응답을 하지 않기로 한 범위(2절)와 이어지는 문제다.
+이 설정을 남길지 없앨지 확인이 필요하다.</li>
+<li><strong>공통 식단을 고르는 기준이 코드에 고정돼 있다.</strong> 특정 사업장 이름 하나를 공통 식단으로 보고,
+그 이름이 없으면 사업장이 한 곳일 때만 그 결과를 쓴다. 이 이름이 <code>POST_PREFIXES</code>의 첫 항목을
+뜻하는지, 고정된 값인지 문서에 없다.</li>
+<li><strong><span class="term" title="사용자 질문에 답할 때 쓰는 SQLite 파일. 현재 주 식단만 둔다" tabindex="0">운영 DB</span>에서 지난 주 데이터를 언제 지울지 정해져 있지 않다.</strong> 저장은 게시물 단위로 바꿔 넣고
+조회는 <span class="term" title="오늘이 속한 주의 월요일부터 일요일까지. 사용자에게는 이 주의 식단만 보여준다" tabindex="0">현재 주</span>로 제한하므로, 사용자에게는 보이지 않지만 지난 주 게시물의 항목이 DB에 계속 남는다.
+정리 주기·방법을 정할지 확인이 필요하다.</li>
+<li><strong>CLI <code>ask</code>와 카카오 API의 &quot;아는 사업장 이름&quot; 목록이 다르다.</strong> API는 설정값을 넘기고
+CLI는 기본 목록을 쓴다. 두 경로가 같은 판정을 해야 하는지 확인이 필요하다.</li>
+<li><strong>서버를 재부팅했을 때 저절로 켜지는지는 아직 검증하지 않았다</strong>(<code>README.md</code>에 적혀 있다). 유닛은
+부팅할 때 올라오도록 등록돼 있지만, 재부팅해서 확인하는 일이 남아 있다.</li>
+</ul>
+</section>
+<section class="chapter" id="sec-14">
+<h2>14. 향후 개선 후보</h2>
+<ul>
+<li><span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span> 무료 한도에 가까워지면, 바깥 공개 경로를 서버리스 무료 주소로 옮긴다.</li>
+<li>Windows에서 운영할 때 필요한 <span class="term" title="루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 NGROK_DOMAIN으로 정한다" tabindex="0">터널</span> 프로그램의 최소 버전 조건은 사내 IT 승인 절차로 해결한다.</li>
+<li><code>REQ-PARSE-002</code>는 2026-09-22에 자동 테스트를 붙였다(<a class="idref" href="#TEST-PARSE-002">TEST-PARSE-002</a>). 남은 둘
+(<code>REQ-SCRAPE-001</code> · <code>REQ-OCR-001</code>)은 수동 절차로 둔다.
+이유: 각각 사내망 <span class="term" title="식단 게시물이 올라오는 사내 업무 시스템. 로그인해야 읽을 수 있다" tabindex="0">그룹웨어</span>와 플랫폼별 <span class="term" title="글자 인식을 맡는 프로그램. macOS는 Apple Vision, Windows·Linux는 PaddleOCR을 쓴다" tabindex="0">OCR provider</span>가 있어야 확인할 수 있다.
+</li>
+<li>위 둘을 자동화하려면, 먼저 저장된 <span class="term" title="이미지 옆에 저장해 둔 OCR 결과 JSON 파일. 있으면 다시 인식하지 않는다" tabindex="0">OCR 캐시</span>를 저장소에 둘 수 있는 형태(개인정보·내부 주소 제거)로
+만들지 결정해야 한다.</li>
 </ul>
 </section>
 </main>

@@ -1,4 +1,4 @@
-"""Validates: REQ-OCR-001. 공휴일 글자가 음식 메뉴로 저장되는 회귀를 막는다."""
+"""Validates: REQ-PARSE-003, REQ-PARSE-004. 공휴일 글자가 음식 메뉴로 저장되는 회귀를 막는다."""
 from datetime import date, datetime
 
 import pytest

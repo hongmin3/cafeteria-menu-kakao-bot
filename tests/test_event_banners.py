@@ -1,4 +1,4 @@
-"""Validates: REQ-OCR-003, REQ-OCR-004.
+"""Validates: REQ-PARSE-005, REQ-PARSE-006.
 
 좌표는 2026-10-19 주차 운영 서버 OCR 캐시(목요일 체육대회 그림)에서 가져왔다.
 """

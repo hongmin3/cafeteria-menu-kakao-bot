@@ -441,7 +441,7 @@ sudo systemctl start menubot-nextweek.service
 요구사항: macOS 14+, Python 3.11+, Google Chrome, Xcode Command Line Tools.
 
 ```bash
-cd "/Users/hongmin/Desktop/자동화/cafeteria-menu-kakao-bot"
+cd projects/cafeteria-menu-kakao-bot   # 워크스페이스 루트에서
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'
@@ -557,3 +557,13 @@ knowledge/ → `akela compile` → 작업별 slice.md → Codex/Claude 작업 �
 ## License
 
 MIT
+
+## AI Agent Context
+
+이 저장소는 작업별 AI 컨텍스트 관리를 위해 Akela를 사용합니다. Akela는 서비스 Runtime Dependency가 아닙니다.
+
+- Knowledge: `knowledge/`
+- Agent Protocol: `akela/PROTOCOL.md`
+- Configuration: `akela.json`
+
+Codex와 Claude Code는 `compile → 작업 → Evidence 기록 → outcome` 흐름을 따릅니다. `akela stats`는 적용·반증 Evidence와 promotion/falsified/dormant 후보를 보여주며, `akela/CURATE.md`에 따라 사람이 정식 Knowledge 변경을 승인합니다.
