@@ -4,9 +4,9 @@
 
 | 항목 | 값 |
 |---|---|
-| Document Version | 1.1.0 |
+| Document Version | 1.2.0 |
 | Project Version | 0.1.0 |
-| Last Updated | 2026-09-25 |
+| Last Updated | 2026-10-20 |
 | Status | active |
 | Owner | hongmin |
 
@@ -35,9 +35,12 @@
 
 예약 실행이 그룹웨어의 식단표 이미지를 읽어 DB에 넣고, 카카오 질문이 오면 그 DB에서 답한다.
 수집이 실패하면 시간마다 다시 시도하고, 답할 수 없는 질문에는 되묻는다.
+읽은 결과가 이상해 보이면 서버의 Claude에게 그림을 보여 주고 묻는다. 묻지 못하면 알림 메일을 보낸다.
 
 ```flow
 정기 수집·주말 확인 -> 그룹웨어 식단 게시물 찾기 -> 이미지 OCR -> 날짜·끼니·코너 칸 나누기 -> 식단 DB(SQLite)
+날짜·끼니·코너 칸 나누기 -(이상 신호)-> Claude 자문 -> 식단 DB(SQLite)
+Claude 자문 -(실패)-> 알림 메일
 그룹웨어 식단 게시물 찾기 -(실패·미게시)-> 시간마다 재시도
 시간마다 재시도 -> 그룹웨어 식단 게시물 찾기
 카카오 질문 -> 날짜·끼니 해석 -> 식단 DB(SQLite) -> 끼니별 말풍선 응답
@@ -77,6 +80,7 @@
 | 웹훅 토큰(`KAKAO_WEBHOOK_TOKEN`) | 챗봇 서버 주소 경로에 붙이는 긴 임의 문자열. 맞지 않는 요청은 404로 답한다 |
 | 루프백 | 같은 컴퓨터 안에서만 닿는 주소 |
 | 터널 | 루프백에만 열린 서버를 바깥에서 부를 수 있게 이어 주는 연결. 고정 도메인은 `NGROK_DOMAIN`으로 정한다 |
+| Claude 자문(`MENU_ADVISOR`) | 읽은 결과가 이상해 보일 때 운영 서버의 Claude CLI에게 식단표 그림을 보여 주고 판정을 묻는 일 |
 | 상시 유닛·타이머 | 서버에서 항상 켜 두는 서비스(웹 서버·터널)와, 정해진 시각에 작업을 돌리는 실행 예약 |
 
 ## 2. 프로젝트 범위
@@ -89,6 +93,7 @@
 - OCR이 잘못 읽은 글자와 잡음 조각을 바로잡는다.
 - SQLite에 **현재 주** 식단을 저장한다.
 - FastAPI로 만든 카카오 Skill API가 평소 말투의 질문을 해석해 답한다.
+- 읽은 결과에 이상 신호가 있으면 Claude CLI에게 묻고, 음식이 아닌 항목과 미운영만 반영한다.
 - 주말 확인으로 다음 주 식단표를 미리 받아 둔다. 받지 못하면 알림 메일을 보내고 시간마다 다시 시도한다.
 
 ### 제외
@@ -108,22 +113,24 @@
 | OCR | `src/menu_bot/ocr.py`, `src/menu_bot/ocr_provider.py`, `src/menu_bot/vision_ocr.swift` | 플랫폼에 맞는 provider 선택, 같은 좌표 규칙으로 맞추기, 결과 캐시 |
 | 파서 | `src/menu_bot/parser.py` | OCR 라인을 날짜·끼니·코너 칸에 넣기, 휴무·특식 판정 |
 | 교정 | `src/menu_bot/corrections.py` | 잡음 제거, 고정 표기 교정, 어휘집 교정 |
+| Claude 자문 | `src/menu_bot/advisor.py` | 이상 신호 찾기, Claude CLI 호출, 반영 범위 제한, 실패 알림 |
 | 파이프라인 | `src/menu_bot/pipeline.py` | 이미지 내려받기, 중복 제거, 주차 거르기, 저장 |
 | 저장소 | `src/menu_bot/db.py`, `src/menu_bot/models.py` | SQLite 열 구성과 조회 |
 | 질의 | `src/menu_bot/query.py` | 질문을 표준 표현으로 바꾸기·해석·되묻기, 응답 문구 만들기 |
 | API | `src/menu_bot/web.py` | 카카오 Skill 주소, 토큰 검사, 말풍선 구성 |
-| CLI | `src/menu_bot/cli.py` | `scrape` · `ingest` · `ask` · `check-next-week` · `next-week-deadline` · `ensure-menu` · `notify-test` · `build-vocab` |
+| CLI | `src/menu_bot/cli.py` | `scrape` · `ingest` · `ask` · `check-next-week` · `next-week-deadline` · `ensure-menu` · `notify-test` · `advisor-check` · `build-vocab` · `correct` |
 | 주말 감시 | `src/menu_bot/next_week_watch.py`, `src/menu_bot/notify.py` | 다음 주 확보 판정, 상태 파일, 알림 메일 |
 | 설정 | `src/menu_bot/config.py`, `.env.example` | 환경변수 읽기 |
 | 운영 | `scripts/systemd/`, `scripts/register-linux-services.sh` | 서비스·타이머 등록 |
 
-바깥 시스템과 닿는 곳은 세 군데다.
+바깥 시스템과 닿는 곳은 네 군데다.
 
 - 그룹웨어: 읽기만 한다. 로그인이 필요하다.
 - 카카오 챗봇 Skill 서버: 요청을 받는다.
 - SMTP 서버: 알림 메일을 보낸다.
+- Claude CLI: 이상 신호가 있을 때만 식단표 그림 한 장과 읽은 메뉴를 보낸다.
 
-이 세 곳 말고는 이미지나 인식 결과를 밖으로 내보내지 않는다.
+이 곳들 말고는 이미지나 인식 결과를 밖으로 내보내지 않는다.
 
 ## 4. 전체 동작 흐름
 
@@ -162,6 +169,7 @@ ID 규칙: `REQ-<CATEGORY>-NNN`. CATEGORY는 대문자·숫자, NNN은 세 자�
 | QUERY | 질문 해석·응답 |
 | API | 챗봇 서버 |
 | WATCH | 다음 주 식단 감시 |
+| ADV | 이상한 식단표의 Claude 자문 |
 | SEC | 보안 |
 | OPS | 운영 |
 | PORT | 이식성 |
@@ -265,7 +273,7 @@ OCR 라인이 REQ-OCR-001의 좌표 규칙을 따른다.
 - 제목에서 사업장이나 날짜를 읽지 못하면 그 게시물은 오류로 기록하고 건너뛴다.
 - 날짜 머리글이나 끼니 이름표가 없는 이미지(안내 포스터 등)는 식단표가 아니다.
   0건을 돌려주고, 파이프라인이 "제외한 이미지"로 센다.
-- 주 시작일에서 10일 넘게 떨어진 날짜, 표 바깥 위치의 라인, 로고·장식 문구는 버린다.
+- 주 시작일에서 14일 넘게 떨어진 날짜(REQ-PARSE-006), 표 바깥 위치의 라인, 로고·장식 문구는 버린다.
 - 같은 칸이 여러 이미지에서 겹치면 더 긴 결과를 쓴다. 없는 코너를 만들지 않는다.
 
 #### 관련 구현
@@ -305,6 +313,56 @@ REQ-PARSE-001이 칸에 넣은 글자.
 
 #### 관련 테스트
 TEST-PARSE-002
+
+### REQ-PARSE-003 공휴일 이름으로 표시한 휴무
+
+식단표의 날짜 칸에 `한글날`이나 `개천절`만 있고 음식 메뉴가 없으면, 조식·중식·석식 모두 식당 미운영으로 안내한다. 공휴일 이름을 일반식 메뉴로 표시하지 않는다.
+
+- 이름 안의 띄어쓰기와 이름을 감싼 괄호는 같은 안내로 읽는다.
+- 다른 공휴일도 식단표에 이름만 적혀 있으면 같은 기준을 적용한다.
+- 같은 날짜에 음식 메뉴가 있으면 공휴일 이름만으로 전일 휴무를 결정하지 않는다.
+- `한글날 특식`, `추석 송편` 같은 음식·행사 문구를 휴무로 바꾸지 않는다.
+- `중식 미운영`처럼 끼니를 지정한 안내는 그 끼니에만 적용한다.
+
+### REQ-PARSE-004 연휴 안내의 범위와 문구 구분
+
+`설 명절`, `한가위 연휴`, `대체 휴일`, `임시 공휴일`도 음식이 없는 날짜의 전일 미운영 안내로 읽는다. 별표나 장식 괄호가 있어도 같은 안내로 처리한다.
+
+1. `식당 휴무`, `전사 휴무`처럼 식당 전체를 지정한 안내는 세 끼에 적용한다.
+2. `석식 공휴일 미운영`은 석식만, `조식·석식 미운영`은 지정한 두 끼니만 처리한다.
+3. `건강식 미운영` 같은 코너 안내를 다른 코너나 끼니의 휴무로 확대하지 않는다.
+4. `공휴일 특식`, `노동절 특식`과 정상 운영 문구는 휴무를 뜻하지 않는다.
+
+같은 날짜 칸에서 가까이 붙어 있는 OCR 조각이 알려진 안내 문구를 이루면 합쳐 읽는다. 다른 날짜의 글자를 이어 붙이거나 잘못 읽은 글자를 추측해 휴일 이름으로 바꾸지 않는다.
+
+날짜가 붙은 안내는 표 안의 해당 날짜에 적용한다. 날짜 범위가 적혀 있거나 안내 글자가 여러 날짜 열에 걸쳐 있으면 해당 열을 각각 판단한다. 이름만 있는 연휴 안내는 음식이 있는 날짜를 휴무로 바꾸지 않는다.
+
+`10/08~09`는 같은 달의 8일부터 9일까지로 읽는다. 날짜가 틀렸거나 끝 날짜가 시작 날짜보다 이르면 휴무 날짜를 추정하지 않는다. 해당 문구만 건너뛰고 다른 날짜 메뉴는 처리한다.
+
+한 게시물의 여러 이미지를 합칠 때도 음식이 있으면 이름만으로 만든 휴무 안내를 제외한다. `식당 휴무`처럼 미운영이 적힌 안내는 유지한다.
+
+> **한계** 휴일 이름이 OCR에서 사라졌거나 글자가 알아볼 수 없게 틀리면 휴무를 확정할 수 없다. 기존 메뉴 없음 안내를 유지하며 달력만 보고 추정하지 않는다.
+
+> **참고** 달력만 보고 휴무를 추정하지 않는다. 이름도 메뉴도 없는 빈 칸은 기존의 메뉴 없음 안내를 유지한다.
+
+### REQ-PARSE-005 행사 그림만 있는 날짜
+
+식단표의 날짜 칸에 메뉴 대신 `뷰웍스 체육대회` 같은 행사 그림만 있으면, 조식·중식·석식 모두 식당 미운영으로 안내한다. 그림 속 글자를 메뉴로 표시하지 않는다.
+
+1. 그 날짜 칸에서 읽힌 글자가 모두 일반 메뉴 글자보다 훨씬 큰 그림 글씨이면 행사 그림으로 본다.
+2. 안내 문구는 그림에서 읽은 글자에 `(식당 미운영)`을 붙인다. 예: `뷰웍스 체육대회 (식당 미운영)`.
+3. 그림 글씨를 잘못 읽은 표기는 기존 표기 교정 목록으로 고친다. 예: `체육대황` → `체육대회`.
+
+> **주의** 같은 날짜 칸에 보통 크기의 음식 글자가 하나라도 있으면 행사 그림으로 보지 않는다. 메뉴 옆의 작은 홍보 그림이나 특식 제목 때문에 운영하는 날을 휴무로 바꾸지 않는다.
+
+### REQ-PARSE-006 다른 주 게시글에 붙은 식단표
+
+식단표 그림의 날짜 줄이 게시글 제목의 주와 다르면 그림에 적힌 날짜를 따른다. 예를 들어 `2026-10-12 ~ 10-16` 게시글에 10/19~10/23 식단표가 붙어 있으면 10/23(금)까지 다섯 날짜를 모두 저장한다.
+
+- 게시글 시작일에서 14일 안의 날짜 줄만 받는다. 그보다 먼 숫자는 날짜로 쓰지 않는다.
+- 이번 주 수집에서는 지금처럼 이번 주 날짜만 남긴다.
+
+이유: 그룹웨어에서 다음 주 식단표가 지난주 게시글에 추가로 올라오고 이번 주 게시글에는 그림이 없는 경우가 있었다. 10일 제한 때문에 금요일 메뉴가 통째로 빠졌다.
 
 ### REQ-CORRECT-001 메뉴 이름 오인식 바로잡기
 
@@ -612,6 +670,57 @@ TEST-WATCH-001
 #### 관련 테스트
 TEST-WATCH-002
 
+### REQ-ADV-001 이상 신호가 있을 때 Claude에게 묻기
+
+식단표 그림을 읽은 결과가 이상해 보이면, 운영 서버에 로그인된 Claude CLI(`claude`)에게 그 그림을 보여 주고 판정을 묻는다. 이상 신호가 없으면 묻지 않는다.
+
+| 이상 신호 | 예 |
+|---|---|
+| 날짜 줄에는 있는데 그날 메뉴가 하나도 없음 | 그림만 있는 휴일 칸 |
+| 일반식 칸의 항목이 1~2개뿐임(미운영 안내 제외) | `체육대황` 한 줄만 있는 중식 일반식 |
+| 메뉴로 남은 글자가 일반 메뉴보다 훨씬 큼 | 메뉴 옆 홍보 그림 글씨 |
+
+1. 그림 한 장에 한 번만 묻는다. 물어볼 날짜와 지금 읽은 메뉴를 함께 보낸다.
+2. 답은 정해진 JSON 형식으로만 받는다.
+3. 같은 그림과 같은 이상 신호에 대한 답은 그림 옆에 저장해 두고 다시 묻지 않는다.
+4. `MENU_ADVISOR=off`이거나 `claude`를 찾을 수 없으면 묻지 않고 지금처럼 처리한다.
+
+> **주의** Claude 호출이 실패하거나, 시간이 3분을 넘거나, 답을 읽을 수 없으면 읽은 결과를 그대로 저장한다. 자문 때문에 식단 수집이 멈추면 안 된다.
+
+### REQ-ADV-002 Claude 답을 반영하는 범위
+
+Claude의 답 중 아래 두 가지만 반영한다. 메뉴 이름을 새로 만들거나 고치라는 답은 반영하지 않는다.
+
+- **음식이 아닌 항목:** 그날 읽은 메뉴에 글자가 똑같이 있는 항목만 지운다. 항목을 지워 칸이 비면 그 칸을 없앤다.
+- **식당 미운영:** 그날 남은 메뉴가 모두 이상 신호에 걸린 항목뿐일 때만 세 끼를 미운영 안내로 바꾼다. 안내 문구는 Claude가 준 이름에 `(식당 미운영)`을 붙인다. 이름이 휴일 이름도 아니고 그 칸의 글자에도 없으면 `식단표에 메뉴 없음 (식당 미운영)`으로 쓴다.
+
+> **예외** 메뉴가 하나도 없던 날짜는 Claude가 준 이름이 휴일 이름이거나 그 칸의 글자에 있을 때만 미운영으로 바꾼다. 이름을 확인할 수 없으면 기존의 메뉴 없음 안내를 유지한다(REQ-PARSE-004의 빈 칸 기준).
+
+이유: Claude가 그림을 잘못 보거나 글자를 지어내도 사용자에게 없는 메뉴가 보이지 않게 한다. 자문은 잘못 읽은 것을 덜어내는 데만 쓴다.
+
+> **참고** 물은 내용과 답, 실제로 반영한 변경은 그림 옆 `<그림>.advice.json`에 남는다. 운영자가 나중에 확인할 수 있다.
+
+### REQ-ADV-003 Claude 자문 실패 알림
+
+Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 저장하고 운영자에게 알림 메일을 보낸다. 메일에는 실패 종류, 오류 내용, 게시글, 확인이 필요한 날짜와 의심 항목, 조치 방법을 적는다.
+
+| 실패 종류 | 알아보는 방법 | 다시 묻기 |
+|---|---|---|
+| 사용 한도 초과 | HTTP 429, 또는 오류에 `usage limit`, `hit your session limit`, `weekly limit`, `credit balance` 같은 말이 있음 | 하지 않음 |
+| 로그인 만료·인증 실패 | HTTP 401·403, 또는 오류에 `Not logged in`, `/login`, `OAuth`, `API key` 같은 말이 있음 | 하지 않음 |
+| 시간 초과 | 3분 안에 끝나지 않음 | 하지 않음 |
+| 서비스 오류·불안정 | 그 밖의 오류(HTTP 529·500, 연결 오류, `Context limit reached` 등) | 20초 뒤 한 번 |
+| 답을 읽을 수 없음 | 정해진 JSON 형식이 아니거나 반영 중 오류 | 하지 않음 |
+| CLI 없음 | `MENU_ADVISOR=on`인데 `claude`를 실행할 수 없음 | 하지 않음 |
+
+- CLI 출력에 HTTP 상태 코드(`api_error_status`)가 있으면 문구보다 코드를 먼저 본다.
+- 같은 종류의 실패 메일은 12시간에 한 번만 보낸다. 메일 발송이 실패하면 다음 실패 때 다시 보낸다.
+- 실패한 답은 저장하지 않는다. 다음 수집에서 다시 묻는다.
+- 학습용 수집(`ingest --learning`)에서는 Claude에게 묻지 않는다.
+- `menu-bot advisor-check`는 짧은 질문 하나로 설치·로그인·한도 상태를 확인한다. `--mail`을 붙이면 실패 메일도 보낸다.
+
+> **주의** 운영 서버는 `.env`에 `MENU_ADVISOR=on`을 둔다. `auto`는 `claude`가 없으면 조용히 자문을 건너뛰므로 개발 PC에서만 쓴다.
+
 ## 6. 비기능 요구사항
 
 ### NFR-SEC-001 비밀값·실제 데이터를 밖에 내보내지 않기
@@ -693,6 +802,9 @@ TEST-WATCH-002
 | `MENU_VOCAB_PATH` | 선택 | data 디렉터리의 JSON | 어휘집 경로 |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURITY` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_TIMEOUT` | 알림 시 필수 | 보안 방식에 따른 포트 기본값 | 알림 메일 발송 |
 | `NOTIFY_EMAIL_FROM` / `NOTIFY_EMAIL_TO` | 알림 시 필수 | 발신자는 계정으로 대신함 | 알림 수신자 |
+| `MENU_ADVISOR` | 선택 | `auto` | Claude 자문. `on`(운영 서버) / `auto` / `off` |
+| `CLAUDE_BIN` | 선택 | PATH, 없으면 `~/.local/bin/claude` | Claude CLI 위치 |
+| `ADVISOR_ALERT_STATE_PATH` | 선택 | data 디렉터리의 JSON | 자문 실패 메일을 마지막으로 보낸 시각 |
 | `MENUBOT_PORT` | 선택 | 운영 스크립트 기본값 | 서버 포트 |
 | `NGROK_DOMAIN` | 선택 | 빈 값 | 고정 터널 도메인 |
 
@@ -713,6 +825,7 @@ TEST-WATCH-002
 | 알림 메일 미설정 | 발송을 건너뛰고 기록만 남김(실패로 보지 않음) |
 | 성공 알림 발송 실패 | 수집은 성공으로 처리(데이터를 버리지 않음) |
 | 마감 알림 발송 실패 | 발송 기록을 남기지 않아 다음 실행에서 다시 시도 |
+| Claude 자문 실패(한도·로그인·시간 초과·서비스 오류·답 형식·CLI 없음) | 읽은 결과를 그대로 저장하고 알림 메일(같은 종류는 12시간에 한 번). 수집은 멈추지 않음(REQ-ADV-003) |
 | 조회할 데이터 없음 | 지어내지 않고 아직 게시되지 않았다고 안내 |
 | 공통 식단을 가려낼 수 없음 | 아무거나 고르지 않고 담당자 확인이 필요하다고 안내 |
 | 해석할 수 없거나 애매한 질문 | 아무거나 고르지 않고 되묻기(REQ-QUERY-002) |
@@ -1012,6 +1125,10 @@ NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
 | REQ-OCR-001 | `src/menu_bot/ocr_provider.py` | TEST-OCR-001 (수동) | implemented |
 | REQ-PARSE-001 | `src/menu_bot/parser.py` | TEST-PARSE-001 | verified |
 | REQ-PARSE-002 | `src/menu_bot/parser.py` | TEST-PARSE-002 | verified |
+| REQ-PARSE-003 | `src/menu_bot/parser.py`, `src/menu_bot/service_notices.py`, `src/menu_bot/query.py` | `tests/test_holiday_notices.py` | verified |
+| REQ-PARSE-004 | `src/menu_bot/service_notices.py`, `src/menu_bot/parser.py`, `src/menu_bot/pipeline.py` | `tests/test_holiday_notices.py` | verified |
+| REQ-PARSE-005 | `src/menu_bot/parser.py`, `src/menu_bot/corrections.py` | `tests/test_event_banners.py` | verified |
+| REQ-PARSE-006 | `src/menu_bot/parser.py` | `tests/test_event_banners.py` | verified |
 | REQ-CORRECT-001 | `src/menu_bot/corrections.py` | TEST-CORRECT-001, TEST-PARSE-001 | verified |
 | REQ-STORE-001 | `src/menu_bot/pipeline.py` | TEST-STORE-001 | verified |
 | REQ-QUERY-001 | `src/menu_bot/query.py` | TEST-QUERY-001 | verified |
@@ -1020,6 +1137,9 @@ NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
 | REQ-API-001 | `src/menu_bot/web.py` | TEST-API-001 | verified |
 | REQ-WATCH-001 | `src/menu_bot/next_week_watch.py` | TEST-WATCH-001 | verified |
 | REQ-WATCH-002 | `src/menu_bot/next_week_watch.py` | TEST-WATCH-002 | verified |
+| REQ-ADV-001 | `src/menu_bot/advisor.py`, `src/menu_bot/pipeline.py` | `tests/test_advisor.py` | verified |
+| REQ-ADV-002 | `src/menu_bot/advisor.py` | `tests/test_advisor.py` | verified |
+| REQ-ADV-003 | `src/menu_bot/advisor.py`, `src/menu_bot/cli.py`, `src/menu_bot/pipeline.py` | `tests/test_advisor.py` | verified |
 | NFR-SEC-001 | `src/menu_bot/web.py`, `.gitignore` | TEST-OPS-001 | verified |
 | NFR-OPS-001 | `scripts/systemd/menubot-web.service`, `scripts/systemd/menubot-tunnel.service`, `scripts/systemd/menubot-collect.service` | TEST-OPS-001 | implemented |
 | NFR-PORT-001 | `src/menu_bot/ocr_provider.py`, `src/menu_bot/config.py` | TEST-OPS-001, TEST-OCR-001 (수동) | implemented |

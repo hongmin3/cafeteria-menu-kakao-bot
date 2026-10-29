@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import pytest
@@ -72,12 +72,54 @@ def test_vertical_menu_format(tmp_path: Path):
     assert "- 샌드위치\n\n<공통 PLUS>" in result
 
 
+def test_same_week_menu_from_two_posts_is_not_duplicated(tmp_path: Path):
+    """실측(2026-09-14 주차): 제목이 옛 주차인 게시물의 첨부 사진이 이미
+    다음 주 것으로 바뀌어 있어, 새로 올라온 정상 게시물과 같은 주 메뉴가
+    서로 다른 source_post_id로 두 벌 저장됐다. 답변에 같은 코너가 두 번
+    나오면 안 된다."""
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "old-post-stale-title",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "라면 · 연근",
+                       source_post_id="old-post-stale-title")],
+        )
+        db.replace_entries(
+            "new-post-correct-title",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "라면 · 연근",
+                       source_post_id="new-post-correct-title")],
+        )
+        result = answer(db, "오늘 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert result.count("라면") == 1
+    assert result.count("<일반식>") == 1
+
+
+def test_special_status_is_explicitly_emphasized(tmp_path: Path):
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "special",
+            [MenuEntry(date(2026, 8, 19), "뷰웍스", "중식", "일반식", "해물백짬뽕 · 유린기",
+                       status="special", source_post_id="special")],
+        )
+        result = answer(db, "오늘 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "✨ 특식 <일반식>" in result
+    assert "해물백짬뽕" in result
+
+
 def test_full_day_response_splits_into_meal_bubbles():
     response = kakao_response("날짜\n\n[조식]\n- A\n\n[중식]\n- B\n\n[석식]\n- C")
     outputs = response["template"]["outputs"]
     assert len(outputs) == 3
     assert outputs[0]["simpleText"]["text"].startswith("날짜\n\n[조식]")
     assert response["template"]["quickReplies"] == [
+        {"action": "message", "label": "오늘의 아침", "messageText": "오늘 아침"},
+        {"action": "message", "label": "오늘의 점심", "messageText": "오늘 점심"},
+        {"action": "message", "label": "오늘의 저녁", "messageText": "오늘 저녁"},
         {"action": "message", "label": "사용방법", "messageText": "사용방법"}
     ]
 
@@ -94,6 +136,75 @@ def test_weekend_reports_restaurant_closed(tmp_path: Path):
     finally:
         db.close()
     assert result == "08월 22일(토) 주말에는 식당을 운영하지 않습니다."
+
+
+def _week_of(day: date) -> date:
+    return day - timedelta(days=day.weekday())
+
+
+def test_blank_day_on_a_posted_board_does_not_promise_a_menu_later(tmp_path: Path):
+    """2026-09-24(추석 연휴 목요일) 실제 사고.
+
+    식단표는 09/21에 올라왔고 월·화 메뉴는 정상 저장됐지만, 수·목·금 칸은
+    한가위 인사 배너가 덮고 있어 영원히 빈 칸이다. 그런데 봇은 "아직 안
+    올라왔으니 조금 뒤에 다시 물어봐 주세요"라고 답해, 생기지 않을 메뉴를
+    사흘 내내 기다리게 했다.
+    """
+    now = datetime(2026, 9, 24, 9, 0, tzinfo=ZoneInfo("Asia/Seoul"))
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "post-2026-09-21",
+            [MenuEntry(date(2026, 9, 21), "뷰웍스", "중식", "일반식", "유니자장면",
+                       source_post_id="post-2026-09-21")],
+        )
+        result = answer(db, "목요일 점심", "Asia/Seoul", now=now)
+    finally:
+        db.close()
+    assert "09월 24일(목)은 식단표에 메뉴가 없습니다." in result
+    assert "다시 물어봐" not in result
+    assert "올라오지 않았어요" not in result
+
+
+def test_nothing_posted_yet_still_tells_the_user_to_wait(tmp_path: Path):
+    """식단표 자체가 없는 주는 기다리면 실제로 생기므로 기존 안내를 유지한다."""
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        result = answer(db, "수요일 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "식단표가 아직 그룹웨어에 올라오지 않았어요" in result
+    assert "조금 뒤에 다시 물어봐 주세요" in result
+
+
+def test_week_closed_end_to_end_is_not_reported_as_unposted(tmp_path: Path):
+    """한 주 전체가 휴무라 메뉴가 0건이어도, 게시물이 있으면 "안 올라왔다"가 아니다."""
+    from menu_bot.models import SourcePost
+
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.save_post(SourcePost(post_id="holiday-week", title="[뷰웍스] 2026-08-17 ~ 2026-08-21",
+                                location="뷰웍스", start_date=_week_of(NOW.date())))
+        result = answer(db, "수요일 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "식단표에 메뉴가 없습니다." in result
+    assert "올라오지 않았어요" not in result
+
+
+def test_one_missing_meal_does_not_claim_the_whole_day_is_blank(tmp_path: Path):
+    """그 날 다른 끼니가 올라와 있으면 "그 날 메뉴가 없다"고 말하면 안 된다."""
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        db.replace_entries(
+            "post-week",
+            [MenuEntry(NOW.date(), "뷰웍스", "중식", "일반식", "유니자장면",
+                       source_post_id="post-week")],
+        )
+        result = answer(db, "오늘 저녁", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert result == "08월 19일(수) 석식은 식단표에 없어요."
 
 
 @pytest.mark.parametrize(

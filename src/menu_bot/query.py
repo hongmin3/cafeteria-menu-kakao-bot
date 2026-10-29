@@ -117,28 +117,17 @@ def unknown_terms(text: str, locations: tuple[str, ...] = DEFAULT_LOCATIONS) -> 
 
 HELP_TEXT = """🍚 뷰밥 메뉴 알리미
 
-안녕하세요! 사내 식당 식단을 알려드려요.
-아래처럼 편하게 물어보시면 됩니다 😊
+👇 아래 버튼으로 오늘 조식·중식·석식을 바로 확인하세요.
 
-🍳 끼니만 말하기
- ‘아침’ ‘점심’ ‘저녁’ → 오늘 그 끼니
+직접 입력해도 돼요 😊
+ · ‘금요일 점심’ / ‘내일 저녁’
+ · ‘화요일’ → 그날 세 끼 전체
+ · ‘8/25 점심’
+ · ‘간편식’=조식 / ‘건강식’=중식
 
-📅 날짜와 함께
- ‘금요일 점심’ → 이번 주 금요일 중식
- ‘금요일’ → 그날 조식·중식·석식 전부
- ‘내일 저녁’ ‘모레 아침’ ‘8/25 점심’도 됩니다
-
-🥗 코너로 찾기
- ‘간편식’ → 그날 조식 (조식에만 나와요)
- ‘건강식’ → 그날 중식 (중식에만 나와요)
-
-💡 알아두시면 좋아요
- · 요일은 늘 이번 주로 봐요. 지난 주·다음 주는 조회할 수 없어요.
- · 주말(토·일)은 식당을 운영하지 않아요.
- · ‘금욜’ ‘낼점심’처럼 줄여 말해도 알아들어요.
- · 특식은 ✨, 미운영은 안내 문구로 표시해요.
-
-이 안내가 다시 필요하면 아래 ‘사용방법’ 버튼을 눌러 주세요!"""
+요일은 이번 주 기준이며 주말은 미운영입니다.
+특식은 ✨로 표시해요.
+도움이 필요하면 ‘사용방법’을 눌러 주세요."""
 
 CASUAL_REPLACEMENTS = {
     "월욜": "월요일",
@@ -314,13 +303,101 @@ def parse_query(text: str, now: datetime) -> ParsedQuery:
     return ParsedQuery(target, meal, None, scope)
 
 
+# 챗봇이 답하는 기준 사업장. 다른 사업장 게시글만 올라온 주차에는
+# 그것으로 대신 답하되(_merge_sites), 이 게시글을 계속 기다린다.
+PRIMARY_LOCATION = "뷰웍스"
+MERGED_LOCATION = "공통"
+
+
+def _meal_is_closed(meal_rows: list) -> bool:
+    return any(row["status"] == "no_service" and row["category"] == "안내" for row in meal_rows)
+
+
+def _row_dict(row, location: str) -> dict:
+    return {
+        "service_date": row["service_date"], "location": location,
+        "meal_type": row["meal_type"], "category": row["category"],
+        "menu_text": row["menu_text"], "status": row["status"],
+    }
+
+
+def _merge_sites(rows: list) -> list:
+    """여러 사업장 게시글만 올라온 주차를 끼니 단위로 합친다.
+
+    2026-08-24 주차에 [화성]·[안양] 게시글만 올라온 적이 있는데, 두 식단을
+    셀 단위로 대조해 보니 42칸 중 31칸이 완전히 같고 실제 차이는 "어느 요일
+    조식을 쉬는가"뿐이었다(안양은 화요일, 화성은 목요일 조식 미운영).
+    나머지 차이는 전부 OCR 오인식이었다.
+
+    그래서 끼니별로 운영/미운영이 같으면 같은 식단으로 보고 하나로 합치고,
+    운영 여부가 갈리는 끼니만 사업장을 나란히 보여준다. 합칠 때는 코너별로
+    더 풍부하게 읽힌 쪽을 채택한다(pipeline의 중복 처리와 같은 원칙).
+    """
+    by_meal: dict[str, dict[str, list]] = {}
+    for row in rows:
+        by_meal.setdefault(row["meal_type"], {}).setdefault(row["location"], []).append(row)
+
+    merged: list = []
+    for per_site in by_meal.values():
+        closed = {site: _meal_is_closed(site_rows) for site, site_rows in per_site.items()}
+        if len(set(closed.values())) > 1:
+            # 운영 여부가 사업장마다 다르다(안양은 화요일, 화성은 목요일 조식
+            # 미운영). 식당은 평소 두 사업장 메뉴가 같아 [뷰웍스] 하나로
+            # 올리고, 이런 예외가 있는 주에만 사업장을 나눠 올린다. 즉 이
+            # 차이는 진짜다. 사용자는 둘 중 한 곳에 있으므로 한쪽만 골라
+            # 보여주면 나머지 절반은 닫힌 식당으로 가게 된다.
+            for site in sorted(per_site):
+                merged.extend(_row_dict(row, site) for row in per_site[site])
+            continue
+        best: dict[str, dict] = {}
+        for site_rows in per_site.values():
+            for row in site_rows:
+                candidate = _row_dict(row, MERGED_LOCATION)
+                previous = best.get(row["category"])
+                if previous is None or _richer(candidate, previous):
+                    best[row["category"]] = candidate
+        merged.extend(best.values())
+    return merged
+
+
+def _richer(candidate: dict, previous: dict) -> bool:
+    """항목 수가 많은 쪽, 같으면 글자가 긴 쪽을 고른다."""
+    return (
+        len(_menu_items(candidate["menu_text"])), len(candidate["menu_text"])
+    ) > (
+        len(_menu_items(previous["menu_text"])), len(previous["menu_text"])
+    )
+
+
+def _dedupe_posts(rows: list) -> list:
+    """같은 (사업장·끼니·코너)가 서로 다른 게시물로 중복 저장된 경우 하나만 남긴다.
+
+    평소엔 한 주에 게시물이 하나뿐이라 일어나지 않지만, 관리자가 예전 게시물을
+    복사해 새 주 사진으로 갱신하는 등 같은 서비스 날짜가 서로 다른
+    source_post_id로 남을 때가 있다(실측: 제목은 "9/7~9/11"인 옛 게시물인데
+    첨부 사진은 이미 다음 주 것으로 바뀌어 있어, 새로 올라온 정상 게시물과
+    같은 주 메뉴가 두 벌 저장됐다). 그대로 두면 카톡 답변에 같은 코너가
+    연달아 두 번 나온다. 코너별로 더 풍부하게 읽힌 쪽을 남긴다(pipeline의
+    이미지 내 중복 처리·사업장 병합과 같은 원칙).
+    """
+    best: dict[tuple, object] = {}
+    for row in rows:
+        key = (row["location"], row["meal_type"], row["category"])
+        previous = best.get(key)
+        if previous is None or _richer(row, previous):
+            best[key] = row
+    return list(best.values())
+
+
 def _choose_common_menu(rows: list) -> list:
     locations = sorted({row["location"] for row in rows})
-    common = [row for row in rows if row["location"] == "뷰웍스"]
+    common = [row for row in rows if row["location"] == PRIMARY_LOCATION]
     if common:
         return common
     if len(locations) == 1:
         return rows
+    if locations:
+        return _merge_sites(rows)
     return []
 
 
@@ -351,12 +428,25 @@ def answer(
     if parsed.day.weekday() >= 5:
         weekday = "토" if parsed.day.weekday() == 5 else "일"
         return f"{parsed.day:%m월 %d일}({weekday}) 주말에는 식당을 운영하지 않습니다."
-    rows = db.query(parsed.day, parsed.meal_type)
+    rows = _dedupe_posts(db.query(parsed.day, parsed.meal_type))
     if not rows:
+        weekday = "월화수목금토일"[parsed.day.weekday()]
+        if parsed.meal_type and db.query(parsed.day):
+            # 그 날 다른 끼니는 올라와 있으니 "그 날 메뉴가 없다"고 하면 거짓말이다.
+            return f"{parsed.day:%m월 %d일}({weekday}) {parsed.meal_type}은 식단표에 없어요."
+        if db.has_board_for_week(this_monday):
+            # 식단표는 올라왔는데 그 날 칸이 비어 있다. 기다려도 생기지 않으므로
+            # 다시 물어보라고 하면 안 된다. 비어 있는 이유(공휴일·회사 휴무·식당
+            # 사정)는 식단표에 적혀 있지 않아 코드가 알 수 없으니 단정하지 않는다.
+            # 2026-09-23은 회사 자체 휴무일, 09-24~25는 추석 연휴였는데 식단표
+            # 상으로는 셋 다 똑같이 빈 칸이었다.
+            return (
+                f"{parsed.day:%m월 %d일}({weekday})은 식단표에 메뉴가 없습니다.\n"
+                "식당 운영 여부는 총무팀에 확인해 주세요."
+            )
         # 주말 폴링이나 월요일 수집이 아직 식단표를 못 받은 상태. 없는 식단을
         # 지어내지 않고 사정을 그대로 알린다. 서버는 확보될 때까지 1시간 간격
         # 으로 계속 다시 확인한다(menubot-ensure.timer).
-        weekday = "월화수목금토일"[parsed.day.weekday()]
         return (
             f"{parsed.day:%m월 %d일}({weekday}) 식단표가 아직 그룹웨어에 올라오지 않았어요.\n"
             "올라오면 자동으로 반영되니 조금 뒤에 다시 물어봐 주세요. 🙏"
@@ -370,8 +460,11 @@ def answer(
         )
 
     weekday = "월화수목금토일"[parsed.day.weekday()]
-    title = f"🍽 {parsed.day:%m월 %d일}({weekday})"
-    parts = [title]
+    # 어느 사업장 게시글에서 왔는지 설명하는 문구는 넣지 않는다. 다만 그 주에
+    # 실제로 사업장별 차이가 있어 나뉘어 올라온 것이므로, 차이나는 끼니만은
+    # 사업장을 밝혀 보여준다. 한쪽만 골라 보여주면 나머지 절반의 사용자가
+    # 닫힌 식당으로 가게 된다.
+    parts = [f"🍽 {parsed.day:%m월 %d일}({weekday})"]
     grouped: dict[str, list] = {}
     for row in selected:
         grouped.setdefault(row["meal_type"], []).append(row)
@@ -379,32 +472,45 @@ def answer(
         meal_rows = grouped.get(meal)
         if not meal_rows:
             continue
-        meal_parts = [f"[{meal}]"]
-        notices = [row for row in meal_rows if row["status"] == "no_service" and row["category"] == "안내"]
-        if notices:
-            notices = list(dict.fromkeys(row["menu_text"] for row in notices))
-            meal_parts.append("<운영 안내>")
-            meal_parts.extend(f"- {notice}" for notice in notices)
-            parts.append("\n".join(meal_parts))
-            continue
-        plus_rows = [row for row in meal_rows if row["category"] == "PLUS 코너"]
-        main_rows = [row for row in meal_rows if row["category"] != "PLUS 코너"]
-        for row in main_rows:
-            if len(meal_parts) > 1 and meal_parts[-1] != "":
+        sites = sorted({row["location"] for row in meal_rows})
+        if len(sites) > 1:
+            meal_parts = [f"[{meal}]", "※ 이 끼니는 사업장에 따라 달라요"]
+            for site in sites:
                 meal_parts.append("")
-            marker = "✨ " if row["status"] == "special" else ""
-            meal_parts.append(f"{marker}<{row['category']}>")
-            if row["status"] == "no_service":
-                meal_parts.append(f"- 미제공 ({row['menu_text']})")
-                continue
-            meal_parts.extend(f"- {item}" for item in _menu_items(row["menu_text"]))
-        if plus_rows:
-            plus_items = []
-            for row in plus_rows:
-                plus_items.extend(_menu_items(row["menu_text"]))
-            if len(meal_parts) > 1 and meal_parts[-1] != "":
-                meal_parts.append("")
-            meal_parts.append("<공통 PLUS>")
-            meal_parts.extend(f"- {item}" for item in dict.fromkeys(plus_items))
+                meal_parts.append(f"〔{site}〕")
+                meal_parts.extend(
+                    _render_meal_body([r for r in meal_rows if r["location"] == site])
+                )
+        else:
+            meal_parts = [f"[{meal}]", *_render_meal_body(meal_rows)]
         parts.append("\n".join(meal_parts))
     return "\n\n".join(parts)
+
+
+def _render_meal_body(meal_rows: list) -> list[str]:
+    notices = [row for row in meal_rows if row["status"] == "no_service" and row["category"] == "안내"]
+    if notices:
+        unique = list(dict.fromkeys(row["menu_text"] for row in notices))
+        return ["<운영 안내>", *(f"- {notice}" for notice in unique)]
+
+    lines: list[str] = []
+    plus_rows = [row for row in meal_rows if row["category"] == "PLUS 코너"]
+    main_rows = [row for row in meal_rows if row["category"] != "PLUS 코너"]
+    for row in main_rows:
+        if lines and lines[-1] != "":
+            lines.append("")
+        marker = "✨ 특식 " if row["status"] == "special" else ""
+        lines.append(f"{marker}<{row['category']}>")
+        if row["status"] == "no_service":
+            lines.append(f"- 미제공 ({row['menu_text']})")
+            continue
+        lines.extend(f"- {item}" for item in _menu_items(row["menu_text"]))
+    if plus_rows:
+        plus_items: list[str] = []
+        for row in plus_rows:
+            plus_items.extend(_menu_items(row["menu_text"]))
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines.append("<공통 PLUS>")
+        lines.extend(f"- {item}" for item in dict.fromkeys(plus_items))
+    return lines

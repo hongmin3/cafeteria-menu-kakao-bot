@@ -4,6 +4,14 @@ Invoke the `task-observer` skill before the first tool call.
 
 Follow `akela/PROTOCOL.md` for every task. 프로젝트 도메인 규칙은 compile된 slice를 기준으로 사용한다.
 
+## Project Root 탐색 규칙
+
+`src/`, `scripts/`, `tests/` 등 이 프로젝트 하위 어디서 작업하든 먼저 상위로 `akela.json`을 탐색해 가장 가까운 Project Root를 식별하고 그 Root의 `knowledge/`·`akela/PROTOCOL.md`를 사용한다. 하위 디렉터리에 별도 `akela.json`/`knowledge/`를 만들지 않는다. 탐색은 `scripts/find-project-root.ps1`로 자동화되어 있다.
+
+## 운영 주의
+
+이 프로젝트는 사내 QA 서버(10.13.0.222)에서 실제 운영 중인 프로덕션 서비스이므로 배포/운영 관련 변경은 특히 신중히 다룬다.
+
 ## 목적과 구조
 
 그룹웨어 주간 식단 이미지를 Playwright로 수집하고 플랫폼별 OCR provider(macOS Apple Vision, Windows·Linux PaddleOCR)로 구조화해 SQLite에 저장한 뒤 FastAPI 카카오 Skill API로 조회한다.

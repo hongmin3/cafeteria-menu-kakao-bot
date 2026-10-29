@@ -22,7 +22,7 @@ SYSTEMD = PROJECT / "scripts" / "systemd"
 
 def tracked():
     out = subprocess.run(["git", "-C", str(PROJECT), "-c", "core.quotepath=false",
-                          "ls-files"], capture_output=True, text=True, check=True).stdout
+                          "ls-files"], capture_output=True, text=True, encoding="utf-8", check=True).stdout
     return [line for line in out.splitlines() if line]
 
 
@@ -40,7 +40,7 @@ def test_git_ignores_the_secret_and_data_paths():
     probes = [".env", "data/menu.sqlite3", "assets/menu.png"]
     result = subprocess.run(["git", "-C", str(PROJECT), "-c", "core.quotepath=false",
                              "check-ignore", "--no-index", *probes],
-                            capture_output=True, text=True)
+                            capture_output=True, text=True, encoding="utf-8")
     ignored = {line for line in result.stdout.splitlines() if line}
     missing = [p for p in probes if p not in ignored]
     assert missing == [], f"git이 무시하지 않는 경로: {missing}"

@@ -26,6 +26,36 @@ import re
 
 HANGUL = re.compile(r"[가-힣]")
 
+# 1년치 원본 OCR 167장 전수 조사에서 실제 메뉴에 섞인 홍보 제목의 공통 형태.
+# 특정 셰프·브랜드 이름을 열거하지 않아 다음 행사에서도 같은 방식으로 처리한다.
+PROMOTIONAL_NOISE = re.compile(
+    r"(?:"
+    r"셰프|쉐프|세프|\bCHEF\b|"
+    r"콜라보(?:레이션)?|COLLAB(?:ORATION)?|"
+    r"맛집(?:탐방|특집)?|"
+    r"이벤트(?:\s*DAY)?|"
+    # 이번 주 어두운 HYUNDAI GREEN FOOD 로고를 `현대그콘푸드`로 읽은
+    # 실제 서버 OCR 결과까지 포함한다. 음식 메뉴의 일반적인 `푸드`는 건드리지 않는다.
+    r"(?:HYUNDAI|현대)\s*(?:GREEN|그[린콘])\s*(?:FOOD|푸드)|"
+    # 명절 인사 배너. 2026-09-24(추석 연휴 직전 목요일) 조식 일반식·간편식,
+    # 중식 일반식 칸에 실제 메뉴 대신 인사말 배너가 들어와 "풍요로운"·"보내세요"
+    # 로 읽혔다(실측 서버 OCR, data/images/09161979294653b39319ba06.png). 같은
+    # 배너의 "한가위"는 신뢰도 0.43으로 "너4"까지 오인식됐다. 인사말 어미
+    # (...보내세요/...되세요)와 계절 형용사(풍요로운)는 실제 메뉴 이름에는
+    # 나타나지 않는 표현이라 그 자체로 안전한 신호다.
+    r"풍요로운|^너4$|보내세요|되세요$"
+    r")",
+    re.I,
+)
+
+# 음식명이 없이 행사명만 적힌 특식 배너. `멕시칸치킨플래터 특식`처럼 음식이
+# 들어간 줄은 보존하고, `말복 특식 DAY` 같은 제목만 제거한다.
+SPECIAL_BANNER_ONLY = re.compile(
+    r"^[*\s]*(?:(?:VIEWORKS|뷰웍스)\s*)?(?:\d{1,2}월\s*)?"
+    r"(?:초복|중복|말복|창립기념일|장김기념일)?\s*특식(?:\s*DAY)?[*\s]*$",
+    re.I,
+)
+
 # 어휘집 항목이 교정 대상이 되기 위한 최소 등장 횟수. 어휘집은 Apple Vision
 # OCR 결과에서 모은 것이라 그 자체에도 오인식이 섞여 있는데, 오인식은 보통
 # 한두 번 나오고 실제 메뉴 이름은 여러 번 반복된다. 하한을 두지 않으면
@@ -43,6 +73,7 @@ SUBSTITUTIONS = {
     "승능": "숭늉",
     "승늉": "숭늉",
     "숭늄": "숭늉",
+    "승늄": "숭늉",
     "짝두기": "깍두기",
     "깥풍기": "깐풍기",
     "듬뿐": "듬뿍",
@@ -53,6 +84,13 @@ SUBSTITUTIONS = {
     "숫불": "숯불",
     "두부릇": "두부톳",
     "깨잎": "깻잎",
+    "고줏잎": "고춧잎",
+    "양넘": "양념",
+    # 사용자 확인분. `복이`는 1년치에서 이 두 항목에만 나와 앞뒤를 함께
+    # 고정하지 않아도 안전하지만, 뜻이 있는 글자라 코너 이름까지 묶는다.
+    "제접무": "제첩무",
+    "복이겨자": "목이겨자",
+    "복이버섯": "목이버섯",
     # ── 장(醬)을 정·자·창·작·당·중·짱·잠으로 잘못 읽는 계통 오류 ──
     # 1년치 전수 조사에서 가장 많이 나온 오인식 묶음이다. `자조림`처럼 넓게
     # 잡으면 `감자조림`·`완자조림`이 깨지므로 앞 글자를 함께 고정한다.
@@ -96,6 +134,20 @@ SUBSTITUTIONS = {
     "출기볶음": "줄기볶음",
     "떠국": "떡국",
     "베이그에그": "베이컨에그",
+    # 2026-10-22 체육대회 그림의 장식 서체를 서버 OCR이 이렇게 읽었다.
+    "체육대황": "체육대회",
+    # 2026-08-24 주차 목요일 중식 실제 서버 OCR 결과.
+    "백쌈뽕": "백짬뽕",
+    "짝두)": "깍두기",
+    # `톳`을 `롯`으로 읽는 계통 오류. `롯` 하나만 잡으면 `롯데`류가 깨지므로
+    # 뒤 글자까지 묶는다(`톳나물`은 2026-08-24, `톳두부`는 2026-08-31 확인).
+    "롯나물무침": "톳나물무침",
+    "롯두부": "톳두부",
+    # 2026-08-31 사용자 확인분.
+    "누륭지": "누룽지",
+    # `나초`는 그 자체로 쓰이는 표기라 앞 글자를 함께 고정한다.
+    "돈육나초": "돈육나쵸",
+    "가마보끄": "가마보꼬",
     # ── 표준 표기로 통일 ──
     # OCR 오인식인지 인쇄 표기인지 가릴 수 없지만 한쪽이 표준 표기이고 빈도도
     # 훨씬 높은 것들. `마늘쫑`(16회) 대 `마늘종`(9회)처럼 빈도가 비슷한 표기는
@@ -106,16 +158,109 @@ SUBSTITUTIONS = {
 }
 
 
+# 위 목록은 근거를 확인해 코드에 고정한 것이고, 아래 파일은 **운영하면서
+# 눈에 띈 것을 그때그때 넣는 자리**다. 코드를 고치고 배포하지 않아도 되도록
+# 분리했다. JSON이 아니라 한 줄에 하나인 텍스트인 이유는, 쉼표 하나 빠뜨리면
+# 전체가 깨지는 형식을 사람 손에 맡기지 않기 위해서다.
+USER_CORRECTIONS_PATH = "data/menu_corrections.txt"
+
+USER_CORRECTIONS_HEADER = """\
+# 메뉴 표기 교정 목록
+#
+# 한 줄에 하나씩,  잘못읽은표기 = 올바른표기  형식으로 적습니다.
+# '#'으로 시작하는 줄과 빈 줄은 무시합니다.
+#
+# 이름 일부만 적어도 되고(예: 누륭지 = 누룽지), 전체를 적어도 됩니다.
+# 짧게 적을수록 널리 적용되니, 다른 메뉴에도 들어갈 수 있는 글자라면
+# 앞뒤를 함께 적어 좁히세요(예: 나초 = 나쵸  ← 위험 / 돈육나초 = 돈육나쵸  ← 안전).
+#
+# 고친 뒤 이미 저장된 식단에도 반영하려면:  menu-bot correct apply
+"""
+
+
+def parse_user_corrections(text: str) -> dict[str, str]:
+    """`잘못 = 올바름` 줄들을 읽는다. 이해할 수 없는 줄은 조용히 건너뛴다.
+
+    한 줄이 잘못됐다고 나머지 교정까지 버리면, 오타 하나로 식단 표기가 통째로
+    되돌아간다. 파일을 편집하는 사람이 개발자가 아니라는 전제로 만든다.
+    """
+    rules: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        wrong, _, right = stripped.partition("=")
+        wrong, right = wrong.strip(), right.strip()
+        # 빈 쪽이 있거나 서로 같으면 규칙이 아니다. 자기 자신으로 바꾸는
+        # 규칙을 허용하면 무한히 같은 값을 덮어쓰는 혼란만 남는다.
+        if wrong and right and wrong != right:
+            rules[wrong] = right
+    return rules
+
+
+def load_user_corrections(path: str | Path | None = None) -> dict[str, str]:
+    """사용자 교정 파일을 읽는다. 없거나 읽을 수 없으면 빈 dict."""
+    resolved = Path(path or os.getenv("MENU_CORRECTIONS_PATH") or USER_CORRECTIONS_PATH)
+    try:
+        return parse_user_corrections(resolved.read_text(encoding="utf-8"))
+    except OSError:
+        return {}
+
+
+_cached_substitutions: dict[str, str] | None = None
+
+
+def active_substitutions() -> dict[str, str]:
+    """코드에 고정된 목록 + 사용자 파일. 사용자 파일이 이긴다.
+
+    같은 표기를 두 곳에서 다르게 고치라고 하면 사람이 방금 적은 쪽을 따른다.
+    현장에서 본 것이 1년치 조사보다 최신이기 때문이다.
+    """
+    global _cached_substitutions
+    if _cached_substitutions is None:
+        _cached_substitutions = {**SUBSTITUTIONS, **load_user_corrections()}
+    return _cached_substitutions
+
+
+def reset_substitutions_cache() -> None:
+    """교정 파일을 고친 뒤 다시 읽게 한다(같은 프로세스에서 이어 쓸 때)."""
+    global _cached_substitutions
+    _cached_substitutions = None
+
+
+def apply_substitutions(text: str, table: dict[str, str] | None = None) -> str:
+    """표기 교정만 적용한다(노이즈 판정·어휘집 교정 없이).
+
+    이미 저장된 식단에 새 교정을 다시 입힐 때 쓴다. 저장된 값은 이미 한 번
+    걸러진 결과라, 그 위에 노이즈 규칙을 다시 돌리면 멀쩡한 안내 문구까지
+    지울 위험이 있다. 새로 추가한 규칙만 반영하는 것이 목적이다.
+    """
+    for wrong, right in (table if table is not None else active_substitutions()).items():
+        if wrong in text:
+            text = text.replace(wrong, right)
+    return text
+
+
 def is_noise(item: str) -> bool:
     """버려야 할 조각인지.
 
-    1년치 고유 항목 2211개를 전수 조사해 보면 한글이 한 글자도 없는 항목은
-    15개뿐이고 전부 장식 문구·로고 조각이었다(`Pulmuone`, `GOPIZZA`,
-    `Happy New year`, `O.`, `-11`, `1R`, `AL` 등). 실제 메뉴 이름은 예외 없이
-    한글을 포함했다. PaddleOCR이 끼워 넣는 `004`, `oo`, `MW` 같은 조각이
-    이 규칙에 걸린다.
+    두 가지를 버린다. 둘 다 1년치 전수 조사로 근거를 확인했다.
+
+    1. 한글이 한 글자도 없는 항목 — 고유 항목 2211개 중 15개뿐이고 전부
+       장식 문구·로고 조각이었다(`Pulmuone`, `Happy New year`, `-11`, `1R`,
+       `AL` 등). PaddleOCR이 끼워 넣는 `004`, `oo`, `MW`가 여기 걸린다.
+    2. 한 글자짜리 항목 — 7개뿐이고 전부 조각이었다(`행`, `주`, `하`, `남`,
+       `돼`, `지`, `집`). 두 글자부터는 `숭늉`(466회), `쌀밥`(243회), `잡채`,
+       `식혜`, `닭죽`처럼 멀쩡한 메뉴가 많으므로 딱 한 글자만 버린다.
     """
-    return not HANGUL.search(item)
+    text = item.strip()
+    return len(text) <= 1 or not HANGUL.search(text) or is_promotional_noise(text)
+
+
+def is_promotional_noise(item: str) -> bool:
+    """셰프·콜라보·행사 제목이나 명절 인사 배너처럼 메뉴가 아닌 문구인지."""
+    text = item.strip()
+    return bool(PROMOTIONAL_NOISE.search(text) or SPECIAL_BANNER_ONLY.fullmatch(text))
 
 
 def load_vocabulary(path: str | Path | None = None) -> dict[str, int]:
@@ -161,9 +306,7 @@ def correct_item(item: str, vocabulary: dict[str, int] | None = None) -> str | N
     text = item.strip()
     if not text or is_noise(text):
         return None
-    for wrong, right in SUBSTITUTIONS.items():
-        if wrong in text:
-            text = text.replace(wrong, right)
+    text = apply_substitutions(text)
     fixed = _vocabulary_fix(text, vocabulary or {})
     return fixed or text
 

@@ -1,9 +1,16 @@
-# 금요일 22:00 (한국시간) 1회
+# 금요일 18:00~23:00 매시 정각 (한국시간).
+#
+# 식단표는 보통 금요일 오후에 올라온다. 예전에는 금 22:00에 딱 한 번만 봤는데,
+# 그 한 번이 실패하면 다음 확인이 토요일 00:05까지 밀렸다. 퇴근 시간대부터
+# 매시 확인해 게시되는 즉시 가져온다.
+#
+# 이미 확보된 주차면 next_week_watch가 그룹웨어에 접속하지 않고 바로 끝나므로,
+# 금요일 저녁에 확보되면 이후 시각들은 사실상 아무 일도 하지 않는다.
 [Unit]
-Description=Vieworks menu bot next-week watch timer (금 22:00 KST)
+Description=Vieworks menu bot next-week watch timer (금 18~23시 매시 KST)
 
 [Timer]
-OnCalendar=Fri 22:00 Asia/Seoul
+OnCalendar=Fri 18..23:00 Asia/Seoul
 Persistent=true
 Unit=menubot-nextweek.service
 
