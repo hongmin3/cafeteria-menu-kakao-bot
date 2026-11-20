@@ -51,6 +51,7 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
 - 2026-09-26: 공통 키트(Botyard 59e195f) 갱신 반영 — .project-check/agents-spec-section.md, .project-check/manifest.json, .project-check/project-readiness.js, .project-check/render-spec-html.js, AGENTS.md, docs/SPEC.html. 준비 검사와 자체 테스트 통과.
 - 2026-09-28: 공통 키트(Botyard a71bac0) 갱신 반영 — .project-check/manifest.json, .project-check/render-spec-html.js. 준비 검사와 자체 테스트 통과.
 - 2026-10-17: 공통 키트(Botyard aa65a66) 갱신 반영 — .project-check/agents-spec-section.md, .project-check/manifest.json, .project-check/project-readiness.js, AGENTS.md. 준비 검사와 자체 테스트 통과.
+- 2026-11-20: Botyard d42fcfc 공통 프로젝트 지침과 검사 도구을 갱신했다.
 
 ### Fixed
 
