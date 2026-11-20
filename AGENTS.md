@@ -104,7 +104,7 @@ node .project-check/project-readiness.js .
 <!-- project-spec-guidance: start -->
 ## 사양 기반 개발 (SPEC)
 
-<!-- spec-workflow: v10 -->
+<!-- spec-workflow: v13 -->
 
 `SPEC.md`가 이 프로젝트가 **어떻게 동작해야 하는가**의 기준이다. 코드의 현재 동작은 사양이
 아니다. 아래는 상위 기준이고, 실제 절차(계획·테스트·검증)는 기존 Skill을 그대로 쓴다.
@@ -122,6 +122,8 @@ node .project-check/project-readiness.js .
 - 기능 문서는 1·2·5·11·12절을 쓴다. 절 번호의 뜻은 `SPEC.md`와 같고, 빠진 번호는 공통이라 `SPEC.md`에 있다.
 - ID는 문서가 달라도 프로젝트 전체에서 하나뿐이다. 기능 문서마다 CATEGORY를 다르게 둔다.
 - backtick 파일 경로는 모든 문서에서 프로젝트 루트 기준이다. Markdown 링크만 그 문서 위치 기준이다.
+
+`draft` 행에는 계획 중인 구현·테스트 경로를 적을 수 있다. 파일 존재 검사는 `implemented`·`verified`부터 적용하며, 사양과 ID 검사는 작성 단계에도 실행한다.
 
 **작업 시작 전** — 기능 추가·변경·버그 수정이면 먼저 사양에서 ① 관련 Requirement,
 ② 그 Requirement의 구현, ③ 관련 테스트, ④ 변경 영향 범위를 확인한다. 어느 문서를 볼지는
@@ -149,6 +151,10 @@ typo, 주석, 문서만 바꾸는 작업은 예외다.
 **완료 전** — `Requirement → 구현 → 테스트 → 실제 실행 결과`를 모두 확인한다. 테스트 PASS는
 실제 동작 검증을 대체하지 않는다. 실행 가능한 프로젝트는 대표 실행 경로를 실제로 돌리고
 출력을 읽는다.
+
+**게시 우선순위** — 사용자의 명시 지시와 프로젝트가 선언한 게시 예외를 우선한다.
+`botyard.json`의 `autoSync`·`autoPush`는 키트 관리 파일의 자동 반영에 적용한다.
+머신 배치용 `AGENTS.local.md`는 공통 게시 정책을 바꾸지 않는다.
 
 **완료 시** — 검증을 통과하면 관련 문서(`CHANGELOG.md`, `progress.md`, 필요하면 `README.md`와
 `SPEC.md`)를 갱신하고 저장소를 커밋·푸시한다. 사용자 요청을 기다리지 않으며 하위 프로젝트
@@ -182,6 +188,8 @@ push 규칙을 따른다.
 - 12절 Test 열에는 테스트 파일 경로, `<도구> --self-test`, 11절에 정의한 TEST-ID만 쓴다. README 같은 일반 파일은 안 된다.
 - 12절 Status는 `draft`·`implemented`·`verified`·`deprecated` 중 하나다. `verified`는 게이트(`botyard.json`의
   `verify` 명령)가 실행하는 자동 테스트가 있을 때만 쓴다. 수동 절차만 있으면 `implemented`로 둔다.
+- `botyard.json`의 `verifyTests`에는 `verify`가 실행하는 테스트 경로를 정확히 적는다. 명령 존재만으로
+  모든 테스트 실행을 추정하지 않는다. 이 목록은 실행 결과가 아니며, 완료 보고에는 실제 명령 결과와 검사한 commit을 따로 남긴다.
 - CHANGELOG 항목 앞에 ID를 붙인다(`- REQ-EXPORT-001: …`). 머리의 형식 예시 블록 안에는 쓰지 않는다 —
   예시 블록은 이력으로 읽히지 않는다. 예전 항목에 ID를 추측으로 소급하지 않는다.
 - 흐름도는 `flow` 코드 블록으로 쓴다(`수집 -> 해석 -> 저장`, `저장 -(실패)-> 알림`). 외부 스크립트
