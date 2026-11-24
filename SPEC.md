@@ -176,6 +176,8 @@ ID 규칙: `REQ-<CATEGORY>-NNN`. CATEGORY는 대문자·숫자, NNN은 세 자�
 
 ### REQ-SCRAPE-001 게시판에서 식단표 이미지 모으기
 
+식단표를 찾을 때 첫 페이지부터 제한된 범위까지 차례로 확인한다. 로그인, 게시판 목록, 제목과 첨부 단계의 오류를 구분한다. 이미지 파일은 내려받기가 끝난 뒤 한 번에 교체하며, 같은 주소에서 내용이 바뀌었는지 다시 확인할 수 있어야 한다.
+
 #### 목적
 그룹웨어 자유게시판에서 식단 게시물과, 그 본문에 든 식단표 이미지의 URL을 얻는다.
 
@@ -212,6 +214,8 @@ ID 규칙: `REQ-<CATEGORY>-NNN`. CATEGORY는 대문자·숫자, NNN은 세 자�
 TEST-SCRAPE-001 (수동)
 
 ### REQ-OCR-001 OCR 결과의 공통 좌표 규칙
+
+이미지 내용과 인식 방법을 기준으로 기존 인식 결과를 재사용한다. 인식 결과 파일이 손상됐거나 이미지가 바뀌었으면 다시 읽는다. 인식 결과 저장이 실패해도 읽은 내용은 다음 단계로 넘긴다.
 
 #### 목적
 어느 플랫폼에서든 파서가 같은 좌표 규칙으로 OCR 결과를 받는다.
@@ -416,9 +420,9 @@ TEST-CORRECT-001, TEST-PARSE-001
 
 #### 동작
 1. 운영 수집은 저장하기 전에 대상 주차 월~일 밖의 항목을 버리고, 버린 개수를 통계로 낸다.
-2. 저장은 게시물 단위로 바꿔 넣는다. 같은 `source_post_id`의 기존 항목을 지우고 새로 넣는다.
-   그래서 같은 게시물을 여러 번 처리해도 결과가 같다.
-3. `--learning`은 모든 날짜를 저장한다. 다만 **항상** 운영 DB와 다른 파일(`<DB이름>.learning.<확장자>`)에 쓴다.
+2. 운영 수집은 같은 게시물의 대상 주차만 한 번의 저장으로 바꾼다. 항목이 없거나 저장이 실패하면 기존 데이터를 유지한다.
+3. 같은 날짜·끼니·코너에 정정 게시물이 있으면 게시물 순서와 처리 시각을 기준으로 정정본을 우선한다.
+4. `--learning`은 모든 날짜를 저장한다. 다만 **항상** 운영 DB와 다른 파일(`<DB이름>.learning.<확장자>`)에 쓴다.
 
 #### 기대 결과
 운영 DB에서 사용자 질문에 쓰는 데이터는 현재 주뿐이다. 학습용 1년치 데이터는 운영 DB에 섞이지 않는다.
@@ -433,6 +437,8 @@ TEST-CORRECT-001, TEST-PARSE-001
 TEST-STORE-001
 
 ### REQ-QUERY-001 질문에서 날짜·끼니 읽기
+
+여러 날의 범위는 이번 주 요일 선택으로 안내한다. `건강식만`처럼 코너를 지정한 요청은 해당 코너를 보여준다. 사업장이 지정됐으면 확인된 그 사업장 식단이나 명시된 공통 식단을 쓰고, 다른 사업장만 확보된 경우는 확인 중이라고 안내한다.
 
 #### 목적
 평소 말투의 질문에서 날짜와 끼니를 읽는다.
@@ -465,6 +471,8 @@ TEST-STORE-001
 TEST-QUERY-001
 
 ### REQ-QUERY-002 답할 수 없는 질문 되묻기
+
+날짜나 끼니가 확인된 되묻기에는 선택 버튼을 붙인다. `이번 주`는 요일 선택으로 연결한다. 원재료·알레르기는 식단명만으로 판단하지 않고 원본 또는 담당자 확인으로 안내한다.
 
 #### 목적
 답할 수 없는 질문에는 엉뚱한 답을 주지 않고, 무엇이 문제인지 되묻는다.
@@ -508,6 +516,8 @@ TEST-QUERY-001
 TEST-QUERY-002
 
 ### REQ-QUERY-003 식단 응답 본문 만들기
+
+확인된 미게시·부분 확보·수집 실패·식당 미운영을 구분한다. 그룹웨어 게시 여부를 확인할 수 없으면 기다리라고 단정하지 않는다. 원본 또는 제보 연결은 운영에서 승인된 주소에만 표시한다.
 
 #### 목적
 확정된 질문에 대해 응답 본문을 만든다. 현재 주 밖의 식단은 보여주지 않는다.
@@ -553,13 +563,15 @@ TEST-QUERY-003
 서버가 로컬 주소에 열려 있고, 터널을 거쳐 바깥에 공개된다.
 
 #### 동작
-- 토큰이 설정돼 있으면 경로의 토큰이 맞을 때만 처리한다. 맞지 않으면 404로 답한다.
+- 운영 웹 서버를 시작하려면 토큰이 필요하다. 경로의 토큰이 맞을 때만 처리하고, 맞지 않으면 404로 답한다.
+- 요청 JSON의 형식과 발화 길이를 확인한다. 유효하지 않은 요청은 HTTP 400으로 답한다.
+- DB 조회에는 짧은 대기 한도를 두고 다른 웹 요청과 독립적으로 처리한다.
 - 발화가 비었거나 도움말 요청(`도움`, `사용방법`, 인사말 등)이면 사용방법을 돌려준다.
 - 식단 질문으로 보이지 않는 발화는 DB를 열지 않고 사용방법을 돌려준다.
 - 하루 전체 응답은 끼니별 말풍선으로 나눈다. 카카오가 정한 출력 개수 상한(3개)을 넘기지 않는다.
-- 말풍선 하나가 길이 상한을 넘으면 잘라내고, 잘렸다는 것을 알린다.
-- 모든 응답에 `사용방법` 퀵 리플라이(말풍선 아래 버튼)를 붙인다.
-- 상태 확인용 주소는 저장된 항목 수도 함께 돌려준다.
+- 긴 식단은 항목 사이에서 나누고, 상세가 더 있으면 같은 식단을 이어 볼 버튼을 붙인다. 날짜와 운영 안내를 먼저 보여준다.
+- 모든 응답에 `사용방법` 버튼을 붙인다. 되묻기, 식단, 장애 안내에는 다음 행동에 맞춘 버튼을 붙인다.
+- 상태 확인용 주소는 전체 항목 수와 현재 주의 날짜·끼니 확보 수를 각각 돌려준다.
 
 #### 기대 결과
 SkillResponse 2.0 형식의 JSON. 카카오 요청을 처리하는 동안에는 그룹웨어에 접속하지 않는다.
@@ -594,8 +606,8 @@ TEST-API-001
 주말에 미리 저장돼 있어도 월요일 전에는 사용자에게 보이지 않는다.
 이유: 응답은 실제 달력 날짜로 거른다.
 
-**저장된 메뉴 항목이 1건 이상일 때만 확보로 본다.**
-이유: 제목만 올라오고 이미지가 없거나 OCR이 아무것도 읽지 못한 경우까지 성공으로 치면, 주말 확인이 멈춰 그 주 식단을 통째로 놓친다.
+**평일의 날짜와 끼니가 모두 확인되어야 주간 확보로 본다.** 명시된 미운영도 확인된 끼니로 센다. 일부만 받았으면 메뉴를 제공할 수 있는 범위는 열어 두고 나머지를 다시 확인한다.
+이유: 한 칸만 저장된 상태에서 멈추면 나머지 요일과 끼니가 빠진다.
 
 확보되면 대상 주차마다 성공 알림을 한 번만 보낸다. 상태는 대상 주차 단위로 저장한다.
 그래서 주차가 바뀌면 손으로 초기화하지 않아도 저절로 다시 확인한다.
@@ -606,7 +618,7 @@ TEST-API-001
 
 #### 예외 처리
 - 접속·수집 실패와 항목 0건은 확보로 보지 않는다. 사유와 함께 시도 기록에 남긴다.
-- 상태 파일이 깨져 있어도 수집을 막지 않는다. 새 상태로 시작한다.
+- 상태 파일은 이전 판 또는 완성된 새 판을 읽을 수 있어야 한다. 문법이나 항목 형식이 맞지 않으면 새 상태로 시작한다.
 - 시도 기록에는 상한을 두어 끝없이 커지지 않게 한다.
 - 성공 알림을 보내지 못해도 수집 자체는 성공으로 처리한다.
 - 정기 수집이 같은 게시물을 다시 처리해도 괜찮다.
@@ -702,6 +714,8 @@ Claude의 답 중 아래 두 가지만 반영한다. 메뉴 이름을 새로 만
 
 ### REQ-ADV-003 Claude 자문 실패 알림
 
+메일이나 자문 결과 파일을 기록하지 못해도 OCR 기본 결과 저장은 계속한다.
+
 Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 저장하고 운영자에게 알림 메일을 보낸다. 메일에는 실패 종류, 오류 내용, 게시글, 확인이 필요한 날짜와 의심 항목, 조치 방법을 적는다.
 
 | 실패 종류 | 알아보는 방법 | 다시 묻기 |
@@ -725,6 +739,8 @@ Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 �
 
 ### NFR-SEC-001 비밀값·실제 데이터를 밖에 내보내지 않기
 
+웹과 터널의 접속 로그에 웹훅 토큰과 발화 원문을 기록하지 않는다. 상태 확인과 장애 감시는 필요한 결과만 남긴다.
+
 **비밀값과 실제 데이터는 저장소·로그·응답에 나가지 않는다.**
 
 - 계정·비밀번호·웹훅 토큰·SMTP 비밀번호는 `.env`에만 두고, Git이 추적하지 않게 한다.
@@ -743,7 +759,7 @@ Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 �
 | 작업 | 실행 시점 |
 |---|---|
 | 정기 수집 | 주 1회, 월요일 아침 |
-| 다음 주 확인 | 금요일 밤 1회, 주말에는 2시간 간격 |
+| 다음 주 확인 | 금요일 18~23시와 토요일~일요일 22시까지 매시간 |
 | 마감 점검 | 일요일 밤 1회 |
 | 미확보 재시도 | 평일 1시간 간격 |
 
@@ -751,8 +767,12 @@ Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 �
   이유: 둘을 묶으면 한쪽이 재시작할 때 다른 쪽이 다시 살아날 근거가 사라진다.
 - 확보된 뒤의 재시도는 바깥에 접속하지 않고 바로 끝나야 한다.
   이유: 타이머는 스스로를 끌 수 없다. 그래서 "반복 끝내기"를 아무 일도 하지 않는 것으로 만든다.
+- 평일 10시에는 확보된 식단도 한 번 다시 확인해 정정본을 반영한다. 그 확인이 실패해도 이미 확보한 내용을 유지한다.
 - 수집·OCR 작업에는 메모리 상한을 둔다.
   이유: 같은 장비의 다른 서비스를 밀어내지 않게 한다.
+- 정기 수집, 주말 확인, 마감, 미확보 재시도가 겹치면 하나만 수집한다.
+- 저장 장치의 여유 공간과 메타데이터, 공개 조회의 메뉴 응답, 마지막으로 받은 식단을 점검한다. 공개 조회는 운영 서버 밖에서도 확인한다.
+- SQLite 백업은 쓰는 중에도 일관된 방법으로 만든다. 운영 서버 밖에 보관한다. 임시로 복구한 파일에 빠지거나 틀린 값이 없는지와 식단 조회가 되는지를 확인한다.
 
 측정: 상시 유닛을 강제로 끄면 스스로 다시 켜진다. 확보된 주차의 재시도는 그룹웨어에 접속하지 않고 끝난다.
 
@@ -783,6 +803,12 @@ Claude에게 물었는데 답을 받지 못하면, 읽은 결과를 그대로 �
 개인정보는 다루지 않는다. 계정 정보는 데이터로 보지 않고 설정으로 보며, `.env`에만 둔다.
 
 ## 8. Configuration 사양
+
+### 카카오 접속 환경
+
+회사망에서는 카카오톡과 카카오 챗봇 관리자센터에 접속할 수 없다. 채널 설정, 카카오톡 화면 시험, 관리자센터의 스킬 URL 교체는 회사에서 승인한 카카오 접속 환경에서 수행한다.
+
+회사망에서는 운영 서버의 공개 스킬 주소에 정해진 시험 요청을 보내 응답 내용을 확인한다. 이 확인과 카카오톡 화면 시험 결과는 별도로 남긴다. 관리 화면 작업에는 회사의 네트워크 정책을 따른다.
 
 모든 설정은 환경변수이며 `.env`에서 읽는다. 값 예시는 `.env.example`에 있다.
 
@@ -1123,8 +1149,8 @@ NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
 
 | Requirement | Implementation | Test | Status |
 |---|---|---|---|
-| REQ-SCRAPE-001 | `src/menu_bot/scraper.py` | TEST-SCRAPE-001 (수동) | implemented |
-| REQ-OCR-001 | `src/menu_bot/ocr_provider.py` | TEST-OCR-001 (수동) | implemented |
+| REQ-SCRAPE-001 | `src/menu_bot/scraper.py` | TEST-SCRAPE-001 (수동), `tests/test_scraper_overlays.py` | implemented |
+| REQ-OCR-001 | `src/menu_bot/ocr_provider.py`, `src/menu_bot/ocr.py` | TEST-OCR-001 (수동), `tests/test_storage_reliability.py` | implemented |
 | REQ-PARSE-001 | `src/menu_bot/parser.py` | TEST-PARSE-001 | verified |
 | REQ-PARSE-002 | `src/menu_bot/parser.py` | TEST-PARSE-002 | verified |
 | REQ-PARSE-003 | `src/menu_bot/parser.py`, `src/menu_bot/service_notices.py`, `src/menu_bot/query.py` | `tests/test_holiday_notices.py` | verified |
@@ -1132,7 +1158,7 @@ NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
 | REQ-PARSE-005 | `src/menu_bot/parser.py`, `src/menu_bot/corrections.py` | `tests/test_event_banners.py` | verified |
 | REQ-PARSE-006 | `src/menu_bot/parser.py` | `tests/test_event_banners.py` | verified |
 | REQ-CORRECT-001 | `src/menu_bot/corrections.py` | TEST-CORRECT-001, TEST-PARSE-001 | verified |
-| REQ-STORE-001 | `src/menu_bot/pipeline.py` | TEST-STORE-001 | verified |
+| REQ-STORE-001 | `src/menu_bot/pipeline.py`, `src/menu_bot/db.py` | TEST-STORE-001, `tests/test_storage_reliability.py` | verified |
 | REQ-QUERY-001 | `src/menu_bot/query.py` | TEST-QUERY-001 | verified |
 | REQ-QUERY-002 | `src/menu_bot/query.py` | TEST-QUERY-002 | verified |
 | REQ-QUERY-003 | `src/menu_bot/query.py` | TEST-QUERY-003 | verified |
@@ -1143,7 +1169,7 @@ NFR-SEC-001, NFR-OPS-001, NFR-PORT-001
 | REQ-ADV-002 | `src/menu_bot/advisor.py` | `tests/test_advisor.py` | verified |
 | REQ-ADV-003 | `src/menu_bot/advisor.py`, `src/menu_bot/cli.py`, `src/menu_bot/pipeline.py` | `tests/test_advisor.py` | verified |
 | NFR-SEC-001 | `src/menu_bot/web.py`, `.gitignore` | TEST-OPS-001 | verified |
-| NFR-OPS-001 | `scripts/systemd/menubot-web.service`, `scripts/systemd/menubot-tunnel.service`, `scripts/systemd/menubot-collect.service` | TEST-OPS-001 | implemented |
+| NFR-OPS-001 | `scripts/systemd/menubot-web.service`, `scripts/systemd/menubot-tunnel.service`, `scripts/systemd/menubot-collect.service`, `scripts/run-external-monitor.ps1`, `src/menu_bot/ops.py` | TEST-OPS-001, `tests/test_ops_reliability.py` | implemented |
 | NFR-PORT-001 | `src/menu_bot/ocr_provider.py`, `src/menu_bot/config.py` | TEST-OPS-001, TEST-OCR-001 (수동) | implemented |
 
 Status 값: `draft` (사양만 있음) / `implemented` / `verified` (실제 실행까지 확인) /

@@ -88,6 +88,24 @@ def test_category_answer_shows_only_that_meal(db, utterance: str, expected_meal:
     assert not is_help(result)
 
 
+def test_health_corner_request_does_not_include_regular_meal(db):
+    result = answer(db, "오늘 점심 건강식만", "Asia/Seoul", now=NOW)
+    assert "중식건강4" in result
+    assert "중식일반4" not in result
+
+
+def test_explicit_site_never_inherits_another_site_menu(sites_db):
+    result = answer(sites_db, "화요일 평촌 아침", "Asia/Seoul", now=NOW)
+    assert "평촌" in result and "확인" in result
+    assert "볶음밥DAY" not in result
+
+
+def test_explicit_site_uses_its_closure_instead_of_other_site(sites_db):
+    result = answer(sites_db, "화요일 안양 아침", "Asia/Seoul", now=NOW)
+    assert "조식 미운영" in result
+    assert "볶음밥DAY" not in result
+
+
 @pytest.mark.parametrize("utterance", ["점심 간편식", "저녁 간편식", "아침 건강식", "석식 건강식"])
 def test_category_conflicting_with_meal_is_explained(db, utterance: str):
     """‘점심 간편식’처럼 코너와 끼니가 어긋나면 임의로 고르지 않는다."""

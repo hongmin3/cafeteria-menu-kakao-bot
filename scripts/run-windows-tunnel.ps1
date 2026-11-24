@@ -16,11 +16,11 @@ if (-not (Get-Command ngrok -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-Write-Log "터널 감시 루프 시작 (도메인: $ngrokDomain)" "tunnel"
+Write-Log "터널 감시 루프 시작" "tunnel"
 
 while ($true) {
     Write-Log "ngrok http 시작" "tunnel"
-    & ngrok http 8000 --url "https://$ngrokDomain" 2>&1 |
+    & ngrok http 8000 --url "https://$ngrokDomain" --inspect=false --log-level warn 2>&1 |
         ForEach-Object { Write-Log $_ "tunnel" }
     Write-Log "ngrok 종료됨(종료 코드 $LASTEXITCODE). 5초 후 재시작합니다." "tunnel"
     Start-Sleep -Seconds 5

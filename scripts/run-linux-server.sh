@@ -8,5 +8,6 @@ set -euo pipefail
 cd "$(project_root)"
 PORT="$(env_value MENUBOT_PORT)"
 PORT="${PORT:-18080}"
+export MENUBOT_REQUIRE_TOKEN=1
 write_log "FastAPI 서버 시작 (127.0.0.1:${PORT})" server
-exec ./.venv/bin/uvicorn menu_bot.web:app --host 127.0.0.1 --port "$PORT"
+exec ./.venv/bin/uvicorn menu_bot.web:app --host 127.0.0.1 --port "$PORT" --no-access-log

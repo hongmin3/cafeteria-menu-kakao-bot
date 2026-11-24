@@ -8,11 +8,12 @@ Set-Location (Get-ProjectRoot)
 Remove-OldLogs
 
 $python = Get-VenvPython
+$env:MENUBOT_REQUIRE_TOKEN = "1"
 Write-Log "서버 감시 루프 시작" "server"
 
 while ($true) {
     Write-Log "uvicorn 시작" "server"
-    & $python -m uvicorn menu_bot.web:app --host 127.0.0.1 --port 8000 2>&1 |
+    & $python -m uvicorn menu_bot.web:app --host 127.0.0.1 --port 8000 --no-access-log 2>&1 |
         ForEach-Object { Write-Log $_ "server" }
     Write-Log "uvicorn 종료됨(종료 코드 $LASTEXITCODE). 5초 후 재시작합니다." "server"
     Start-Sleep -Seconds 5

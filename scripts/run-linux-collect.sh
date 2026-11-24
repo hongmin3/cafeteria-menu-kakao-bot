@@ -5,6 +5,7 @@
 set -uo pipefail
 . "$(dirname "$0")/linux-common.sh"
 cd "$(project_root)"
+lock_collection collect 600
 remove_old_logs
 
 MENU_BOT="$(venv_menu_bot)" || exit 1

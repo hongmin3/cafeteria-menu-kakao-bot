@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+import json
 from pathlib import Path
 import sqlite3
 
@@ -37,13 +38,15 @@ ON menu_entries(service_date, location, meal_type);
 
 
 class MenuDB:
-    def __init__(self, path: Path | str, *, read_only: bool = False):
+    def __init__(self, path: Path | str, *, read_only: bool = False, timeout: float = 5.0):
         self.path = Path(path)
         if read_only:
-            self.conn = sqlite3.connect(f"{self.path.absolute().as_uri()}?mode=ro", uri=True)
+            self.conn = sqlite3.connect(
+                f"{self.path.absolute().as_uri()}?mode=ro", uri=True, timeout=timeout,
+            )
         else:
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            self.conn = sqlite3.connect(self.path)
+            self.conn = sqlite3.connect(self.path, timeout=timeout)
             try:
                 self.conn.executescript(SCHEMA)
             except sqlite3.Error:
@@ -55,8 +58,10 @@ class MenuDB:
         self.conn.close()
 
     def save_post(self, post: SourcePost) -> None:
-        import json
+        with self.conn:
+            self._write_post(post)
 
+    def _write_post(self, post: SourcePost) -> None:
         self.conn.execute(
             """INSERT INTO source_posts(post_id,title,location,start_date,image_urls_json)
                VALUES(?,?,?,?,?)
@@ -73,10 +78,40 @@ class MenuDB:
                 json.dumps(post.image_urls, ensure_ascii=False),
             ),
         )
-        self.conn.commit()
 
     def replace_entries(self, post_id: str, entries: list[MenuEntry]) -> None:
-        self.conn.execute("DELETE FROM menu_entries WHERE source_post_id=?", (post_id,))
+        with self.conn:
+            self.conn.execute("DELETE FROM menu_entries WHERE source_post_id=?", (post_id,))
+            self._insert_entries(entries)
+
+    def save_week(self, post: SourcePost, entries: list[MenuEntry], week_start: date | None) -> None:
+        """Replace only a successfully read post scope, including its metadata in the same transaction."""
+        if not entries:
+            return
+
+        where = "source_post_id=?"
+        args = (post.post_id,)
+        if week_start is not None:
+            week_end = week_start + timedelta(days=6)
+            if any(e.source_post_id != post.post_id or not week_start <= e.service_date <= week_end
+                   for e in entries):
+                raise ValueError("저장 대상 게시물과 주차가 일치하지 않습니다.")
+            where += " AND service_date BETWEEN ? AND ?"
+            args += (week_start.isoformat(), week_end.isoformat())
+
+        with self.conn:
+            self._write_post(post)
+            if week_start is not None:
+                previous_meals = self.conn.execute(
+                    f"SELECT DISTINCT service_date, location, meal_type FROM menu_entries WHERE {where}", args,
+                )
+                read_meals = {(e.service_date.isoformat(), e.location, e.meal_type) for e in entries}
+                if any(tuple(meal) not in read_meals for meal in previous_meals):
+                    raise ValueError("다시 읽은 식단에서 기존 끼니가 빠져 이전 식단을 유지합니다.")
+            self.conn.execute(f"DELETE FROM menu_entries WHERE {where}", args)
+            self._insert_entries(entries)
+
+    def _insert_entries(self, entries: list[MenuEntry]) -> None:
         self.conn.executemany(
             """INSERT INTO menu_entries(
                  service_date,location,meal_type,category,menu_text,status,
@@ -91,15 +126,19 @@ class MenuDB:
                 for e in entries
             ],
         )
-        self.conn.commit()
 
     def query(self, day: date, meal_type: str | None = None) -> list[sqlite3.Row]:
-        sql = "SELECT * FROM menu_entries WHERE service_date=?"
+        sql = """
+            SELECT m.*, p.processed_at AS source_processed_at, p.start_date AS source_start_date,
+                   p.rowid AS source_post_sequence
+            FROM menu_entries m LEFT JOIN source_posts p ON p.post_id=m.source_post_id
+            WHERE m.service_date=?
+        """
         params: list[str] = [day.isoformat()]
         if meal_type:
             sql += " AND meal_type=?"
             params.append(meal_type)
-        sql += " ORDER BY location, CASE meal_type WHEN '조식' THEN 1 WHEN '중식' THEN 2 ELSE 3 END, id"
+        sql += " ORDER BY m.location, CASE m.meal_type WHEN '조식' THEN 1 WHEN '중식' THEN 2 ELSE 3 END, m.id"
         return list(self.conn.execute(sql, params))
 
     def reapply_corrections(self, fix) -> list[tuple[str, str]]:

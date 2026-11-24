@@ -59,7 +59,7 @@ class BlockedScraper:
     def list_recent_titles(self, max_pages: int = 1):
         raise RuntimeError(self.message)
 
-    def collect(self, max_pages: int = 1):
+    def collect(self, max_pages: int = 1, *, target_post_ids=None):
         raise RuntimeError(self.message)
 
 
@@ -72,7 +72,7 @@ class TitleScraper:
     def list_recent_titles(self, max_pages: int = 1) -> list[dict]:
         return [{"id": f"post-{i}", "title": t} for i, t in enumerate(self.titles)]
 
-    def collect(self, max_pages: int = 1) -> list[dict]:
+    def collect(self, max_pages: int = 1, *, target_post_ids=None) -> list[dict]:
         return [
             {"id": f"post-{i}", "title": t, "images": []}
             for i, t in enumerate(self.titles)

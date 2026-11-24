@@ -8,8 +8,16 @@
 set -uo pipefail
 . "$(dirname "$0")/linux-common.sh"
 cd "$(project_root)"
+lock_collection ensure-menu
 remove_old_logs
 
 MENU_BOT="$(venv_menu_bot)" || exit 1
-"$MENU_BOT" ensure-menu 2>&1 | while IFS= read -r l; do write_log "$l" ensure-menu; done
+refresh=()
+if [ "$(TZ=Asia/Seoul date +%u)" -le 5 ] && [ "$(TZ=Asia/Seoul date +%H)" = 10 ]; then
+  refresh=(--refresh)
+  if ! ./.venv/bin/python -m menu_bot.ops prune-cache >/dev/null 2>&1; then
+    write_log "이미지 캐시 보관 한도 확인 실패" ensure-menu
+  fi
+fi
+"$MENU_BOT" ensure-menu "${refresh[@]}" 2>&1 | while IFS= read -r l; do write_log "$l" ensure-menu; done
 exit "${PIPESTATUS[0]}"

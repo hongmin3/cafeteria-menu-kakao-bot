@@ -163,10 +163,14 @@ def test_split_notice_does_not_combine_across_dates():
     assert all(e.status != 'no_service' for e in entries if e.service_date == date(2026, 10, 8))
 
 
-def test_other_image_with_food_prevents_name_only_closure(tmp_path):
-    from menu_bot.pipeline import image_path, process_manifest
+def test_other_image_with_food_prevents_name_only_closure(tmp_path, monkeypatch):
+    from menu_bot.pipeline import image_path, process_manifest, requests
     import json
+    from types import SimpleNamespace
 
+    monkeypatch.setattr(requests, "get", lambda *a, **k: SimpleNamespace(
+        headers={"Content-Type": "image/png"}, content=b"cached image", raise_for_status=lambda: None,
+    ))
     urls = ['https://example.com/notice.png', 'https://example.com/food.png']
     for url, lines in zip(urls, [board('추석'), board('쌀밥/김치')]):
         path = image_path(url, tmp_path)

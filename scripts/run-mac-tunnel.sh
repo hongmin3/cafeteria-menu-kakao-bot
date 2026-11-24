@@ -20,4 +20,4 @@ if [[ -z "${NGROK_DOMAIN:-}" ]]; then
   exit 1
 fi
 
-exec ngrok http 8000 --url "https://${NGROK_DOMAIN}"
+exec ngrok http 8000 --url "https://${NGROK_DOMAIN}" --inspect=false --log-level warn

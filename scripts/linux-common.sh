@@ -18,11 +18,28 @@ env_value() {
 write_log() {
   local message="$1" log_name="$2"
   local log_dir="$(project_root)/logs"
-  mkdir -p "$log_dir"
   local stamp="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S')"
   local line="[$stamp KST] $message"
-  printf '%s\n' "$line" >> "$log_dir/${log_name}-$(TZ=Asia/Seoul date '+%Y-%m-%d').log"
+  if mkdir -p "$log_dir" 2>/dev/null; then
+    { printf '%s\n' "$line" >> "$log_dir/${log_name}-$(TZ=Asia/Seoul date '+%Y-%m-%d').log"; } 2>/dev/null || true
+  fi
   printf '%s\n' "$line"
+}
+
+# A running collector inherits fd 9, so its replacements stay serialized.
+lock_collection() {
+  local name="$1" wait="${2:-0}" rc
+  mkdir -p data && exec 9>>data/.collection.lock || exit 1
+  if flock -E 75 -w "$wait" 9; then
+    return 0
+  else
+    rc=$?
+  fi
+  if [ "$rc" -eq 75 ]; then
+    write_log "다른 수집이 실행 중이어서 이번 실행을 건너뜁니다." "$name"
+    exit 0
+  fi
+  exit "$rc"
 }
 
 remove_old_logs() {

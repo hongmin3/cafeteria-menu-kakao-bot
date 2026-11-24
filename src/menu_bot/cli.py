@@ -5,10 +5,12 @@ from datetime import datetime, timedelta
 import json
 import os
 from pathlib import Path
+import sqlite3
 import sys
 from zoneinfo import ZoneInfo
 
 from . import advisor
+from .atomic import write_bytes
 from .config import get_settings
 from .corrections import (
     MIN_VOCAB_COUNT,
@@ -26,6 +28,7 @@ from .next_week_watch import (
     check_next_week_deadline,
     check_next_week_posted,
     ensure_week_menu,
+    week_coverage,
 )
 from .notify import get_mail_settings, send_mail
 from .ocr import recognize
@@ -106,6 +109,9 @@ def main() -> None:
         "--now", metavar="ISO8601",
         help="기준 시각을 지정해 재시도 시나리오를 검증. 시스템 시계는 건드리지 않는다.",
     )
+    ensure.add_argument(
+        "--refresh", action="store_true", help="식단이 이미 있어도 게시물과 첨부의 변경 사항을 확인",
+    )
     sub.add_parser(
         "notify-test",
         help="알림 메일 설정이 실제로 동작하는지 시험 메일 1통으로 확인(비밀번호는 출력하지 않음)",
@@ -149,8 +155,7 @@ def main() -> None:
 
     if args.command == "scrape":
         rows = GroupwareScraper(settings, headless=not args.show_browser).collect(args.pages)
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+        write_bytes(args.output, json.dumps(rows, ensure_ascii=False, indent=2).encode("utf-8"))
         print(f"{len(rows)}개 게시물을 {args.output}에 저장했습니다.")
     elif args.command == "ingest":
         rows = json.loads(args.manifest.read_text(encoding="utf-8"))
@@ -166,15 +171,26 @@ def main() -> None:
             # 1년치 학습 수집에서 Claude를 부르면 호출과 실패 메일이 수십 건 쌓인다.
             stats = process_manifest(rows, db, Path("data/images"), week_start=week_start,
                                      use_advisor=not args.learning)
+            if week_start is not None:
+                stats["coverage"] = week_coverage(db, week_start)
             print(json.dumps(stats, ensure_ascii=False, indent=2))
         finally:
             db.close()
+        if not args.learning and (
+            not stats.get("entries") or stats.get("errors") or stats["coverage"]["status"] != "complete"
+        ):
+            sys.exit(1)
     elif args.command == "ask":
-        db = MenuDB(settings.database_path)
         try:
-            print(answer(db, args.text, settings.timezone, settings.default_location))
-        finally:
-            db.close()
+            db = MenuDB(settings.database_path, read_only=True)
+            try:
+                print(answer(db, args.text, settings.timezone, settings.default_location,
+                             locations=settings.post_prefixes))
+            finally:
+                db.close()
+        except sqlite3.DatabaseError:
+            print("식단 DB를 조회할 수 없습니다. 식단을 먼저 받아 두었는지 확인하세요.", file=sys.stderr)
+            sys.exit(1)
     elif args.command == "check-next-week":
         result = check_next_week_posted(settings, now=_parse_now(args.now, settings.timezone))
         print(result.message)
@@ -190,7 +206,7 @@ def main() -> None:
         if not result.confirmed and not result.already_alerted:
             sys.exit(1)
     elif args.command == "ensure-menu":
-        result = ensure_week_menu(settings, now=_parse_now(args.now, settings.timezone))
+        result = ensure_week_menu(settings, now=_parse_now(args.now, settings.timezone), refresh=args.refresh)
         print(result.message)
         # 아직 게시글이 없는 것은 이상 상황이 아니므로 0으로 끝낸다(한 시간 뒤 다시
         # 시도한다). 접속 실패나 OCR 0건만 systemd가 실패로 잡도록 1로 끝낸다.

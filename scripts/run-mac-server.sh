@@ -10,4 +10,5 @@ if [[ ! -x ".venv/bin/uvicorn" ]]; then
   exit 1
 fi
 
-exec .venv/bin/uvicorn menu_bot.web:app --host 127.0.0.1 --port 8000
+export MENUBOT_REQUIRE_TOKEN=1
+exec .venv/bin/uvicorn menu_bot.web:app --host 127.0.0.1 --port 8000 --no-access-log

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Collection
 from datetime import datetime
 from pathlib import Path
 import platform
@@ -300,9 +301,13 @@ class GroupwareScraper:
 
     def _read_titles(self, page, page_no: int) -> list[dict]:
         """현재 목록 화면에서 제목과 게시물 번호를 읽는다."""
-        return page.locator("a._atcl").evaluate_all(
+        rows = page.locator("a._atcl").evaluate_all(
             "els => els.map(e => ({title:(e.textContent||'').trim(), id:e.dataset.atclId}))"
         )
+        posts = [{**post, "page": page_no} for post in rows if post.get("id") and post.get("title")]
+        if not posts:
+            raise ScrapeError("게시물 목록", "게시물 번호와 제목을 읽지 못했습니다.")
+        return posts
 
     def _go_to_page(self, page, page_no: int) -> bool:
         """목록 페이지를 넘긴다. 해당 번호가 없으면 False."""
@@ -311,11 +316,40 @@ class GroupwareScraper:
         )
         if not pager.count():
             return False
-        pager.click()
-        page.wait_for_timeout(600)
+        previous = [post["id"] for post in self._read_titles(page, page_no - 1)]
+        try:
+            _click_past_overlays(page, pager)
+            page.wait_for_function(
+                """previous => {
+                  const ids = [...document.querySelectorAll('a._atcl[data-atcl-id]')]
+                    .map(e => e.dataset.atclId);
+                  return ids.length > 0 && (ids.length !== previous.length
+                    || ids.some((id, index) => id !== previous[index]));
+                }""",
+                arg=previous, timeout=15_000,
+            )
+        except PlaywrightError as exc:
+            raise ScrapeError("게시물 목록", f"{page_no}페이지 목록이 나타나지 않았습니다.") from exc
         return True
 
-    def collect(self, max_pages: int = 2) -> list[dict]:
+    def _read_attachments(self, page, post_id: str) -> list[dict]:
+        _click_past_overlays(page, page.locator(f'a._atcl[data-atcl-id="{post_id}"]'))
+        page.wait_for_timeout(650)
+        page.wait_for_function(
+            """() => [...document.images]
+              .every(img => !img.src.includes('/board/image/') || img.complete)""",
+            timeout=12_000,
+        )
+        # 본문 이미지 위치는 변경될 수 있어 첨부 URL 패턴으로 고른다.
+        images = page.locator("img").evaluate_all(
+            "els => els.filter(e => e.src.includes('/board/image/'))"
+            ".map(e => ({src:e.src,w:e.naturalWidth,h:e.naturalHeight}))"
+        )
+        if any(not image["w"] or not image["h"] for image in images):
+            raise ScrapeError("첨부 읽기", "식단표로 쓰일 수 있는 첨부 이미지를 읽지 못했습니다.")
+        return [image for image in images if image["w"] > 500 and image["h"] > 500]
+
+    def collect(self, max_pages: int = 2, *, target_post_ids: Collection[str] | None = None) -> list[dict]:
         self._require_credentials()
         with sync_playwright() as pw:
             browser = self._launch(pw)
@@ -331,22 +365,14 @@ class GroupwareScraper:
                     posts = [
                         post for post in self._read_titles(page, page_no)
                         if title_re.match(post["title"])
+                        and (target_post_ids is None or post["id"] in target_post_ids)
                     ]
                     for post in posts:
-                        _click_past_overlays(
-                            page, page.locator(f'a._atcl[data-atcl-id="{post["id"]}"]')
-                        )
-                        page.wait_for_timeout(650)
-                        # 본문 이미지는 <article> 안이 아니라 <p> 아래에 바로
-                        # 들어 있어 태그 위치 대신 첨부파일 URL 패턴으로 찾는다.
-                        images = page.locator("img").evaluate_all(
-                            "els => els.map(e => ({src:e.src,w:e.naturalWidth,h:e.naturalHeight}))"
-                            ".filter(x => x.w > 500 && x.h > 500 && x.src.includes('/board/image/'))"
-                        )
-                        collected.append({
-                            "id": post["id"], "title": post["title"],
-                            "images": images, "page": page_no,
-                        })
+                        try:
+                            images = self._read_attachments(page, post["id"])
+                            collected.append({**post, "images": images})
+                        except (PlaywrightError, ScrapeError):
+                            collected.append({**post, "images": [], "collection_error": "첨부 이미지를 읽지 못했습니다."})
                 return collected
             except Exception:
                 _save_failure_snapshot(page, "collect")

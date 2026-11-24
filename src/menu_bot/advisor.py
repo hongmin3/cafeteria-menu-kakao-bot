@@ -17,6 +17,7 @@ import re
 import shutil
 import subprocess
 
+from .atomic import write_bytes
 from .corrections import apply_substitutions
 from .models import MenuEntry, SourcePost
 from .parser import find_date_headers
@@ -186,23 +187,23 @@ def failure_mail(error: AdvisorError, post: SourcePost, image_name: str, signals
     return subject, body
 
 
-def _should_alert(kind: str, now: float, path: Path) -> bool:
+def _alert_state(path: Path) -> dict:
     try:
         state = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        state = {}
-    last = state.get(kind)
+        return {}
+    return state if isinstance(state, dict) else {}
+
+
+def _should_alert(kind: str, now: float, path: Path) -> bool:
+    last = _alert_state(path).get(kind)
     return not isinstance(last, (int, float)) or now - last >= ALERT_INTERVAL_HOURS * 3600
 
 
 def _mark_alerted(kind: str, now: float, path: Path) -> None:
-    try:
-        state = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        state = {}
+    state = _alert_state(path)
     state[kind] = now
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(state), encoding="utf-8")
+    write_bytes(path, json.dumps(state).encode("utf-8"))
 
 
 def report_failure(error: AdvisorError, post: SourcePost, image_name: str, signals: list[dict],
@@ -216,9 +217,16 @@ def report_failure(error: AdvisorError, post: SourcePost, image_name: str, signa
         progress(f"  같은 종류의 Claude 자문 실패 메일을 최근 {ALERT_INTERVAL_HOURS}시간 안에 보내 생략합니다.")
         return False
     subject, body = failure_mail(error, post, image_name, signals)
-    sent = (send or send_mail)(subject, body, progress=progress)
+    try:
+        sent = (send or send_mail)(subject, body, progress=progress)
+    except Exception:
+        progress("  Claude 자문 실패 메일을 발송하지 못했습니다. 식단은 계속 처리합니다.")
+        return False
     if sent:
-        _mark_alerted(error.kind, now, path)
+        try:
+            _mark_alerted(error.kind, now, path)
+        except OSError:
+            progress("  Claude 자문 실패 알림 이력을 기록하지 못했습니다. 식단은 계속 처리합니다.")
     return sent
 
 
@@ -387,12 +395,18 @@ def advise(post: SourcePost, image_path: Path, lines: list[dict], entries: list[
     if not signals:
         return entries
     cache = image_path.with_name(image_path.name + ".advice.json")
-    key = hashlib.sha256(json.dumps([PROMPT_VERSION, signals], ensure_ascii=False, sort_keys=True)
+    try:
+        with image_path.open("rb") as image:
+            image_digest = hashlib.file_digest(image, "sha256").hexdigest()
+    except OSError:
+        progress("  Claude 자문에 사용할 첨부를 읽지 못했습니다. 인식 결과는 계속 처리합니다.")
+        return entries
+    key = hashlib.sha256(json.dumps([PROMPT_VERSION, image_digest, signals], ensure_ascii=False, sort_keys=True)
                          .encode()).hexdigest()
     verdict = None
     try:
         saved = json.loads(cache.read_text(encoding="utf-8"))
-        if saved.get("key") == key:
+        if isinstance(saved, dict) and saved.get("key") == key:
             verdict = saved["verdict"]
     except (OSError, ValueError, KeyError):
         pass
@@ -415,8 +429,13 @@ def advise(post: SourcePost, image_path: Path, lines: list[dict], entries: list[
                        state_path=alert_state_path)
         return entries
     if asked:
-        cache.write_text(json.dumps({"key": key, "signals": signals, "verdict": verdict, "changes": changes},
-                                    ensure_ascii=False, indent=1), encoding="utf-8")
+        try:
+            write_bytes(cache, json.dumps(
+                {"key": key, "signals": signals, "verdict": verdict, "changes": changes},
+                ensure_ascii=False, indent=1,
+            ).encode("utf-8"))
+        except OSError:
+            progress("  Claude 자문 결과 파일을 기록하지 못했습니다. 자문 결과는 계속 처리합니다.")
         progress(f"  Claude 자문: {len(signals)}개 날짜 확인, 변경 {len(changes)}건")
         for change in changes:
             progress(f"    {change}")

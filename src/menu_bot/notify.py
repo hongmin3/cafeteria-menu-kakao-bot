@@ -18,15 +18,18 @@ WEEKDAY_KO = "월화수목금토일"
 MEAL_ORDER = ("조식", "중식", "석식")
 
 # 그룹웨어에서 식단을 못 가져온 결과들. 연속 실패를 셀 때 같은 것으로 본다.
-FAILURE_RESULTS = frozenset({"error", "ingest_failed", "not_servable", "title_unreadable"})
+FAILURE_RESULTS = frozenset({"error", "db_error", "ingest_failed", "not_servable", "title_unreadable"})
 
 ATTEMPT_LABELS = {
     "not_posted": "게시글이 아직 없음",
     "error": "그룹웨어 접속/스크래핑 실패",
-    "ingest_failed": "게시글은 있는데 OCR·파싱 결과가 0건",
+    "db_error": "식단 DB 접근 실패",
+    "ingest_failed": "게시글의 식단 처리 실패",
     "not_servable": "저장은 됐지만 공통 식단을 고를 수 없음",
     "title_unreadable": "식단표 게시글은 있는데 제목에서 주차를 못 읽음",
+    "partial": "일부 끼니만 확보",
     "confirmed": "수집 성공",
+    "refresh_not_found": "기존 식단 유지, 게시글 추가 확인 실패",
 }
 
 

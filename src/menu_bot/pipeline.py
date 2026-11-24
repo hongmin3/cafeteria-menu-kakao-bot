@@ -3,9 +3,13 @@ from __future__ import annotations
 import hashlib
 from datetime import date, timedelta
 from pathlib import Path
+import re
+from urllib.parse import parse_qs, urlsplit
+
 import requests
 
 from .advisor import advise
+from .atomic import write_bytes
 from .db import MenuDB
 from .models import MenuEntry
 from .ocr import recognize
@@ -15,17 +19,25 @@ from .service_notices import is_inferred_notice
 
 def image_path(url: str, image_dir: Path) -> Path:
     """이미지 URL이 저장되는 경로. 다운로드와 어휘집 생성이 같은 규칙을 써야 한다."""
-    suffix = Path(url.split("fileName=")[-1]).suffix or ".img"
+    parts = urlsplit(url)
+    filenames = parse_qs(parts.query).get("fileName")
+    suffix = Path(filenames[0] if filenames else parts.path).suffix
+    if not re.fullmatch(r"\.[a-zA-Z0-9]{1,8}", suffix):
+        suffix = ".img"
     return image_dir / (hashlib.sha256(url.encode()).hexdigest()[:24] + suffix)
 
 
 def _download(url: str, image_dir: Path) -> Path:
     path = image_path(url, image_dir)
-    if not path.exists():
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(response.content)
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    content_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+    content = response.content
+    html = content[:128].lstrip().lower().startswith((b"<!doctype html", b"<html"))
+    if not content or html or content_type.startswith("text/") or content_type == "application/json":
+        raise ValueError("첨부 파일이 이미지가 아닙니다.")
+    if not path.exists() or path.read_bytes() != content:
+        write_bytes(path, content)
     return path
 
 
@@ -45,11 +57,15 @@ def process_manifest(
     }
     for index, row in enumerate(rows, 1):
         try:
+            if row.get("collection_error"):
+                raise ValueError(row["collection_error"])
             urls = [image["src"] if isinstance(image, dict) else image for image in row.get("images", [])]
             post = post_from_title(row["id"], row["title"], urls)
             all_entries: list[MenuEntry] = []
             for url in urls:
-                path = _download(url, image_dir)
+                path = image_path(url, image_dir)
+                if week_start is not None or not path.exists():
+                    path = _download(url, image_dir)
                 lines = recognize(path)
                 # 이상 신호가 있을 때만 Claude에게 그림을 보여 주고 묻는다(REQ-ADV-001).
                 parsed = parse_ocr_lines(post, url, lines)
@@ -74,8 +90,9 @@ def process_manifest(
             if week_start is not None:
                 selected_entries, filtered = filter_entries_to_week(selected_entries, week_start)
                 stats["filtered_entries"] += filtered
-            db.save_post(post)
-            db.replace_entries(post.post_id, selected_entries)
+            if not selected_entries:
+                continue
+            db.save_week(post, selected_entries, week_start)
             stats["posts"] += 1
             stats["entries"] += len(selected_entries)
             progress(f"[{index}/{len(rows)}] {post.title}: {len(selected_entries)}개 메뉴")

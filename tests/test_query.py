@@ -34,7 +34,7 @@ def test_plain_breakfast_means_today():
 def test_next_week_can_be_parsed_but_is_rejected_by_answer_validation():
     parsed = parse_query("평촌 다음주 화요일 저녁", NOW)
     assert parsed.day.isoformat() == "2026-08-25"
-    assert parsed.location is None
+    assert parsed.location == "평촌"
     assert parsed.meal_type == "석식"
 
 
@@ -94,6 +94,30 @@ def test_same_week_menu_from_two_posts_is_not_duplicated(tmp_path: Path):
         db.close()
     assert result.count("라면") == 1
     assert result.count("<일반식>") == 1
+
+
+def test_shorter_midweek_correction_precedes_old_content_and_closure(tmp_path: Path):
+    from menu_bot.models import SourcePost
+
+    day = NOW.date()
+    week = day - timedelta(days=day.weekday())
+    db = MenuDB(tmp_path / "menus.db")
+    try:
+        for post_id, rows in (
+            ("11", [
+                MenuEntry(day, "뷰웍스", "중식", "일반식", "지난메뉴 · 지난반찬", source_post_id="11"),
+                MenuEntry(day, "뷰웍스", "중식", "안내", "예전휴무안내", status="no_service", source_post_id="11"),
+            ]),
+            ("12", [MenuEntry(day, "뷰웍스", "중식", "일반식", "정정메뉴", source_post_id="12")]),
+        ):
+            title_date = week if post_id == "11" else week + timedelta(days=1)
+            db.save_post(SourcePost(post_id, "시험 게시물", "뷰웍스", title_date))
+            db.replace_entries(post_id, rows)
+        result = answer(db, "오늘 점심", "Asia/Seoul", now=NOW)
+    finally:
+        db.close()
+    assert "정정메뉴" in result
+    assert "지난메뉴" not in result and "예전휴무안내" not in result
 
 
 def test_special_status_is_explicitly_emphasized(tmp_path: Path):
@@ -167,10 +191,10 @@ def test_blank_day_on_a_posted_board_does_not_promise_a_menu_later(tmp_path: Pat
 
 
 def test_nothing_posted_yet_still_tells_the_user_to_wait(tmp_path: Path):
-    """식단표 자체가 없는 주는 기다리면 실제로 생기므로 기존 안내를 유지한다."""
+    """게시판 확인 결과가 있는 경우에만 미게시로 안내한다."""
     db = MenuDB(tmp_path / "menus.db")
     try:
-        result = answer(db, "수요일 점심", "Asia/Seoul", now=NOW)
+        result = answer(db, "수요일 점심", "Asia/Seoul", now=NOW, collection_status="not_posted")
     finally:
         db.close()
     assert "식단표가 아직 그룹웨어에 올라오지 않았어요" in result

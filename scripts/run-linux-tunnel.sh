@@ -18,5 +18,5 @@ if [ -z "$DOMAIN" ]; then
   write_log "오류: .env의 NGROK_DOMAIN이 비어 있습니다." tunnel
   exit 1
 fi
-write_log "ngrok 터널 시작 ($DOMAIN -> 127.0.0.1:$PORT)" tunnel
-exec "$NGROK" http "$PORT" --domain "$DOMAIN" --log stdout --log-format logfmt --log-level info
+write_log "ngrok 터널 시작" tunnel
+exec "$NGROK" http "$PORT" --domain "$DOMAIN" --inspect=false --log stdout --log-format logfmt --log-level warn

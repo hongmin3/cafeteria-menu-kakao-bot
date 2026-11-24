@@ -12,6 +12,8 @@
 set -uo pipefail
 . "$(dirname "$0")/linux-common.sh"
 cd "$(project_root)"
+[ "$(TZ=Asia/Seoul date +%u)" -eq 7 ] || exit 0
+lock_collection next-week-deadline 600
 remove_old_logs
 
 MENU_BOT="$(venv_menu_bot)" || exit 1
