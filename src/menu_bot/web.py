@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from contextlib import closing
+import logging
+import sqlite3
+
 from fastapi import FastAPI, HTTPException, Request
 
 from .config import get_settings
@@ -8,6 +12,7 @@ from .query import HELP_TEXT, answer, looks_like_menu_query
 
 
 app = FastAPI(title="Vieworks Menu Kakao Skill")
+logger = logging.getLogger(__name__)
 
 
 QUICK_REPLIES = [
@@ -42,11 +47,11 @@ def kakao_response(text: str) -> dict:
 @app.get("/health")
 def health() -> dict:
     settings = get_settings()
-    db = MenuDB(settings.database_path)
     try:
-        return {"ok": True, "entries": db.count_entries()}
-    finally:
-        db.close()
+        with closing(MenuDB(settings.database_path, read_only=True)) as db:
+            return {"ok": True, "entries": db.count_entries()}
+    except sqlite3.DatabaseError as exc:
+        raise HTTPException(status_code=503, detail="Menu database unavailable") from exc
 
 
 @app.post("/kakao/skill")
@@ -62,13 +67,14 @@ async def kakao_skill(request: Request, token: str = "") -> dict:
         return kakao_response(HELP_TEXT)
     if not looks_like_menu_query(utterance):
         return kakao_response("무슨 말씀인지 잘 못 알아들었어요. 😅\n\n" + HELP_TEXT)
-    db = MenuDB(settings.database_path)
     try:
-        return kakao_response(
-            answer(
+        with closing(MenuDB(settings.database_path, read_only=True)) as db:
+            text = answer(
                 db, utterance, settings.timezone, settings.default_location,
                 locations=settings.post_prefixes,
             )
-        )
-    finally:
-        db.close()
+    except sqlite3.DatabaseError as exc:
+        error_name = getattr(exc, "sqlite_errorname", type(exc).__name__)
+        logger.warning("Kakao menu database unavailable (%s)", error_name)
+        text = "지금은 식단을 조회하기 어려워요. 잠시 후 다시 물어봐 주세요."
+    return kakao_response(text)

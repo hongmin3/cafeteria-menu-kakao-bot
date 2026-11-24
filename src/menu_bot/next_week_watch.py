@@ -370,7 +370,9 @@ def _db_can_serve_week(settings: Settings, week_start: date) -> bool:
     "확인할 수 없어요"로 답했다. 알림과 실제 응답이 어긋나면 안 되므로
     응답을 만들 때 쓰는 바로 그 기준(_choose_common_menu)으로 판단한다.
     """
-    db = MenuDB(settings.database_path)
+    if not settings.database_path.exists():
+        return False
+    db = MenuDB(settings.database_path, read_only=True)
     try:
         return any(
             _choose_common_menu(db.query(week_start + timedelta(days=offset)))

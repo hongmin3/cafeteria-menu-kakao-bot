@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="botyard render-spec-html v8">
 <meta name="spec-html-renderer" content="v8">
-<meta name="spec-source-sha256" content="5e11445c00a48c14d3ddab8d10f27b4e9eb1036b559f98b6410ac7fe89465ed6">
+<meta name="spec-source-sha256" content="d5ceebb3bc87c9bdefbc297a0f4fb258fcfcca7b26e594b272bc9f91a086458e">
 <title>뷰밥 메뉴 알리미 사양서</title>
 <style>:root{--bg:#f7f8fa;--panel:#fff;--text:#1d2330;--muted:#5d6678;--line:#e2e6ee;--accent:#2f6fde;--code:#f1f3f7;
 --req:#2f6fde;--nfr:#8a4fd8;--test:#15907a;--draft:#8a93a6;--implemented:#c98a12;--verified:#1f9d55;--deprecated:#c2413a;--active:#2f6fde;
@@ -870,7 +870,12 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 </section>
 <section class="card kind-req" id="REQ-API-001">
 <h3><span class="idtag">REQ-API-001</span> 카카오 챗봇 Skill 응답</h3>
-<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/web.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta nohist"><b>변경 이력</b> CHANGELOG에 이 ID로 기록된 변경 없음</span></div>
+<div class="card-meta"><span class="badge st-verified">verified</span><span class="meta"><b>구현</b> <code>src/menu_bot/web.py</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-API-001">TEST-API-001</a></span></div>
+<details class="history"><summary>변경 이력 1</summary>
+<ul>
+<li><span class="hist">[Unreleased] · Fixed</span> <a class="idref" href="#REQ-API-001">REQ-API-001</a>: 카카오 식단 조회와 상태 확인에서 DB 초기화를 건너뛴다. DB를 읽을 수 없으면 카카오는 재시도 안내를 보내고 상태 확인용 주소는 HTTP 503으로 답한다.</li>
+</ul>
+</details>
 <section class="field"><h4>목적</h4><div class="field-body">
 <p>카카오 챗봇 Skill 서버로서 요청을 받고, 카카오 규격에 맞는 응답을 돌려준다.</p>
 </div></section>
@@ -1115,7 +1120,7 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <section class="card kind-nfr" id="NFR-OPS-001">
 <h3><span class="idtag">NFR-OPS-001</span> 사람 없이 정해진 시각에 돌고 스스로 복구</h3>
 <div class="card-meta"><span class="badge st-implemented">implemented</span><span class="meta"><b>구현</b> <code>scripts/systemd/menubot-web.service</code>, <code>scripts/systemd/menubot-tunnel.service</code>, <code>scripts/systemd/menubot-collect.service</code></span><span class="meta"><b>테스트</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span><span class="meta"><b>참조됨</b> <a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a></span></div>
-<details class="history"><summary>변경 이력 2</summary>
+<details class="history"><summary>변경 이력 3</summary>
 <ul>
 <li><span class="hist">[Unreleased] · Added</span> <a class="idref" href="#NFR-SEC-001">NFR-SEC-001</a> / <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a> / <a class="idref" href="#NFR-PORT-001">NFR-PORT-001</a>: 운영·보안·이식성 계약 검사(<a class="idref" href="#TEST-OPS-001">TEST-OPS-001</a>,
 <code>tests/test_operational_contracts.py</code>). 추적 파일 위생과 git 실제 무시 동작, 웹훅
@@ -1123,6 +1128,7 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 설정 사용을 고정한다.</li>
 <li><span class="hist">[Unreleased] · Changed</span> <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a>: 추적성 표의 구현 열이 디렉터리(<code>scripts/systemd/</code>)를 가리켜 검사기가
 파일 참조로 인정하지 않던 것을 실제 유닛 파일 경로로 바꿨다.</li>
+<li><span class="hist">[Unreleased] · Fixed</span> <a class="idref" href="#NFR-OPS-001">NFR-OPS-001</a>: 매시간 식단 <span class="term" title="대상 주차의 메뉴 항목이 1건 이상 저장된 상태" tabindex="0">확보</span> 확인과 Linux 환경 점검에서 DB를 읽기 전용으로 연다.</li>
 </ul>
 </details>
 <p><strong>정해진 시각에 사람 손 없이 돌고, 멈추면 스스로 다시 켜진다.</strong></p>
@@ -1405,10 +1411,12 @@ footer{max-width:1800px;margin:0 auto;padding:8px 24px 40px;color:var(--muted);f
 <p>없음.</p>
 </div></section>
 <section class="field"><h4>절차</h4><div class="field-body">
-<p><code>tests/test_query.py</code>, <code>tests/test_query_routing.py</code>.</p>
+<p><code>tests/test_query.py</code>, <code>tests/test_query_routing.py</code>, <code>tests/test_web_database.py</code>.</p>
 <ol>
 <li>하루 전체 응답을 카카오 응답으로 바꿔 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span>이 나뉘는지 확인한다.</li>
 <li>사용방법 문구가, 앞에 안내 문구가 붙은 경우까지 <span class="term" title="카카오톡에 보이는 답 한 덩어리. 한 응답에 3개까지 보낼 수 있다" tabindex="0">말풍선</span> 하나에 들어가는지 확인한다.</li>
+<li>저장된 식단을 카카오에서 조회하고, 상태 확인용 주소에서 항목 수를 읽는다. 두 요청 뒤 SQLite의 저장 방식이 그대로인지 확인한다.</li>
+<li>파일이 없거나 손상됐을 때와 디스크 입출력 오류가 날 때 카카오가 다시 시도하라는 안내를 돌려주는지 확인한다. 상태 확인용 주소는 HTTP 503을 돌려준다.</li>
 </ol>
 </div></section>
 <section class="field"><h4>Expected Result</h4><div class="field-body">

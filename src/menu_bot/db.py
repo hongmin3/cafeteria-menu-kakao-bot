@@ -37,12 +37,19 @@ ON menu_entries(service_date, location, meal_type);
 
 
 class MenuDB:
-    def __init__(self, path: Path | str):
+    def __init__(self, path: Path | str, *, read_only: bool = False):
         self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(self.path)
+        if read_only:
+            self.conn = sqlite3.connect(f"{self.path.absolute().as_uri()}?mode=ro", uri=True)
+        else:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.conn = sqlite3.connect(self.path)
+            try:
+                self.conn.executescript(SCHEMA)
+            except sqlite3.Error:
+                self.conn.close()
+                raise
         self.conn.row_factory = sqlite3.Row
-        self.conn.executescript(SCHEMA)
 
     def close(self) -> None:
         self.conn.close()

@@ -1,6 +1,8 @@
+from contextlib import closing
 from datetime import date, datetime
 import json
 from pathlib import Path
+import sqlite3
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -382,12 +384,15 @@ def test_ensure_menu_uses_the_db_not_just_the_state_file(tmp_path: Path):
             MenuEntry(service_date=date(2026, 8, 24), location="뷰웍스", meal_type="중식",
                       category="일반식", menu_text="제육볶음", source_post_id="p"),
         ])
+        assert db.conn.execute("PRAGMA journal_mode=DELETE").fetchone()[0] == "delete"
     finally:
         db.close()
     result = ensure_week_menu(settings, now=MONDAY_EARLY, scraper=ExplodingScraper())
     assert result.already_confirmed is True
     # 주말 폴링·마감 점검이 헛돌지 않도록 상태 파일에도 확보 사실을 남긴다.
     assert _state(settings)["confirmed_week_start"] == TARGET
+    with closing(sqlite3.connect(settings.database_path)) as conn:
+        assert conn.execute("PRAGMA journal_mode").fetchone()[0] == "delete"
 
 
 def test_ensure_menu_keeps_retrying_while_post_is_absent(tmp_path: Path):

@@ -54,6 +54,9 @@ Semantic Versioning은 강제하지 않는다. 프로젝트에 Versioning 정책
 
 ### Fixed
 
+- REQ-API-001: 카카오 식단 조회와 상태 확인에서 DB 초기화를 건너뛴다. DB를 읽을 수 없으면 카카오는 재시도 안내를 보내고 상태 확인용 주소는 HTTP 503으로 답한다.
+- NFR-OPS-001: 매시간 식단 확보 확인과 Linux 환경 점검에서 DB를 읽기 전용으로 연다.
+
 ### Removed
 
 ## 2026-10-20

@@ -68,7 +68,7 @@ if [ -f "$(env_value DATABASE_PATH)" ] || [ -f data/menus.db ]; then
   ./.venv/bin/python -c "
 from menu_bot.config import get_settings
 from menu_bot.db import MenuDB
-s=get_settings(); db=MenuDB(s.database_path)
+s=get_settings(); db=MenuDB(s.database_path, read_only=True)
 print('  [OK]   메뉴 항목', db.count_entries(), '개')
 db.close()" 2>/dev/null || bad "DB 조회 실패"
 else warn "DB 아직 없음 (첫 수집 전)"; fi

@@ -73,6 +73,7 @@
 | 사업장별로 나뉘어 올라온 주차 | 같은 끼니는 합쳐서 사업장 없이, 운영 여부가 갈리는 끼니만 사업장을 나란히 표시 |
 | 안내 포스터 혼입 | 날짜 열과 끼니 행이 없는 이미지는 제외 |
 | OCR 중복 | 날짜·지점·끼니·코너가 같으면 더 풍부한 결과를 채택 |
+| 저장된 식단을 일시적으로 읽을 수 없음 | 카카오에 잠시 후 다시 물어봐 달라고 안내. 도움말 버튼으로 사용방법 확인 가능 |
 
 최근 1년치 게시물과 이미지 후보를 전수 조사해 표 구조 변화와 예외 패턴을 검증했습니다. 실제 게시물 목록, 원본 이미지, OCR 결과와 메뉴 데이터는 공개 저장소에 포함하지 않습니다.
 
@@ -430,11 +431,14 @@ systemctl list-timers 'menubot-*'
 # 로그 (스크립트가 logs/*.log에도 KST로 남깁니다)
 journalctl -u menubot-web -n 50
 journalctl -u menubot-collect -n 50
+df -h . data /var/log
 
 # 수동 실행
 sudo systemctl start menubot-collect.service
 sudo systemctl start menubot-nextweek.service
 ```
+
+`/health`는 식단 DB를 읽을 수 있을 때 항목 수를 돌려줍니다. HTTP 503이면 웹 서비스 로그와 DB가 있는 파일시스템의 여유 공간을 확인하세요. 초기 설치에서는 첫 수집 또는 식단 가져오기로 DB가 만들어진 뒤 조회할 수 있습니다.
 
 ## macOS 설치
 

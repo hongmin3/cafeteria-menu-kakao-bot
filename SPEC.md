@@ -977,10 +977,12 @@ REQ-API-001
 없음.
 
 #### 절차
-`tests/test_query.py`, `tests/test_query_routing.py`.
+`tests/test_query.py`, `tests/test_query_routing.py`, `tests/test_web_database.py`.
 
 1. 하루 전체 응답을 카카오 응답으로 바꿔 말풍선이 나뉘는지 확인한다.
 2. 사용방법 문구가, 앞에 안내 문구가 붙은 경우까지 말풍선 하나에 들어가는지 확인한다.
+3. 저장된 식단을 카카오에서 조회하고, 상태 확인용 주소에서 항목 수를 읽는다. 두 요청 뒤 SQLite의 저장 방식이 그대로인지 확인한다.
+4. 파일이 없거나 손상됐을 때와 디스크 입출력 오류가 날 때 카카오가 다시 시도하라는 안내를 돌려주는지 확인한다. 상태 확인용 주소는 HTTP 503을 돌려준다.
 
 #### Expected Result
 끼니별로 말풍선이 나뉘고 개수 상한을 넘지 않는다. 사용방법은 한 말풍선에 들어간다.
